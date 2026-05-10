@@ -30,7 +30,14 @@ export default function Console() {
   useEffect(() => {
     let i = 0;
     const t = setInterval(() => {
-      setLines((prev) => [...prev, BOOT[i]]);
+      const nextLine = BOOT[i];
+      if (typeof nextLine !== "string") {
+        clearInterval(t);
+        setReady(true);
+        return;
+      }
+
+      setLines((prev) => [...prev, nextLine]);
       i += 1;
       if (i >= BOOT.length) {
         clearInterval(t);
@@ -65,8 +72,7 @@ export default function Console() {
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.9) 100%)",
+          background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.9) 100%)",
         }}
       />
       {/* scanlines */}
@@ -80,7 +86,7 @@ export default function Console() {
 
       <div className="relative w-full max-w-2xl mt-8 sm:mt-20">
         <pre className="text-emerald-400/80 text-[10px] leading-tight mb-6 select-none">
-{`  ████████╗██████╗  █████╗  ██████╗███████╗██╗██╗   ██╗███╗   ███╗
+          {`  ████████╗██████╗  █████╗  ██████╗███████╗██╗██╗   ██╗███╗   ███╗
   ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝██║██║   ██║████╗ ████║
      ██║   ██████╔╝███████║██║     █████╗  ██║██║   ██║██╔████╔██║
      ██║   ██╔══██╗██╔══██║██║     ██╔══╝  ██║██║   ██║██║╚██╔╝██║
@@ -89,11 +95,14 @@ export default function Console() {
         </pre>
 
         <div className="text-sm space-y-1">
-          {lines.map((l, i) => (
-            <div key={i} className={l.startsWith("#") ? "text-emerald-500/60" : ""}>
-              {l || "\u00A0"}
-            </div>
-          ))}
+          {lines.map((l, i) => {
+            const line = l ?? "";
+            return (
+              <div key={i} className={line.startsWith("#") ? "text-emerald-500/60" : ""}>
+                {line || "\u00A0"}
+              </div>
+            );
+          })}
         </div>
 
         {ready && (
