@@ -31,8 +31,9 @@ import {
   Info,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useMaterialStore, STATUS_TOOLTIPS } from "@/data/materials";
-import type { Material } from "@/data/materials";
+import { useMaterialStore } from "@/data/materials";
+import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
+import { Link } from "@tanstack/react-router";
 
 /*
  * Design: Material Intelligence — Dark Industrial Minimalism
