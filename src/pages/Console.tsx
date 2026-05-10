@@ -30,7 +30,14 @@ export default function Console() {
   useEffect(() => {
     let i = 0;
     const t = setInterval(() => {
-      setLines((prev) => [...prev, BOOT[i]]);
+      const nextLine = BOOT[i];
+      if (typeof nextLine !== "string") {
+        clearInterval(t);
+        setReady(true);
+        return;
+      }
+
+      setLines((prev) => [...prev, nextLine]);
       i += 1;
       if (i >= BOOT.length) {
         clearInterval(t);
@@ -89,11 +96,14 @@ export default function Console() {
         </pre>
 
         <div className="text-sm space-y-1">
-          {lines.map((l, i) => (
-            <div key={i} className={l.startsWith("#") ? "text-emerald-500/60" : ""}>
-              {l || "\u00A0"}
+          {lines.map((l, i) => {
+            const line = l ?? "";
+            return (
+            <div key={i} className={line.startsWith("#") ? "text-emerald-500/60" : ""}>
+              {line || "\u00A0"}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {ready && (
