@@ -80,7 +80,7 @@ export default function Inventory() {
   const totalProducts = filtered.length;
 
   // Handle stock report ingestion via the shared store
-  const handleIngest = (data: {
+  const handleIngest = async (data: {
     rows: Record<string, string | number | null>[];
     mappings: { sourceColumn: string; mappedTo: string | null; isCustom: boolean }[];
     customColumns: string[];
