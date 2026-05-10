@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import traceumIcon from "@/assets/traceium-icon.png";
+import traceumWordmark from "@/assets/traceium-wordmark.png";
 
 // Dashboard, Compliance, Documents, Suppliers, Orders are intentionally
 // hidden from the sidebar (routes still resolve via direct URL).
@@ -37,17 +39,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center h-14 px-4 border-b border-border">
           {sidebarExpanded ? (
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded bg-white flex items-center justify-center">
-                <span className="text-black font-bold text-sm tracking-tight">T</span>
-              </div>
-              <span className="text-foreground font-semibold text-base tracking-tight">
-                Traceum
-              </span>
+              <img src={traceumIcon} alt="Traceium" className="h-7 w-auto object-contain" />
+              <img
+                src={traceumWordmark}
+                alt="Traceium"
+                className="h-4 w-auto object-contain"
+              />
             </div>
           ) : (
-            <div className="w-7 h-7 rounded bg-white flex items-center justify-center mx-auto">
-              <span className="text-black font-bold text-sm tracking-tight">T</span>
-            </div>
+            <img
+              src={traceumIcon}
+              alt="Traceium"
+              className="h-7 w-auto object-contain mx-auto"
+            />
           )}
         </div>
 
