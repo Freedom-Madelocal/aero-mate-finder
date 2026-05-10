@@ -156,14 +156,19 @@ export default function Inventory() {
     };
 
     // Use the shared store's addMaterials with fuzzy matching
-    addMaterials(newMaterials, report);
-    setShowReportBanner(true);
-
-    toast.success(`Ingested ${data.rows.length} rows from ${data.fileName}`, {
-      description: data.customColumns.length > 0
-        ? `${data.customColumns.length} custom column${data.customColumns.length !== 1 ? "s" : ""} added: ${data.customColumns.join(", ")}`
-        : "All columns mapped to known fields. Fuzzy matching applied to prevent duplicates.",
-    });
+    try {
+      await addMaterials(newMaterials, report);
+      setShowReportBanner(true);
+      toast.success(`Ingested ${data.rows.length} rows from ${data.fileName}`, {
+        description: data.customColumns.length > 0
+          ? `${data.customColumns.length} custom column${data.customColumns.length !== 1 ? "s" : ""} added: ${data.customColumns.join(", ")}`
+          : "All columns mapped to known fields. Fuzzy matching applied to prevent duplicates.",
+      });
+    } catch (err) {
+      toast.error("Failed to save stock report", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
   };
 
   const isEmpty = materials.length === 0;
