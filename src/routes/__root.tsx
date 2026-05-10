@@ -124,10 +124,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <ThemeProvider defaultTheme="dark">
-          <TooltipProvider delayDuration={200}>
-            <Toaster />
-            <Outlet />
-          </TooltipProvider>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <Toaster />
+              <Outlet />
+            </TooltipProvider>
+          </AuthProvider>
         </ThemeProvider>
       </ErrorBoundary>
     </QueryClientProvider>
