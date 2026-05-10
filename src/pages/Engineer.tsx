@@ -120,7 +120,7 @@ export default function Engineer() {
       description: kitDescription,
       specs,
       savedAt: new Date().toISOString(),
-      matchCount: matchedMaterials.length,
+      matchCount: matchedSpecs.length,
     };
 
     setKits([...kits, newKit]);
@@ -302,7 +302,7 @@ export default function Engineer() {
                 {/* NASA E595 */}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-2">
-                    <StatusTooltip content={STATUS_TOOLTIPS["nasa-pass"]}>
+                    <StatusTooltip content={""}>
                       <span className="flex items-center gap-1 cursor-help">
                         <Zap className="w-3 h-3" />
                         NASA E595 Compliance
@@ -449,11 +449,11 @@ export default function Engineer() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-medium text-foreground">
-                    Matching Materials ({matchedMaterials.length})
+                    Matching Materials ({matchedSpecs.length})
                   </h2>
-                  {matchedMaterials.length > 0 && (
+                  {matchedSpecs.length > 0 && (
                     <span className="text-xs text-muted-foreground">
-                      {matchedMaterials.reduce(
+                      {matchedSpecs.reduce(
                         (sum, m: Material) => sum + m.availableQty,
                         0
                       )}{" "}
@@ -462,7 +462,7 @@ export default function Engineer() {
                   )}
                 </div>
 
-                {matchedMaterials.length === 0 ? (
+                {matchedSpecs.length === 0 ? (
                   <div className="bg-card border border-border rounded-lg p-8 text-center">
                     <AlertCircle className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground">
@@ -499,7 +499,7 @@ export default function Engineer() {
                           </tr>
                         </thead>
                         <tbody>
-                          {matchedMaterials.map((material: Material) => (
+                          {matchedSpecs.map((material: Material) => (
                             <tr
                               key={material.id}
                               className="border-b border-border/50 hover:bg-secondary/20 transition-colors cursor-pointer"
