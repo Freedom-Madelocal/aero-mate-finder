@@ -49,6 +49,8 @@ export interface MasterSpec {
   minimumOrderQuantity: string | null;
   sourceDocument: string | null;
   uploadedFrom: string | null;
+  frequentReorder: boolean;
+  engineerDefaultName: string | null;
 }
 
 export interface MasterSpecUpload {
