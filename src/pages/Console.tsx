@@ -12,8 +12,8 @@ const BOOT = [
 ];
 
 const OPTIONS = [
-  { cmd: "login", label: "log in to existing account", to: "/login" as const },
-  { cmd: "signin", label: "request new credentials", to: "/login" as const },
+  { cmd: "login", label: "log in to existing account", to: "/console/login" as const },
+  { cmd: "signin", label: "request new credentials", to: "/console/login" as const },
 ];
 
 export default function Console() {
