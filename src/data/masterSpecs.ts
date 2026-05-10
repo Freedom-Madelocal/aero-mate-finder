@@ -98,6 +98,8 @@ interface SpecRow {
   minimum_order_quantity: string | null;
   source_document: string | null;
   uploaded_from: string | null;
+  frequent_reorder: boolean | null;
+  engineer_default_name: string | null;
 }
 
 const num = (v: number | string | null): number | null =>
