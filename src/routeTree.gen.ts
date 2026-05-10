@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ProcurementRouteImport } from './routes/procurement'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
@@ -29,6 +30,11 @@ const SuppliersRoute = SuppliersRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProcurementRoute = ProcurementRouteImport.update({
+  id: '/procurement',
+  path: '/procurement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
+  '/procurement': typeof ProcurementRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/material/$id': typeof MaterialIdRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
+  '/procurement': typeof ProcurementRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/material/$id': typeof MaterialIdRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
+  '/procurement': typeof ProcurementRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/material/$id': typeof MaterialIdRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/master-specs'
     | '/orders'
+    | '/procurement'
     | '/settings'
     | '/suppliers'
     | '/material/$id'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/master-specs'
     | '/orders'
+    | '/procurement'
     | '/settings'
     | '/suppliers'
     | '/material/$id'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/master-specs'
     | '/orders'
+    | '/procurement'
     | '/settings'
     | '/suppliers'
     | '/material/$id'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
+  ProcurementRoute: typeof ProcurementRoute
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
   MaterialIdRoute: typeof MaterialIdRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/procurement': {
+      id: '/procurement'
+      path: '/procurement'
+      fullPath: '/procurement'
+      preLoaderRoute: typeof ProcurementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
+  ProcurementRoute: ProcurementRoute,
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
   MaterialIdRoute: MaterialIdRoute,
@@ -271,3 +292,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
