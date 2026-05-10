@@ -7,8 +7,21 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { seedMockData } from "@/data/materials";
+import {
+  SEED_MATERIALS,
+  SEED_LOTS,
+  SEED_COA_RECORDS,
+  SEED_COC_RECORDS,
+  SEED_STOCK_REPORT,
+} from "@/data/mockSeed";
 
 function NotFoundComponent() {
   return (
@@ -35,16 +48,13 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -72,21 +82,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Traceum — Composites Inventory OS" },
+      {
+        name: "description",
+        content:
+          "Composites-native inventory operating system for aerospace stocking distributors, engineers, and manufacturers.",
+      },
+      { property: "og:title", content: "Traceum — Composites Inventory OS" },
+      {
+        property: "og:description",
+        content:
+          "Material lifecycle tracking, TSM compliance, COA/COC documentation, and supplier visibility for aerospace composites.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -96,7 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
@@ -108,12 +119,32 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function MockDataSeeder() {
+  useEffect(() => {
+    seedMockData({
+      materials: SEED_MATERIALS,
+      lots: SEED_LOTS,
+      coaRecords: SEED_COA_RECORDS,
+      cocRecords: SEED_COC_RECORDS,
+      stockReport: SEED_STOCK_REPORT,
+    });
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ErrorBoundary>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider delayDuration={200}>
+            <MockDataSeeder />
+            <Toaster />
+            <Outlet />
+          </TooltipProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }
