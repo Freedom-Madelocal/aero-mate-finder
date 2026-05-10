@@ -89,18 +89,22 @@ async function hydrate() {
   if (_hydrated) return;
   if (_hydrating) return _hydrating;
   _hydrating = (async () => {
-    const [r, c] = await Promise.all([
-      supabase.from("procurement_requests" as never).select("*").order("created_at", { ascending: false }),
-      supabase.from("vendor_contacts" as never).select("*").order("vendor"),
-    ]);
-    if (!r.error && Array.isArray(r.data)) {
-      _store = { ..._store, requests: (r.data as unknown as RequestRow[]).map(rowToReq) };
+    try {
+      const [r, c] = await Promise.all([
+        supabase.from("procurement_requests" as never).select("*").order("created_at", { ascending: false }),
+        supabase.from("vendor_contacts" as never).select("*").order("vendor"),
+      ]);
+      if (!r.error && Array.isArray(r.data)) {
+        _store = { ..._store, requests: (r.data as unknown as RequestRow[]).map(rowToReq) };
+      }
+      if (!c.error && Array.isArray(c.data)) {
+        _store = { ..._store, contacts: (c.data as unknown as ContactRow[]).map(rowToContact) };
+      }
+      _hydrated = true;
+      notify();
+    } finally {
+      _hydrating = null;
     }
-    if (!c.error && Array.isArray(c.data)) {
-      _store = { ..._store, contacts: (c.data as unknown as ContactRow[]).map(rowToContact) };
-    }
-    _hydrated = true;
-    notify();
   })();
   return _hydrating;
 }
