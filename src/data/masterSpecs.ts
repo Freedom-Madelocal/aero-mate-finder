@@ -267,6 +267,27 @@ export async function addMasterSpecs(specs: Partial<MasterSpec>[], fileName: str
   await hydrate();
 }
 
+/** Toggle the frequent-reorder star on a master spec. */
+export async function setFrequentReorder(specId: string, value: boolean, engineerName?: string) {
+  const patch: Record<string, unknown> = { frequent_reorder: value };
+  if (value && engineerName) patch.engineer_default_name = engineerName;
+  const { error } = await supabase
+    .from("master_specs" as never)
+    .update(patch as never)
+    .eq("id", specId);
+  if (error) throw error;
+  // Optimistic local update
+  _store = {
+    ..._store,
+    specs: _store.specs.map((s) =>
+      s.id === specId
+        ? { ...s, frequentReorder: value, engineerDefaultName: engineerName ?? s.engineerDefaultName }
+        : s,
+    ),
+  };
+  notify();
+}
+
 /** Lookup the inventory match for a master spec. */
 export type InventoryMatch =
   | { status: "in-stock"; material: Material }
