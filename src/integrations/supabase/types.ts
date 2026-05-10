@@ -49,9 +49,11 @@ export type Database = {
           cure_time: string | null
           cvcm_pct: number | null
           dry_tg_onset_c: number | null
+          engineer_default_name: string | null
           flame_retardant: boolean
           flatwise_tension_mpa: number | null
           freezer_life_months: number | null
+          frequent_reorder: boolean
           high_temperature: boolean
           id: string
           impact_resistant: boolean
@@ -91,9 +93,11 @@ export type Database = {
           cure_time?: string | null
           cvcm_pct?: number | null
           dry_tg_onset_c?: number | null
+          engineer_default_name?: string | null
           flame_retardant?: boolean
           flatwise_tension_mpa?: number | null
           freezer_life_months?: number | null
+          frequent_reorder?: boolean
           high_temperature?: boolean
           id?: string
           impact_resistant?: boolean
@@ -133,9 +137,11 @@ export type Database = {
           cure_time?: string | null
           cvcm_pct?: number | null
           dry_tg_onset_c?: number | null
+          engineer_default_name?: string | null
           flame_retardant?: boolean
           flatwise_tension_mpa?: number | null
           freezer_life_months?: number | null
+          frequent_reorder?: boolean
           high_temperature?: boolean
           id?: string
           impact_resistant?: boolean
@@ -242,6 +248,77 @@ export type Database = {
         }
         Relationships: []
       }
+      procurement_requests: {
+        Row: {
+          chosen_vendor: string
+          created_at: string
+          engineer_name: string
+          id: string
+          master_spec_id: string
+          note: string | null
+          quantity: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          chosen_vendor?: string
+          created_at?: string
+          engineer_name?: string
+          id?: string
+          master_spec_id: string
+          note?: string | null
+          quantity?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          chosen_vendor?: string
+          created_at?: string
+          engineer_name?: string
+          id?: string
+          master_spec_id?: string
+          note?: string | null
+          quantity?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_requests_master_spec_id_fkey"
+            columns: ["master_spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_sends: {
+        Row: {
+          body: string | null
+          email: string
+          id: string
+          request_ids: string[]
+          sent_at: string
+          vendor: string
+        }
+        Insert: {
+          body?: string | null
+          email: string
+          id?: string
+          request_ids?: string[]
+          sent_at?: string
+          vendor: string
+        }
+        Update: {
+          body?: string | null
+          email?: string
+          id?: string
+          request_ids?: string[]
+          sent_at?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
       stock_reports: {
         Row: {
           created_at: string
@@ -266,6 +343,36 @@ export type Database = {
           id?: string
           row_count?: number
           uploaded_at?: string
+        }
+        Relationships: []
+      }
+      vendor_contacts: {
+        Row: {
+          contact_name: string | null
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          contact_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          vendor?: string
         }
         Relationships: []
       }
