@@ -506,6 +506,14 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      <Link
+        to="/pi"
+        aria-label="·"
+        title=""
+        className="fixed bottom-3 right-3 z-50 text-muted-foreground/30 hover:text-foreground/80 transition-colors text-xs font-serif leading-none p-2 select-none"
+      >
+        π
+      </Link>
     </div>
   );
 }
