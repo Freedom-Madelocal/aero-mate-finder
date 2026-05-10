@@ -449,15 +449,11 @@ export default function Engineer() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-medium text-foreground">
-                    Matching Materials ({matchedSpecs.length})
+                    Matching Specs ({matchedSpecs.length})
                   </h2>
                   {matchedSpecs.length > 0 && (
                     <span className="text-xs text-muted-foreground">
-                      {matchedSpecs.reduce(
-                        (sum, m: Material) => sum + m.availableQty,
-                        0
-                      )}{" "}
-                      units available
+                      {matchedSpecs.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length} in stock
                     </span>
                   )}
                 </div>
@@ -466,7 +462,7 @@ export default function Engineer() {
                   <div className="bg-card border border-border rounded-lg p-8 text-center">
                     <AlertCircle className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground">
-                      No materials match your specifications.
+                      No specs match your requirements.
                     </p>
                   </div>
                 ) : (
@@ -475,104 +471,72 @@ export default function Engineer() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-border bg-secondary/30">
-                            <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">
-                              Product
-                            </th>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">
-                              Supplier
-                            </th>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">
-                              Form / Chemistry
-                            </th>
-                            <th className="text-center px-4 py-3 text-xs font-medium text-muted-foreground">
-                              Service Temp
-                            </th>
-                            <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">
-                              Available
-                            </th>
-                            <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">
-                              Incoming
-                            </th>
-                            <th className="text-center px-4 py-3 text-xs font-medium text-muted-foreground">
-                              NASA E595
-                            </th>
+                            <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Product</th>
+                            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Vendor</th>
+                            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Form / Chemistry</th>
+                            <th className="text-center px-4 py-3 text-xs font-medium text-muted-foreground">Service °C</th>
+                            <th className="text-center px-4 py-3 text-xs font-medium text-muted-foreground">OOA</th>
+                            <th className="text-center px-4 py-3 text-xs font-medium text-muted-foreground">E595 (TML/CVCM)</th>
+                            <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Inventory</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {matchedSpecs.map((material: Material) => (
-                            <tr
-                              key={material.id}
-                              className="border-b border-border/50 hover:bg-secondary/20 transition-colors cursor-pointer"
-                              onClick={() => {
-                                // Could navigate to material detail here
-                              }}
-                            >
-                              <td className="px-5 py-3">
-                                <div>
-                                  <div className="font-medium text-foreground">
-                                    {material.product}
-                                  </div>
-                                  {material.formerName && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {material.formerName}
-                                    </div>
+                          {matchedSpecs.map((spec: MasterSpec) => {
+                            const inv = getInventoryMatch(spec, materials);
+                            const e595Pass = spec.tmlPct !== null && spec.tmlPct <= 1.0 && spec.cvcmPct !== null && spec.cvcmPct <= 0.1;
+                            return (
+                              <tr key={spec.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
+                                <td className="px-5 py-3">
+                                  <div className="font-medium text-foreground">{spec.productName}</div>
+                                  {spec.productFamily && (
+                                    <div className="text-xs text-muted-foreground">{spec.productFamily}</div>
                                   )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 text-muted-foreground">
-                                {material.supplier}
-                              </td>
-                              <td className="px-4 py-3 text-muted-foreground">
-                                {material.form} / {material.chemistry}
-                              </td>
-                              <td className="px-4 py-3 text-center font-mono text-foreground">
-                                {material.maxServiceTemp}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <StatusTooltip content="Units currently in stock">
-                                  <span className="font-mono text-foreground">
-                                    {material.availableQty} {material.availableUnit}
-                                  </span>
-                                </StatusTooltip>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {material.incomingQty > 0 ? (
-                                  <StatusTooltip
-                                    content={`Arriving ${material.incomingEta}`}
-                                  >
-                                    <span className="font-mono text-[var(--status-warning)]">
-                                      +{material.incomingQty}
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">{spec.vendor}</td>
+                                <td className="px-4 py-3 text-muted-foreground">
+                                  {(spec.productForm ?? "—")} / {(spec.resinChemistry ?? "—")}
+                                </td>
+                                <td className="px-4 py-3 text-center font-mono text-foreground">
+                                  {spec.maxServiceTemperatureC ?? "—"}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  {spec.ooaVboCapable ? (
+                                    <span className="text-[var(--status-compliant)] font-mono text-sm">Yes</span>
+                                  ) : (
+                                    <span className="text-muted-foreground/40">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-center font-mono text-xs">
+                                  {spec.tmlPct === null && spec.cvcmPct === null ? (
+                                    <span className="text-muted-foreground/40">—</span>
+                                  ) : (
+                                    <span className={e595Pass ? "text-[var(--status-compliant)]" : "text-[var(--status-warning)]"}>
+                                      {spec.tmlPct ?? "?"} / {spec.cvcmPct ?? "?"}
                                     </span>
-                                  </StatusTooltip>
-                                ) : (
-                                  <span className="text-muted-foreground/40">—</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <StatusTooltip
-                                  content={
-                                    material.nasaE595 === "—"
-                                      ? "Not NASA E595 compliant"
-                                      : material.nasaE595 === "▲"
-                                        ? "NASA E595 Pass"
-                                        : "NASA E595 Verify"
-                                  }
-                                >
-                                  <span
-                                    className={`text-sm font-mono ${
-                                      material.nasaE595 === "—"
-                                        ? "text-muted-foreground/40"
-                                        : material.nasaE595 === "▲"
-                                          ? "text-[var(--status-compliant)]"
-                                          : "text-[var(--status-warning)]"
-                                    }`}
-                                  >
-                                    {material.nasaE595}
-                                  </span>
-                                </StatusTooltip>
-                              </td>
-                            </tr>
-                          ))}
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  {inv.status === "none" ? (
+                                    <span className="text-[10px] font-mono uppercase text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
+                                      Not Stocked
+                                    </span>
+                                  ) : (
+                                    <Link
+                                      to="/material/$id"
+                                      params={{ id: inv.material.id }}
+                                      className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                                        inv.status === "in-stock"
+                                          ? "bg-[var(--status-compliant)]/15 text-[var(--status-compliant)]"
+                                          : "bg-[var(--status-warning)]/15 text-[var(--status-warning)]"
+                                      }`}
+                                    >
+                                      {inv.status === "in-stock" ? `In Stock (${inv.material.availableQty})` : "Tracked"}
+                                    </Link>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
