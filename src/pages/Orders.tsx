@@ -2,7 +2,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import { ShoppingCart, CheckCircle2, Clock, AlertTriangle, Package, Upload, Info } from "lucide-react";
 import { toast } from "sonner";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMaterialStore, STATUS_TOOLTIPS } from "@/data/materials";
 
 /*
@@ -12,7 +12,7 @@ import { useMaterialStore, STATUS_TOOLTIPS } from "@/data/materials";
  */
 
 export default function Orders() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const store = useMaterialStore();
   const materials = store.materials;
 
@@ -57,7 +57,7 @@ export default function Orders() {
               real-time availability before making delivery promises to customers.
             </p>
             <button
-              onClick={() => setLocation("/inventory")}
+              onClick={() => navigate({ to: "/inventory" })}
               className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <Upload className="w-4 h-4" />

@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -26,8 +26,8 @@ import type { Material, MaterialLot, COARecord, COCRecord } from "@/data/materia
  */
 
 export default function MaterialDetail() {
-  const { id } = useParams<{ id: string }>();
-  const [, setLocation] = useLocation();
+  const { id } = useParams({ from: "/material/$id" });
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"lots" | "coa" | "coc">("lots");
   const store = useMaterialStore();
 
@@ -43,7 +43,7 @@ export default function MaterialDetail() {
           <Package className="w-8 h-8 text-muted-foreground/40" />
           <p className="text-muted-foreground">Material not found</p>
           <button
-            onClick={() => setLocation("/inventory")}
+            onClick={() => navigate({ to: "/inventory" })}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
           >
             Return to Inventory
@@ -58,7 +58,7 @@ export default function MaterialDetail() {
       <div className="space-y-6">
         {/* Back navigation */}
         <button
-          onClick={() => setLocation("/inventory")}
+          onClick={() => navigate({ to: "/inventory" })}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

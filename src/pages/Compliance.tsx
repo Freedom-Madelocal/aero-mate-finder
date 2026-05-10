@@ -12,7 +12,7 @@ import {
   History,
   XCircle,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMaterialStore, STATUS_TOOLTIPS } from "@/data/materials";
 import type { Material, MaterialLot } from "@/data/materials";
 
@@ -39,7 +39,7 @@ const MOVEMENT_LOG = [
 ];
 
 export default function Compliance() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const store = useMaterialStore();
   const materials = store.materials;
   const lots = store.lots;
@@ -101,7 +101,7 @@ export default function Compliance() {
               and out-time tracking.
             </p>
             <button
-              onClick={() => setLocation("/inventory")}
+              onClick={() => navigate({ to: "/inventory" })}
               className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <Upload className="w-4 h-4" />
@@ -202,7 +202,7 @@ export default function Compliance() {
                         <tr
                           key={lot.lotId}
                           className="border-b border-border/50 hover:bg-secondary/20 cursor-pointer transition-colors"
-                          onClick={() => setLocation(`/material/${lot.materialId}`)}
+                          onClick={() => navigate({ to: "/material/$id", params: { id: String(lot.materialId) } })}
                         >
                           <td className="px-5 py-3 font-mono text-xs text-foreground">{lot.lotId}</td>
                           <td className="px-4 py-3 text-sm text-foreground">{material?.product ?? lot.materialId}</td>

@@ -3,7 +3,7 @@ import StockReportUpload from "@/components/StockReportUpload";
 import StatusTooltip from "@/components/StatusTooltip";
 import { Search, Filter, Plus, ChevronDown, Package, TruckIcon, Upload, FileSpreadsheet, X, Info, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMaterialStore, addMaterials, clearAllData, getStore, STATUS_TOOLTIPS, METRIC_TOOLTIPS } from "@/data/materials";
 import type { Material, StockReportRecord } from "@/data/materials";
 import { toast } from "sonner";
@@ -17,7 +17,7 @@ import { toast } from "sonner";
  */
 
 export default function Inventory() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [formFilter, setFormFilter] = useState("All");
@@ -475,7 +475,7 @@ export default function Inventory() {
                     {filtered.map((material: Material) => (
                       <tr
                         key={material.id}
-                        onClick={() => setLocation(`/material/${material.id}`)}
+                        onClick={() => navigate({ to: "/material/$id", params: { id: String(material.id) } })}
                         className="border-b border-border/50 hover:bg-accent/20 transition-colors cursor-pointer group"
                       >
                         <td className="py-3 px-4">

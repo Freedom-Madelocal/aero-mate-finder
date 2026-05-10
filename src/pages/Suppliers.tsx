@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import { Truck, AlertTriangle, CheckCircle2, Clock, Package, Upload, Info } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMaterialStore, STATUS_TOOLTIPS } from "@/data/materials";
 import type { Material } from "@/data/materials";
 import { useMemo } from "react";
@@ -13,7 +13,7 @@ import { useMemo } from "react";
  */
 
 export default function Suppliers() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const store = useMaterialStore();
   const materials = store.materials;
 
@@ -63,7 +63,7 @@ export default function Suppliers() {
               Inbound shipment tracking and delay visibility will activate once purchase orders are created.
             </p>
             <button
-              onClick={() => setLocation("/inventory")}
+              onClick={() => navigate({ to: "/inventory" })}
               className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <Upload className="w-4 h-4" />

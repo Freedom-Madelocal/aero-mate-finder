@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 /*
@@ -8,13 +8,13 @@ import { useState } from "react";
  */
 
 export default function Login() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLocation("/");
+    navigate({ to: "/" });
   };
 
   return (

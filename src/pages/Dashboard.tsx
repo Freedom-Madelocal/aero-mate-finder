@@ -15,7 +15,7 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMaterialStore, STATUS_TOOLTIPS, METRIC_TOOLTIPS, HEALTH_BAR_TOOLTIPS } from "@/data/materials";
 import type { Material, MaterialLot } from "@/data/materials";
 
@@ -26,7 +26,7 @@ import type { Material, MaterialLot } from "@/data/materials";
  */
 
 export default function Dashboard() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const store = useMaterialStore();
   const materials = store.materials;
   const lots = store.lots;
@@ -114,7 +114,7 @@ export default function Dashboard() {
               Go to Inventory and click "Upload Stock Report" to import your material catalog.
             </p>
             <button
-              onClick={() => setLocation("/inventory")}
+              onClick={() => navigate({ to: "/inventory" })}
               className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <Upload className="w-4 h-4" />
@@ -287,7 +287,7 @@ export default function Dashboard() {
                         >
                           <div
                             className="flex items-start gap-3 p-3 rounded-md bg-secondary/40 border border-border/50 cursor-pointer hover:bg-accent/10 transition-colors"
-                            onClick={() => setLocation(`/material/${lot.materialId}`)}
+                            onClick={() => navigate({ to: "/material/$id", params: { id: String(lot.materialId) } })}
                           >
                             <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: statusColor }} />
                             <div className="flex-1 min-w-0">
@@ -327,7 +327,7 @@ export default function Dashboard() {
                   Top Materials by Volume
                 </h2>
                 <button
-                  onClick={() => setLocation("/inventory")}
+                  onClick={() => navigate({ to: "/inventory" })}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   View all inventory <ArrowUpRight className="w-3 h-3" />
@@ -343,7 +343,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={m.id}
-                        onClick={() => setLocation(`/material/${m.id}`)}
+                        onClick={() => navigate({ to: "/material/$id", params: { id: String(m.id) } })}
                         className="bg-secondary/50 border border-border/50 rounded-lg p-3 cursor-pointer hover:bg-accent/20 transition-colors relative"
                       >
                         {(hasAlert || hasWarning) && (
@@ -414,7 +414,7 @@ export default function Dashboard() {
                     >
                       <div
                         className="flex items-center gap-4 p-3 rounded-md bg-secondary/40 border border-border/50 cursor-pointer hover:bg-accent/10 transition-colors"
-                        onClick={() => setLocation("/orders")}
+                        onClick={() => navigate({ to: "/orders" })}
                       >
                         <StatusIcon className="w-4 h-4 flex-shrink-0" style={{ color: statusColor }} />
                         <div className="flex-1 min-w-0">

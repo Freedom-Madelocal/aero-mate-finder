@@ -1,8 +1,8 @@
 import { AlertCircle } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -13,7 +13,7 @@ export default function NotFound() {
           The page you're looking for doesn't exist or has been moved.
         </p>
         <button
-          onClick={() => setLocation("/")}
+          onClick={() => navigate({ to: "/" })}
           className="mt-4 bg-white text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-white/90 transition-colors"
         >
           Back to Dashboard

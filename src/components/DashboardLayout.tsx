@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Package,
@@ -26,7 +26,7 @@ const navItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const location = useLocation({ select: (l) => l.pathname });
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
 
   return (
@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {navItems.map((item) => {
             const isActive = location === item.path;
             return (
-              <Link key={item.path} href={item.path}>
+              <Link key={item.path} to={item.path}>
                 <div
                   className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                     isActive
@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Sidebar footer */}
         <div className="border-t border-border p-2">
-          <Link href="/settings">
+          <Link to="/settings">
             <div
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full transition-colors ${
                 location === "/settings"
