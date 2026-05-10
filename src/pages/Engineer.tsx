@@ -82,9 +82,9 @@ const APPLICATIONS = [
 ];
 
 export default function Engineer() {
-  const store = useMaterialStore();
-  const materials = store.materials;
-  const isEmpty = materials.length === 0;
+  const { specs: masterSpecs } = useMasterSpecStore();
+  const { materials } = useMaterialStore();
+  const isEmpty = masterSpecs.length === 0;
 
   // Filter state
   const [specs, setSpecs] = useState<SpecFilter>({});
@@ -93,39 +93,23 @@ export default function Engineer() {
   const [kitName, setKitName] = useState("");
   const [kitDescription, setKitDescription] = useState("");
 
-  // Material matching algorithm
-  const matchedMaterials = useMemo(() => {
-    return materials.filter((m: Material) => {
-      // Parse temp ranges from strings like "177°C"
-      const serviceTemp = parseInt(m.maxServiceTemp);
-      if (!isNaN(serviceTemp)) {
-        if (specs.minServiceTemp && serviceTemp < specs.minServiceTemp)
-          return false;
-        if (specs.maxServiceTemp && serviceTemp > specs.maxServiceTemp)
-          return false;
-      }
-
-      if (specs.form && m.form !== specs.form) return false;
-      if (specs.chemistry && m.chemistry !== specs.chemistry) return false;
-
-      if (specs.nasaE595 === "required" && m.nasaE595 === "—") return false;
-      if (specs.nasaE595 === "preferred" && m.nasaE595 === "—") return false;
-
-      if (specs.ooaCapable === "required" && m.ooaCapable !== "Yes")
-        return false;
-
-      // Check applications
+  // Match against master spec catalog
+  const matchedSpecs = useMemo(() => {
+    return masterSpecs.filter((s: MasterSpec) => {
+      const t = s.maxServiceTemperatureC;
+      if (specs.minServiceTemp && (t === null || t < specs.minServiceTemp)) return false;
+      if (specs.maxServiceTemp && (t === null || t > specs.maxServiceTemp)) return false;
+      if (specs.form && (s.productForm ?? "").toLowerCase() !== specs.form.toLowerCase()) return false;
+      if (specs.chemistry && (s.resinChemistry ?? "").toLowerCase() !== specs.chemistry.toLowerCase()) return false;
+      if (specs.ooaCapable === "required" && !s.ooaVboCapable) return false;
+      if (specs.nasaE595 === "required" && (s.tmlPct === null || s.tmlPct > 1.0 || s.cvcmPct === null || s.cvcmPct > 0.1)) return false;
       if (selectedApplications.length > 0) {
-        const hasAllApps = selectedApplications.every((app) => {
-          const customValue = m.customFields?.[app];
-          return customValue === "✓" || customValue === "Yes";
-        });
-        if (!hasAllApps) return false;
+        const apps = (s.applications ?? "").toLowerCase();
+        if (!selectedApplications.every((a) => apps.includes(a.toLowerCase()))) return false;
       }
-
       return true;
     });
-  }, [materials, specs, selectedApplications]);
+  }, [masterSpecs, specs, selectedApplications]);
 
   const handleSaveKit = () => {
     if (!kitName.trim()) return;
