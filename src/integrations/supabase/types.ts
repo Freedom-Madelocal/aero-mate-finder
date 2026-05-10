@@ -14,6 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
+      master_spec_uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          row_count: number
+          uploaded_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          row_count?: number
+          uploaded_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          row_count?: number
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
+      master_specs: {
+        Row: {
+          applications: string | null
+          climbing_drum_peel_in_lb_per_in: number | null
+          created_at: string
+          crossover_product: string | null
+          crossover_vendor: string | null
+          cure_temperature_c: number | null
+          cure_time: string | null
+          cvcm_pct: number | null
+          dry_tg_onset_c: number | null
+          flame_retardant: boolean
+          flatwise_tension_mpa: number | null
+          freezer_life_months: number | null
+          high_temperature: boolean
+          id: string
+          impact_resistant: boolean
+          low_dielectric: boolean
+          low_moisture_absorption: boolean
+          material_category: string | null
+          max_service_temperature_c: number | null
+          minimum_order_quantity: string | null
+          notes: string | null
+          ooa_vbo_capable: boolean
+          out_life_days: number | null
+          peak_tg_c: number | null
+          process_method: string | null
+          product_family: string | null
+          product_form: string | null
+          product_name: string
+          qualifications_standards: string | null
+          reinforcement: string | null
+          resin_chemistry: string | null
+          source_document: string | null
+          t_peel_n_per_25mm: number | null
+          tensile_lap_shear_mpa: number | null
+          tml_pct: number | null
+          toughened: boolean
+          updated_at: string
+          uploaded_from: string | null
+          vendor: string
+          wet_tg_c: number | null
+        }
+        Insert: {
+          applications?: string | null
+          climbing_drum_peel_in_lb_per_in?: number | null
+          created_at?: string
+          crossover_product?: string | null
+          crossover_vendor?: string | null
+          cure_temperature_c?: number | null
+          cure_time?: string | null
+          cvcm_pct?: number | null
+          dry_tg_onset_c?: number | null
+          flame_retardant?: boolean
+          flatwise_tension_mpa?: number | null
+          freezer_life_months?: number | null
+          high_temperature?: boolean
+          id?: string
+          impact_resistant?: boolean
+          low_dielectric?: boolean
+          low_moisture_absorption?: boolean
+          material_category?: string | null
+          max_service_temperature_c?: number | null
+          minimum_order_quantity?: string | null
+          notes?: string | null
+          ooa_vbo_capable?: boolean
+          out_life_days?: number | null
+          peak_tg_c?: number | null
+          process_method?: string | null
+          product_family?: string | null
+          product_form?: string | null
+          product_name: string
+          qualifications_standards?: string | null
+          reinforcement?: string | null
+          resin_chemistry?: string | null
+          source_document?: string | null
+          t_peel_n_per_25mm?: number | null
+          tensile_lap_shear_mpa?: number | null
+          tml_pct?: number | null
+          toughened?: boolean
+          updated_at?: string
+          uploaded_from?: string | null
+          vendor: string
+          wet_tg_c?: number | null
+        }
+        Update: {
+          applications?: string | null
+          climbing_drum_peel_in_lb_per_in?: number | null
+          created_at?: string
+          crossover_product?: string | null
+          crossover_vendor?: string | null
+          cure_temperature_c?: number | null
+          cure_time?: string | null
+          cvcm_pct?: number | null
+          dry_tg_onset_c?: number | null
+          flame_retardant?: boolean
+          flatwise_tension_mpa?: number | null
+          freezer_life_months?: number | null
+          high_temperature?: boolean
+          id?: string
+          impact_resistant?: boolean
+          low_dielectric?: boolean
+          low_moisture_absorption?: boolean
+          material_category?: string | null
+          max_service_temperature_c?: number | null
+          minimum_order_quantity?: string | null
+          notes?: string | null
+          ooa_vbo_capable?: boolean
+          out_life_days?: number | null
+          peak_tg_c?: number | null
+          process_method?: string | null
+          product_family?: string | null
+          product_form?: string | null
+          product_name?: string
+          qualifications_standards?: string | null
+          reinforcement?: string | null
+          resin_chemistry?: string | null
+          source_document?: string | null
+          t_peel_n_per_25mm?: number | null
+          tensile_lap_shear_mpa?: number | null
+          tml_pct?: number | null
+          toughened?: boolean
+          updated_at?: string
+          uploaded_from?: string | null
+          vendor?: string
+          wet_tg_c?: number | null
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           active_lots: number
