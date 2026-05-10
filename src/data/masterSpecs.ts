@@ -168,25 +168,29 @@ async function hydrate(): Promise<void> {
   if (_hydrated) return;
   if (_hydrating) return _hydrating;
   _hydrating = (async () => {
-    const [s, u] = await Promise.all([
-      supabase.from("master_specs" as never).select("*").order("vendor").order("product_name"),
-      supabase.from("master_spec_uploads" as never).select("*").order("uploaded_at", { ascending: false }),
-    ]);
-    if (!s.error && Array.isArray(s.data)) {
-      _store = { ..._store, specs: (s.data as unknown as SpecRow[]).map(rowToSpec) };
+    try {
+      const [s, u] = await Promise.all([
+        supabase.from("master_specs" as never).select("*").order("vendor").order("product_name"),
+        supabase.from("master_spec_uploads" as never).select("*").order("uploaded_at", { ascending: false }),
+      ]);
+      if (!s.error && Array.isArray(s.data)) {
+        _store = { ..._store, specs: (s.data as unknown as SpecRow[]).map(rowToSpec) };
+      }
+      if (!u.error && Array.isArray(u.data)) {
+        _store = {
+          ..._store,
+          uploads: (u.data as unknown as { file_name: string; uploaded_at: string; row_count: number }[]).map((r) => ({
+            fileName: r.file_name,
+            uploadedAt: new Date(r.uploaded_at).toLocaleString(),
+            rowCount: r.row_count,
+          })),
+        };
+      }
+      _hydrated = true;
+      notify();
+    } finally {
+      _hydrating = null;
     }
-    if (!u.error && Array.isArray(u.data)) {
-      _store = {
-        ..._store,
-        uploads: (u.data as unknown as { file_name: string; uploaded_at: string; row_count: number }[]).map((r) => ({
-          fileName: r.file_name,
-          uploadedAt: new Date(r.uploaded_at).toLocaleString(),
-          rowCount: r.row_count,
-        })),
-      };
-    }
-    _hydrated = true;
-    notify();
   })();
   return _hydrating;
 }
