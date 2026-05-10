@@ -3,12 +3,19 @@ import SpecSheetUpload from "@/components/SpecSheetUpload";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
 import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MasterSpecs() {
+  const navigate = useNavigate();
+  const { isSuperAdmin, loading } = useAuth();
   const { specs, uploads } = useMasterSpecStore();
   const { materials } = useMaterialStore();
+
+  useEffect(() => {
+    if (!loading && !isSuperAdmin) navigate({ to: "/engineer" });
+  }, [loading, isSuperAdmin, navigate]);
 
   const [search, setSearch] = useState("");
   const [vendor, setVendor] = useState("All");
