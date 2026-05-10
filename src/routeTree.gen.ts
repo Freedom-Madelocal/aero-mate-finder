@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProcurementRouteImport } from './routes/procurement'
+import { Route as PiRouteImport } from './routes/pi'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as EngineerRouteImport } from './routes/engineer'
 import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
@@ -35,6 +37,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ProcurementRoute = ProcurementRouteImport.update({
   id: '/procurement',
   path: '/procurement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PiRoute = PiRouteImport.update({
+  id: '/pi',
+  path: '/pi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -67,6 +74,11 @@ const DocumentsRoute = DocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleRoute = ConsoleRouteImport.update({
+  id: '/console',
+  path: '/console',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComplianceRoute = ComplianceRouteImport.update({
   id: '/compliance',
   path: '/compliance',
@@ -86,12 +98,14 @@ const MaterialIdRoute = MaterialIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
+  '/console': typeof ConsoleRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
+  '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
@@ -100,12 +114,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
+  '/console': typeof ConsoleRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
+  '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
@@ -115,12 +131,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
+  '/console': typeof ConsoleRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
+  '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
@@ -131,12 +149,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/compliance'
+    | '/console'
     | '/documents'
     | '/engineer'
     | '/inventory'
     | '/login'
     | '/master-specs'
     | '/orders'
+    | '/pi'
     | '/procurement'
     | '/settings'
     | '/suppliers'
@@ -145,12 +165,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/compliance'
+    | '/console'
     | '/documents'
     | '/engineer'
     | '/inventory'
     | '/login'
     | '/master-specs'
     | '/orders'
+    | '/pi'
     | '/procurement'
     | '/settings'
     | '/suppliers'
@@ -159,12 +181,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/compliance'
+    | '/console'
     | '/documents'
     | '/engineer'
     | '/inventory'
     | '/login'
     | '/master-specs'
     | '/orders'
+    | '/pi'
     | '/procurement'
     | '/settings'
     | '/suppliers'
@@ -174,12 +198,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ComplianceRoute: typeof ComplianceRoute
+  ConsoleRoute: typeof ConsoleRoute
   DocumentsRoute: typeof DocumentsRoute
   EngineerRoute: typeof EngineerRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
+  PiRoute: typeof PiRoute
   ProcurementRoute: typeof ProcurementRoute
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
@@ -207,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/procurement'
       fullPath: '/procurement'
       preLoaderRoute: typeof ProcurementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pi': {
+      id: '/pi'
+      path: '/pi'
+      fullPath: '/pi'
+      preLoaderRoute: typeof PiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -251,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console': {
+      id: '/console'
+      path: '/console'
+      fullPath: '/console'
+      preLoaderRoute: typeof ConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compliance': {
       id: '/compliance'
       path: '/compliance'
@@ -278,12 +318,14 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComplianceRoute: ComplianceRoute,
+  ConsoleRoute: ConsoleRoute,
   DocumentsRoute: DocumentsRoute,
   EngineerRoute: EngineerRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
+  PiRoute: PiRoute,
   ProcurementRoute: ProcurementRoute,
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
