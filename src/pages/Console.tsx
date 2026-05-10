@@ -72,8 +72,7 @@ export default function Console() {
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.9) 100%)",
+          background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.9) 100%)",
         }}
       />
       {/* scanlines */}
@@ -87,7 +86,7 @@ export default function Console() {
 
       <div className="relative w-full max-w-2xl mt-8 sm:mt-20">
         <pre className="text-emerald-400/80 text-[10px] leading-tight mb-6 select-none">
-{`  ████████╗██████╗  █████╗  ██████╗███████╗██╗██╗   ██╗███╗   ███╗
+          {`  ████████╗██████╗  █████╗  ██████╗███████╗██╗██╗   ██╗███╗   ███╗
   ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝██║██║   ██║████╗ ████║
      ██║   ██████╔╝███████║██║     █████╗  ██║██║   ██║██╔████╔██║
      ██║   ██╔══██╗██╔══██║██║     ██╔══╝  ██║██║   ██║██║╚██╔╝██║
@@ -99,9 +98,9 @@ export default function Console() {
           {lines.map((l, i) => {
             const line = l ?? "";
             return (
-            <div key={i} className={line.startsWith("#") ? "text-emerald-500/60" : ""}>
-              {line || "\u00A0"}
-            </div>
+              <div key={i} className={line.startsWith("#") ? "text-emerald-500/60" : ""}>
+                {line || "\u00A0"}
+              </div>
             );
           })}
         </div>
