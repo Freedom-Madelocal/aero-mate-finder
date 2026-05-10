@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as EngineerRouteImport } from './routes/engineer'
@@ -33,6 +34,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterSpecsRoute = MasterSpecsRouteImport.update({
+  id: '/master-specs',
+  path: '/master-specs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/engineer': typeof EngineerRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
+  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/engineer': typeof EngineerRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
+  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/engineer': typeof EngineerRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
+  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/engineer'
     | '/inventory'
     | '/login'
+    | '/master-specs'
     | '/orders'
     | '/settings'
     | '/suppliers'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/engineer'
     | '/inventory'
     | '/login'
+    | '/master-specs'
     | '/orders'
     | '/settings'
     | '/suppliers'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/engineer'
     | '/inventory'
     | '/login'
+    | '/master-specs'
     | '/orders'
     | '/settings'
     | '/suppliers'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   EngineerRoute: typeof EngineerRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
+  MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master-specs': {
+      id: '/master-specs'
+      path: '/master-specs'
+      fullPath: '/master-specs'
+      preLoaderRoute: typeof MasterSpecsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   EngineerRoute: EngineerRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
+  MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,

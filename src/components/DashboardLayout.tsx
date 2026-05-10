@@ -11,6 +11,7 @@ import {
   Bell,
   ChevronRight,
   Lightbulb,
+  BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/inventory", label: "Inventory", icon: Package },
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
+  { path: "/master-specs", label: "Master Specs", icon: BookOpen },
   { path: "/compliance", label: "TSM Compliance", icon: Thermometer },
   { path: "/documents", label: "Documents", icon: FileText },
   { path: "/suppliers", label: "Suppliers", icon: Truck },
