@@ -14,7 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      materials: {
+        Row: {
+          active_lots: number
+          available_qty: number
+          available_unit: string
+          chemistry: string
+          created_at: string
+          cure_temp: string
+          custom_fields: Json | null
+          form: string
+          former_name: string | null
+          id: string
+          incoming_eta: string | null
+          incoming_qty: number
+          max_service_temp: string
+          nasa_e595: string
+          notes: string | null
+          ooa_capable: string
+          product: string
+          source: string | null
+          stock_report_name: string | null
+          supplier: string
+          total_lots: number
+          updated_at: string
+        }
+        Insert: {
+          active_lots?: number
+          available_qty?: number
+          available_unit?: string
+          chemistry?: string
+          created_at?: string
+          cure_temp?: string
+          custom_fields?: Json | null
+          form?: string
+          former_name?: string | null
+          id: string
+          incoming_eta?: string | null
+          incoming_qty?: number
+          max_service_temp?: string
+          nasa_e595?: string
+          notes?: string | null
+          ooa_capable?: string
+          product?: string
+          source?: string | null
+          stock_report_name?: string | null
+          supplier?: string
+          total_lots?: number
+          updated_at?: string
+        }
+        Update: {
+          active_lots?: number
+          available_qty?: number
+          available_unit?: string
+          chemistry?: string
+          created_at?: string
+          cure_temp?: string
+          custom_fields?: Json | null
+          form?: string
+          former_name?: string | null
+          id?: string
+          incoming_eta?: string | null
+          incoming_qty?: number
+          max_service_temp?: string
+          nasa_e595?: string
+          notes?: string | null
+          ooa_capable?: string
+          product?: string
+          source?: string | null
+          stock_report_name?: string | null
+          supplier?: string
+          total_lots?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_reports: {
+        Row: {
+          created_at: string
+          custom_columns: string[]
+          file_name: string
+          id: string
+          row_count: number
+          uploaded_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_columns?: string[]
+          file_name: string
+          id?: string
+          row_count?: number
+          uploaded_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_columns?: string[]
+          file_name?: string
+          id?: string
+          row_count?: number
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
