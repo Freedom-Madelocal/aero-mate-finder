@@ -22,6 +22,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as EngineerRouteImport } from './routes/engineer'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DemoExpiredRouteImport } from './routes/demo-expired'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as IndexRouteImport } from './routes/index'
@@ -97,6 +98,11 @@ const DemoExpiredRoute = DemoExpiredRouteImport.update({
   path: '/demo-expired',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleRoute = ConsoleRouteImport.update({
   id: '/console',
   path: '/console',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
     | '/'
     | '/compliance'
     | '/console'
+    | '/dashboard'
     | '/demo-expired'
     | '/documents'
     | '/engineer'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/'
     | '/compliance'
     | '/console'
+    | '/dashboard'
     | '/demo-expired'
     | '/documents'
     | '/engineer'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/'
     | '/compliance'
     | '/console'
+    | '/dashboard'
     | '/demo-expired'
     | '/documents'
     | '/engineer'
@@ -295,6 +307,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ComplianceRoute: typeof ComplianceRoute
   ConsoleRoute: typeof ConsoleRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   DemoExpiredRoute: typeof DemoExpiredRoute
   DocumentsRoute: typeof DocumentsRoute
   EngineerRoute: typeof EngineerRoute
@@ -408,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoExpiredRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/console': {
       id: '/console'
       path: '/console'
@@ -489,6 +509,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComplianceRoute: ComplianceRoute,
   ConsoleRoute: ConsoleRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   DemoExpiredRoute: DemoExpiredRoute,
   DocumentsRoute: DocumentsRoute,
   EngineerRoute: EngineerRoute,
@@ -511,3 +532,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
