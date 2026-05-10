@@ -502,7 +502,7 @@ export default function Landing() {
           </p>
           <div className="flex items-center gap-5 text-xs text-muted-foreground">
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
-            <Link to="/engineer" className="hover:text-foreground">Sign in</Link>
+            <Link to="/login" className="hover:text-foreground">Log in</Link>
           </div>
         </div>
       </footer>

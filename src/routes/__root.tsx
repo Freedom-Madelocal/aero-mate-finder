@@ -14,6 +14,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/hooks/useAuth";
 
 function NotFoundComponent() {
   return (
@@ -123,10 +124,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <ThemeProvider defaultTheme="dark">
-          <TooltipProvider delayDuration={200}>
-            <Toaster />
-            <Outlet />
-          </TooltipProvider>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <Toaster />
+              <Outlet />
+            </TooltipProvider>
+          </AuthProvider>
         </ThemeProvider>
       </ErrorBoundary>
     </QueryClientProvider>

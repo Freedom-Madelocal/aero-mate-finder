@@ -11,18 +11,27 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProcurementRouteImport } from './routes/procurement'
 import { Route as PiRouteImport } from './routes/pi'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as EngineerRouteImport } from './routes/engineer'
 import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as DemoExpiredRouteImport } from './routes/demo-expired'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrgTeamRouteImport } from './routes/org.team'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as ConsoleLoginRouteImport } from './routes/console.login'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 
 const SuppliersRoute = SuppliersRouteImport.update({
   id: '/suppliers',
@@ -32,6 +41,11 @@ const SuppliersRoute = SuppliersRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProcurementRoute = ProcurementRouteImport.update({
@@ -64,6 +78,11 @@ const InventoryRoute = InventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EngineerRoute = EngineerRouteImport.update({
   id: '/engineer',
   path: '/engineer',
@@ -72,6 +91,16 @@ const EngineerRoute = EngineerRouteImport.update({
 const DocumentsRoute = DocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoExpiredRoute = DemoExpiredRouteImport.update({
+  id: '/demo-expired',
+  path: '/demo-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleRoute = ConsoleRouteImport.update({
@@ -89,60 +118,112 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrgTeamRoute = OrgTeamRouteImport.update({
+  id: '/org/team',
+  path: '/org/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MaterialIdRoute = MaterialIdRouteImport.update({
   id: '/material/$id',
   path: '/material/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => ConsoleRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
+  id: '/admin/organizations',
+  path: '/admin/organizations',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
-  '/console': typeof ConsoleRoute
+  '/console': typeof ConsoleRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/console/login': typeof ConsoleLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
+  '/org/team': typeof OrgTeamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
-  '/console': typeof ConsoleRoute
+  '/console': typeof ConsoleRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/console/login': typeof ConsoleLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
+  '/org/team': typeof OrgTeamRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
-  '/console': typeof ConsoleRoute
+  '/console': typeof ConsoleRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/console/login': typeof ConsoleLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
+  '/org/team': typeof OrgTeamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,66 +231,101 @@ export interface FileRouteTypes {
     | '/'
     | '/compliance'
     | '/console'
+    | '/dashboard'
+    | '/demo-expired'
     | '/documents'
     | '/engineer'
+    | '/forgot-password'
     | '/inventory'
     | '/login'
     | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
+    | '/reset-password'
     | '/settings'
     | '/suppliers'
+    | '/admin/organizations'
+    | '/admin/users'
+    | '/console/login'
+    | '/invite/$token'
     | '/material/$id'
+    | '/org/team'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/compliance'
     | '/console'
+    | '/dashboard'
+    | '/demo-expired'
     | '/documents'
     | '/engineer'
+    | '/forgot-password'
     | '/inventory'
     | '/login'
     | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
+    | '/reset-password'
     | '/settings'
     | '/suppliers'
+    | '/admin/organizations'
+    | '/admin/users'
+    | '/console/login'
+    | '/invite/$token'
     | '/material/$id'
+    | '/org/team'
   id:
     | '__root__'
     | '/'
     | '/compliance'
     | '/console'
+    | '/dashboard'
+    | '/demo-expired'
     | '/documents'
     | '/engineer'
+    | '/forgot-password'
     | '/inventory'
     | '/login'
     | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
+    | '/reset-password'
     | '/settings'
     | '/suppliers'
+    | '/admin/organizations'
+    | '/admin/users'
+    | '/console/login'
+    | '/invite/$token'
     | '/material/$id'
+    | '/org/team'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ComplianceRoute: typeof ComplianceRoute
-  ConsoleRoute: typeof ConsoleRoute
+  ConsoleRoute: typeof ConsoleRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
+  DemoExpiredRoute: typeof DemoExpiredRoute
   DocumentsRoute: typeof DocumentsRoute
   EngineerRoute: typeof EngineerRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
   PiRoute: typeof PiRoute
   ProcurementRoute: typeof ProcurementRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
+  AdminOrganizationsRoute: typeof AdminOrganizationsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   MaterialIdRoute: typeof MaterialIdRoute
+  OrgTeamRoute: typeof OrgTeamRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -226,6 +342,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/procurement': {
@@ -270,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/engineer': {
       id: '/engineer'
       path: '/engineer'
@@ -282,6 +412,20 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo-expired': {
+      id: '/demo-expired'
+      path: '/demo-expired'
+      fullPath: '/demo-expired'
+      preLoaderRoute: typeof DemoExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console': {
@@ -305,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/org/team': {
+      id: '/org/team'
+      path: '/org/team'
+      fullPath: '/org/team'
+      preLoaderRoute: typeof OrgTeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/material/$id': {
       id: '/material/$id'
       path: '/material/$id'
@@ -312,24 +463,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MaterialIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/login': {
+      id: '/console/login'
+      path: '/login'
+      fullPath: '/console/login'
+      preLoaderRoute: typeof ConsoleLoginRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/organizations': {
+      id: '/admin/organizations'
+      path: '/admin/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AdminOrganizationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface ConsoleRouteChildren {
+  ConsoleLoginRoute: typeof ConsoleLoginRoute
+}
+
+const ConsoleRouteChildren: ConsoleRouteChildren = {
+  ConsoleLoginRoute: ConsoleLoginRoute,
+}
+
+const ConsoleRouteWithChildren =
+  ConsoleRoute._addFileChildren(ConsoleRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComplianceRoute: ComplianceRoute,
-  ConsoleRoute: ConsoleRoute,
+  ConsoleRoute: ConsoleRouteWithChildren,
+  DashboardRoute: DashboardRoute,
+  DemoExpiredRoute: DemoExpiredRoute,
   DocumentsRoute: DocumentsRoute,
   EngineerRoute: EngineerRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
   PiRoute: PiRoute,
   ProcurementRoute: ProcurementRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
+  AdminOrganizationsRoute: AdminOrganizationsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  InviteTokenRoute: InviteTokenRoute,
   MaterialIdRoute: MaterialIdRoute,
+  OrgTeamRoute: OrgTeamRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
