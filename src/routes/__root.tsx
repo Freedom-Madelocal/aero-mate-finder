@@ -74,13 +74,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Traceum — Composites Inventory OS" },
+      { title: "Traceium -  Aerospace Composities Simplified" },
       {
         name: "description",
         content:
           "Composites-native inventory operating system for aerospace stocking distributors, engineers, and manufacturers.",
       },
-      { property: "og:title", content: "Traceum — Composites Inventory OS" },
+      { property: "og:title", content: "Traceium -  Aerospace Composities Simplified" },
       {
         property: "og:description",
         content:
@@ -88,6 +88,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Traceium -  Aerospace Composities Simplified" },
+      { name: "description", content: "Trace the data, build the future." },
+      { property: "og:description", content: "Trace the data, build the future." },
+      { name: "twitter:description", content: "Trace the data, build the future." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/1S9s3HU9Tqacr1tSi3abu0E43Ep1/social-images/social-1778386448089-Screenshot_2026-05-09_at_9.13.55_PM.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/1S9s3HU9Tqacr1tSi3abu0E43Ep1/social-images/social-1778386448089-Screenshot_2026-05-09_at_9.13.55_PM.webp" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
