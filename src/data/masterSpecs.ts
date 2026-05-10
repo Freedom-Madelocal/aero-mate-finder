@@ -145,6 +145,8 @@ function rowToSpec(r: SpecRow): MasterSpec {
     minimumOrderQuantity: r.minimum_order_quantity,
     sourceDocument: r.source_document,
     uploadedFrom: r.uploaded_from,
+    frequentReorder: !!r.frequent_reorder,
+    engineerDefaultName: r.engineer_default_name,
   };
 }
 
