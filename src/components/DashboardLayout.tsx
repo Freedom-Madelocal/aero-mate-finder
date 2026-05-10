@@ -1,30 +1,24 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
   Package,
-  Thermometer,
-  FileText,
-  Truck,
-  ShoppingCart,
   Settings,
   Search,
   Bell,
   ChevronRight,
   Lightbulb,
   BookOpen,
+  ShoppingBasket,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+// Dashboard, Compliance, Documents, Suppliers, Orders are intentionally
+// hidden from the sidebar (routes still resolve via direct URL).
 const navItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/inventory", label: "Inventory", icon: Package },
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
   { path: "/master-specs", label: "Master Specs", icon: BookOpen },
-  { path: "/compliance", label: "TSM Compliance", icon: Thermometer },
-  { path: "/documents", label: "Documents", icon: FileText },
-  { path: "/suppliers", label: "Suppliers", icon: Truck },
-  { path: "/orders", label: "Orders", icon: ShoppingCart },
+  { path: "/inventory", label: "Inventory", icon: Package },
+  { path: "/procurement", label: "Procurement", icon: ShoppingBasket },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
