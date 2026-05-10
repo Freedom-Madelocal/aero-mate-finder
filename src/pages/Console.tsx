@@ -21,6 +21,11 @@ export default function Console() {
   const [lines, setLines] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
   const [sel, setSel] = useState(0);
+  const [sessionId, setSessionId] = useState("");
+
+  useEffect(() => {
+    setSessionId(Math.random().toString(36).slice(2, 10).toUpperCase());
+  }, []);
 
   useEffect(() => {
     let i = 0;
@@ -119,8 +124,7 @@ export default function Console() {
         )}
 
         <div className="mt-10 text-emerald-700/50 text-[10px] tracking-widest">
-          session id: {Math.random().toString(36).slice(2, 10).toUpperCase()} ·
-          uplink: 256-bit · node: trc-01
+          session id: {sessionId || "--------"} · uplink: 256-bit · node: trc-01
         </div>
       </div>
     </div>
