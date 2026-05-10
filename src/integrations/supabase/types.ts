@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      demo_requests: {
+        Row: {
+          company: string
+          created_at: string
+          id: string
+          message: string | null
+          name: string
+          role: string | null
+          team_size: string | null
+          work_email: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          name: string
+          role?: string | null
+          team_size?: string | null
+          work_email: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          name?: string
+          role?: string | null
+          team_size?: string | null
+          work_email?: string
+        }
+        Relationships: []
+      }
       master_spec_uploads: {
         Row: {
           created_at: string
