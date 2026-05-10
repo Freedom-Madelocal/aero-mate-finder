@@ -14,14 +14,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
-import { seedMockData } from "@/data/materials";
-import {
-  SEED_MATERIALS,
-  SEED_LOTS,
-  SEED_COA_RECORDS,
-  SEED_COC_RECORDS,
-  SEED_STOCK_REPORT,
-} from "@/data/mockSeed";
 
 function NotFoundComponent() {
   return (
