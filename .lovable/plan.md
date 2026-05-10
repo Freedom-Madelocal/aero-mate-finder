@@ -1,72 +1,106 @@
 ## Goal
 
-Take the existing Traceum repo (`freedomnoble/traceum`) — a composites-native inventory OS with a "Material Intelligence" dark industrial design — and rebuild it on this Lovable TanStack Start template. Result: an identical-looking, fully working frontend running here, with the dev/server stack swapped out and Lovable Cloud enabled so we can replace mock seed data with a real backend in follow-up steps.
+Introduce a canonical "Master Spec List" — the engineer-facing catalog of every aerospace material spec we know about — separate from the operational `materials` (inventory) table. Engineers search the master list; when a row also exists in inventory, it's badged accordingly.
 
-## What's in the source repo
+## 1. Database — new `master_specs` table
 
-- `client/` — Vite + React + wouter app. 11 pages: Dashboard, Inventory, MaterialDetail, Compliance, Documents, Suppliers, Orders, Engineer, Settings, Login, NotFound. Plus `DashboardLayout`, `ErrorBoundary`, `ManusDialog`, `Map`, `StatusTooltip`, `StockReportUpload`, full shadcn `ui/` set, contexts (`ThemeContext`), hooks, and a reactive in-memory store in `data/materials.ts` seeded from `data/mockSeed.ts` (~1300 lines of mock materials, lots, COA/COC, stock report).
-- `server/index.ts` — minimal Express static server. Not needed here; TanStack Start handles SSR + serving.
-- `shared/const.ts` — session cookie constants for an external OAuth portal (will be replaced by Lovable Cloud auth later).
-- Design: Dark industrial minimalism, Geist + Geist Mono, charcoal `#111` / `#1C1C1C` / `#222` surfaces, status colors emerald/amber/red.
+Mirror the 36 columns of `Aerospace_Materials_Master_Dataset.csv`. Snake_cased columns, TEXT for free-form fields, NUMERIC where the dataset is numeric, BOOLEAN for the Yes/blank flag columns.
 
-## Rebuild plan
+Columns (grouped):
 
-### 1. Frontend port
-- Copy `client/src/components/ui/*` (shadcn set) into `src/components/ui/`. Reconcile against the components already in this template — overwrite with source versions to keep design fidelity.
-- Copy app components: `DashboardLayout`, `ErrorBoundary`, `ManusDialog`, `Map`, `StatusTooltip`, `StockReportUpload` into `src/components/`.
-- Copy `contexts/`, `hooks/`, `lib/`, `data/materials.ts`, `data/mockSeed.ts`, `index.css` over. Merge `index.css` design tokens into `src/styles.css` (oklch tokens + Geist fonts + dark-industrial palette) so all Tailwind utilities resolve.
-- Install missing deps: `wouter` is dropped; add anything else the source uses that isn't here (e.g. `cmdk`, `sonner`, `recharts`, `react-hook-form`, `zod`, `date-fns`, `lucide-react`, `axios`, etc. — verified against source `package.json`).
+- **Identity**: `id` (uuid pk), `vendor`, `product_name`, `product_family`, `material_category`
+- **Chemistry / form**: `resin_chemistry`, `reinforcement`, `product_form`
+- **Cure**: `cure_temperature_c` (numeric), `cure_time` (text — values like "90 min")
+- **Thermal**: `dry_tg_onset_c`, `wet_tg_c`, `peak_tg_c`, `max_service_temperature_c` (all numeric)
+- **Storage**: `out_life_days` (numeric), `freezer_life_months` (numeric)
+- **Outgassing**: `tml_pct`, `cvcm_pct` (numeric)
+- **Mechanical**: `tensile_lap_shear_mpa`, `t_peel_n_per_25mm`, `flatwise_tension_mpa`, `climbing_drum_peel_in_lb_per_in` (numeric)
+- **Process flags**: `process_method`, `ooa_vbo_capable` (bool), `toughened` (bool), `flame_retardant` (bool), `low_dielectric` (bool), `low_moisture_absorption` (bool), `impact_resistant` (bool), `high_temperature` (bool)
+- **Context**: `applications`, `qualifications_standards`, `crossover_product`, `crossover_vendor`, `notes`, `minimum_order_quantity`, `source_document`
+- **Provenance**: `uploaded_from` (text — file name, null for the seed), `created_at`, `updated_at`
 
-### 2. Routing migration (wouter → TanStack file-based)
-Create one route file per page under `src/routes/`:
+RLS: same permissive read/write as `materials` (no auth yet). A unique index on `(vendor, product_name)` so re-uploads upsert cleanly.
 
-```text
-src/routes/
-  __root.tsx              (already exists — wrap with ThemeProvider, TooltipProvider, Toaster, ErrorBoundary, run seedMockData once)
-  index.tsx               -> Dashboard
-  inventory.tsx           -> Inventory
-  material.$id.tsx        -> MaterialDetail (param: id)
-  compliance.tsx
-  documents.tsx
-  suppliers.tsx
-  orders.tsx
-  engineer.tsx
-  settings.tsx
-  login.tsx
-```
+A second tiny table `master_spec_uploads` (id, file_name, uploaded_at, row_count) tracks each upload, parallel to `stock_reports`.
 
-Each page gets a per-route `head()` with a unique title + meta description (SEO requirement of the template). Replace any `wouter` imports (`useLocation`, `Link`, `useRoute`) inside pages with the `@tanstack/react-router` equivalents (`useNavigate`, `Link`, `useParams`).
+## 2. Seed data
 
-### 3. Shell + providers
-Update `src/routes/__root.tsx` to:
-- Mount `ThemeProvider` (default dark), `TooltipProvider`, `Toaster`, `ErrorBoundary`, and `QueryClientProvider` (already present).
-- Call `seedMockData(...)` once on the client (guard for SSR with a `useEffect` in a client-only component) so the in-memory store still hydrates.
+Parse the uploaded CSV server-side once and insert all 203 rows via the migration's seed step. Cure-temp, Tg, etc. get cast to numeric; "Yes" → true, blank → false for the flag columns; semicolon/pipe-delimited applications stay as text for now.
 
-### 4. Drop the Express server
-Delete `server/` and the static-serving logic — TanStack Start owns the dev server and SSR. Remove the `oauth-portal` based `getLoginUrl` in `const.ts`; the `Login` page will be rewired to Lovable Cloud auth in step 6.
+## 3. New page: `/master-specs` ("Master Spec List")
 
-### 5. Cleanup
-- Remove `data-lovable-blank-page-placeholder` placeholder from `src/routes/index.tsx`.
-- Verify no orphaned imports, no `wouter` references, no `process.env.VITE_*` usage that needs to become `import.meta.env`.
-- Confirm `src/routeTree.gen.ts` regenerates cleanly.
+Route file `src/routes/master-specs.tsx` + page component `src/pages/MasterSpecs.tsx` styled to match the existing dark Material Intelligence aesthetic.
 
-### 6. Enable Lovable Cloud (foundation for backend work)
-After the port builds, enable Lovable Cloud so the next iterations can:
-- Replace `data/mockSeed.ts` + `useMaterialStore` with real Postgres tables (`materials`, `material_lots`, `coa_records`, `coc_records`, `stock_reports`, `suppliers`, `orders`).
-- Add auth (email + Google) for engineers, sales, students/schools — with a `user_roles` table and RLS so distributors don't see each other's inventory.
-- Move stock-report upload parsing to a server function and persist results.
-- Add storage buckets for COA/COC PDFs.
+Layout:
 
-These backend steps are out of scope for this turn — the deliverable here is a fully-running ported frontend on Cloud-ready infrastructure.
+- Header with title, subtitle ("Canonical aerospace material spec catalog — search, compare, and qualify.") and a primary "Upload Spec Sheet" button.
+- Top metric strip: total specs, vendors, categories, # in inventory.
+- Filter bar: search box (vendor / product / family / chemistry / applications), and dropdowns for Vendor, Material Category, Resin Chemistry, Product Form, OOA Capable.
+- Table columns (default, others behind a column toggle): Vendor, Product, Category, Chemistry, Form, Cure °C, Max Service °C, Tg °C, OOA, Out Life, Freezer Life, **In Inventory** badge, Source.
+- Click a row → side drawer / detail view with the full 36-field spec sheet, qualifications, crossovers, and any matching inventory lots.
 
-## Out of scope (next iterations)
-- Schema design and migrations for materials/lots/COA/COC.
-- Auth flows and role-based access (engineer vs. sales vs. student).
-- Server functions for stock-report ingestion, supplier lead-time tracking, AI-assisted material search for the Engineer page.
-- Replacing the `Map` component data source with real supplier coordinates.
+"Upload Spec Sheet" reuses a generalized version of the existing `StockReportUpload` component (same XLSX/CSV parser, same auto-mapping flow). Mappings are aimed at the master-spec schema; unrecognized columns are flagged but not stored (master schema is fixed). On confirm: rows upsert into `master_specs` keyed on `(vendor, product_name)` and the upload is logged in `master_spec_uploads`.
+
+Add nav entry "Master Specs" (BookOpen icon) to `DashboardLayout` between Engineer and TSM Compliance.
+
+## 4. Inventory linkage
+
+Each `master_specs` row is matched to inventory by reusing `fuzzyMatch(product_name, materials.product)` plus exact vendor match (case-insensitive). The match is computed client-side from the two stores so no schema-level FK is required and re-uploads on either side stay loosely coupled.
+
+Result surfaced as:
+
+- A green "In Inventory" pill in the Master Spec table
+- On the detail drawer: link to `/material/$id` and a mini summary (available qty, active lots) for the matched inventory item
+
+## 5. Engineer page rework
+
+Switch the Engineer page's primary data source from `useMaterialStore().materials` to the master spec catalog:
+
+- Reverse-lookup search filters (service temp, chemistry, OOA, NASA E595, applications) run against `master_specs`.
+- Each result card shows the spec sheet preview plus an inventory badge:
+  - **In Stock** (green) if a matching inventory row exists with `available_qty > 0`
+  - **Tracked** (muted) if the material exists in inventory but is out of stock
+  - **Not Stocked** (subtle) if no inventory match — with a "Request Sourcing" CTA
+- "Save Kit" continues to work; saved kits reference `master_spec.id` so they survive inventory changes.
+
+## 6. Data layer changes
+
+`src/data/masterSpecs.ts` — mirrors the pattern in `src/data/materials.ts`:
+
+- `MasterSpec` type
+- `useMasterSpecStore()` hook hydrating from Supabase
+- `addMasterSpecs(specs, upload)` upsert helper used by the spec uploader
+- `getInventoryMatch(spec, materials)` helper returning `{ status: "in-stock" | "tracked" | "none", material? }`
+
+Engineer page imports `useMasterSpecStore` and `useMaterialStore` together.
+
+## Out of scope
+
+- Authentication / per-user spec lists (still permissive RLS pending the auth pass)
+- COA/COC document linkage from master specs
+- AI-assisted natural-language spec search
 
 ## Technical notes
-- Source uses `wouter`; target uses `@tanstack/react-router`. All `<Link href=>` become `<Link to=>`; `useLocation()[1]` becomes `useNavigate()`.
-- Source `index.css` defines HSL tokens; this template requires `oklch` in `src/styles.css`. Convert the dark-industrial palette to oklch equivalents (charcoal `#111` ≈ `oklch(0.18 0 0)`, etc.) while keeping the same visual result.
-- `seedMockData` writes to a module-level store; must run only on the client to avoid SSR hydration mismatches.
-- Don't import `.server.ts` files from route files. No server functions are added in this turn.
+
+```text
+src/
+  data/
+    masterSpecs.ts          (new — Supabase-backed store)
+  pages/
+    MasterSpecs.tsx         (new)
+    Engineer.tsx            (refactor to use master spec store)
+  routes/
+    master-specs.tsx        (new file route → /master-specs)
+  components/
+    StockReportUpload.tsx   (extract upload modal into a reusable
+                             SpreadsheetUpload with a `mode` prop:
+                             "stock-report" | "master-spec")
+    DashboardLayout.tsx     (add Master Specs nav item)
+
+supabase migration:
+  - create master_specs (36 fields + uploaded_from + timestamps)
+  - create master_spec_uploads
+  - unique(vendor, product_name) on master_specs
+  - permissive RLS policies (read/insert/update/delete)
+  - seed 203 rows from the attached dataset
+```
