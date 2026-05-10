@@ -13,19 +13,26 @@ import { useState } from "react";
 import { toast } from "sonner";
 import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
+import { useAuth } from "@/hooks/useAuth";
 
 // Dashboard, Compliance, Documents, Suppliers, Orders are intentionally
 // hidden from the sidebar (routes still resolve via direct URL).
-const navItems = [
+const baseNavItems = [
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
-  { path: "/master-specs", label: "Master Specs", icon: BookOpen },
   { path: "/inventory", label: "Inventory", icon: Package },
   { path: "/procurement", label: "Procurement", icon: ShoppingBasket },
+];
+const superAdminNavItems = [
+  { path: "/master-specs", label: "Master Specs", icon: BookOpen },
+  { path: "/admin/users", label: "Users", icon: Settings },
+  { path: "/admin/organizations", label: "Organizations", icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation({ select: (l) => l.pathname });
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const { isSuperAdmin } = useAuth();
+  const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
