@@ -49,6 +49,8 @@ export interface MasterSpec {
   minimumOrderQuantity: string | null;
   sourceDocument: string | null;
   uploadedFrom: string | null;
+  frequentReorder: boolean;
+  engineerDefaultName: string | null;
 }
 
 export interface MasterSpecUpload {
@@ -96,6 +98,8 @@ interface SpecRow {
   minimum_order_quantity: string | null;
   source_document: string | null;
   uploaded_from: string | null;
+  frequent_reorder: boolean | null;
+  engineer_default_name: string | null;
 }
 
 const num = (v: number | string | null): number | null =>
@@ -141,6 +145,8 @@ function rowToSpec(r: SpecRow): MasterSpec {
     minimumOrderQuantity: r.minimum_order_quantity,
     sourceDocument: r.source_document,
     uploadedFrom: r.uploaded_from,
+    frequentReorder: !!r.frequent_reorder,
+    engineerDefaultName: r.engineer_default_name,
   };
 }
 
@@ -259,6 +265,27 @@ export async function addMasterSpecs(specs: Partial<MasterSpec>[], fileName: str
   // Refresh from DB to get authoritative IDs
   _hydrated = false;
   await hydrate();
+}
+
+/** Toggle the frequent-reorder star on a master spec. */
+export async function setFrequentReorder(specId: string, value: boolean, engineerName?: string) {
+  const patch: Record<string, unknown> = { frequent_reorder: value };
+  if (value && engineerName) patch.engineer_default_name = engineerName;
+  const { error } = await supabase
+    .from("master_specs" as never)
+    .update(patch as never)
+    .eq("id", specId);
+  if (error) throw error;
+  // Optimistic local update
+  _store = {
+    ..._store,
+    specs: _store.specs.map((s) =>
+      s.id === specId
+        ? { ...s, frequentReorder: value, engineerDefaultName: engineerName ?? s.engineerDefaultName }
+        : s,
+    ),
+  };
+  notify();
 }
 
 /** Lookup the inventory match for a master spec. */

@@ -1,106 +1,115 @@
-## Goal
+# Procurement Workflow + Spec-Driven Compliance
 
-Introduce a canonical "Master Spec List" — the engineer-facing catalog of every aerospace material spec we know about — separate from the operational `materials` (inventory) table. Engineers search the master list; when a row also exists in inventory, it's badged accordingly.
+## 1. Navigation cleanup
+Hide **Dashboard, Compliance, Documents, Suppliers, Orders** from `DashboardLayout` sidebar (routes stay so direct URLs still work). Add **Procurement** nav item. Default landing route changes from `/` → `/engineer` (or `/master-specs`).
 
-## 1. Database — new `master_specs` table
+## 2. Compliance data on every product
+Compliance is already partially captured on `master_specs` (`qualifications_standards`, `nasa_e595` via `tml_pct`/`cvcm_pct`, `flame_retardant`, etc.). Add a dedicated **Compliance** section to:
+- Master Spec drawer (existing) — group fields under "Compliance & Qualifications".
+- Engineer result row → click opens a side drawer with full spec sheet + compliance tab.
 
-Mirror the 36 columns of `Aerospace_Materials_Master_Dataset.csv`. Snake_cased columns, TEXT for free-form fields, NUMERIC where the dataset is numeric, BOOLEAN for the Yes/blank flag columns.
+No schema change needed; just UI grouping.
 
-Columns (grouped):
+## 3. Engineer search — all-spec filters
+Replace today's narrow filter set with a **filter panel** keyed off every queryable `master_spec` column:
+- Text search (vendor, product_name, applications, qualifications, notes)
+- Multi-select chips: material_category, resin_chemistry, reinforcement, product_form, process_method
+- Numeric range sliders: cure_temperature_c, peak_tg_c, max_service_temperature_c, out_life_days, tml_pct, cvcm_pct
+- Boolean toggles: ooa_vbo_capable, toughened, flame_retardant, low_dielectric, low_moisture_absorption, impact_resistant, high_temperature
+- Inventory status filter: In Stock / Tracked / Not Stocked
 
-- **Identity**: `id` (uuid pk), `vendor`, `product_name`, `product_family`, `material_category`
-- **Chemistry / form**: `resin_chemistry`, `reinforcement`, `product_form`
-- **Cure**: `cure_temperature_c` (numeric), `cure_time` (text — values like "90 min")
-- **Thermal**: `dry_tg_onset_c`, `wet_tg_c`, `peak_tg_c`, `max_service_temperature_c` (all numeric)
-- **Storage**: `out_life_days` (numeric), `freezer_life_months` (numeric)
-- **Outgassing**: `tml_pct`, `cvcm_pct` (numeric)
-- **Mechanical**: `tensile_lap_shear_mpa`, `t_peel_n_per_25mm`, `flatwise_tension_mpa`, `climbing_drum_peel_in_lb_per_in` (numeric)
-- **Process flags**: `process_method`, `ooa_vbo_capable` (bool), `toughened` (bool), `flame_retardant` (bool), `low_dielectric` (bool), `low_moisture_absorption` (bool), `impact_resistant` (bool), `high_temperature` (bool)
-- **Context**: `applications`, `qualifications_standards`, `crossover_product`, `crossover_vendor`, `notes`, `minimum_order_quantity`, `source_document`
-- **Provenance**: `uploaded_from` (text — file name, null for the seed), `created_at`, `updated_at`
+## 4. Engineer result row controls
+Each row gains:
+- **Procure** checkbox (header = column label + select-all)
+- **Star** icon (Phosphor-style filled star SVG provided) — toggles "frequent reorder" flag on the spec
+- **Engineer note** — small inline input for "needed for" context (optional)
+- **Supplier select** — defaults to spec.vendor; lets engineer override if a crossover vendor is preferred
 
-RLS: same permissive read/write as `materials` (no auth yet). A unique index on `(vendor, product_name)` so re-uploads upsert cleanly.
+Checking "Procure" creates a `procurement_requests` row.
 
-A second tiny table `master_spec_uploads` (id, file_name, uploaded_at, row_count) tracks each upload, parallel to `stock_reports`.
+## 5. New tables
 
-## 2. Seed data
+```sql
+-- One row per engineer pick
+procurement_requests (
+  id uuid pk,
+  master_spec_id uuid fk → master_specs,
+  engineer_name text,            -- free text for now (no auth)
+  chosen_vendor text,            -- defaults to spec.vendor
+  quantity text,                 -- free text ("2 rolls", etc.)
+  note text,
+  status text default 'pending', -- pending | sent | fulfilled | cancelled
+  created_at, updated_at
+)
 
-Parse the uploaded CSV server-side once and insert all 203 rows via the migration's seed step. Cure-temp, Tg, etc. get cast to numeric; "Yes" → true, blank → false for the flag columns; semicolon/pipe-delimited applications stay as text for now.
+-- Vendor email contacts
+vendor_contacts (
+  id uuid pk,
+  vendor text unique,
+  contact_name text,
+  email text not null,
+  notes text,
+  created_at, updated_at
+)
 
-## 3. New page: `/master-specs` ("Master Spec List")
+-- Frequent-reorder flag on master_specs
+ALTER TABLE master_specs ADD COLUMN frequent_reorder boolean default false;
+ALTER TABLE master_specs ADD COLUMN engineer_default_name text; -- last engineer who starred it (optional)
 
-Route file `src/routes/master-specs.tsx` + page component `src/pages/MasterSpecs.tsx` styled to match the existing dark Material Intelligence aesthetic.
+-- Procurement send log
+procurement_sends (
+  id uuid pk,
+  vendor text,
+  email text,
+  request_ids uuid[],
+  body text,
+  sent_at timestamptz default now()
+)
+```
 
-Layout:
+All public RLS (consistent with current setup).
 
-- Header with title, subtitle ("Canonical aerospace material spec catalog — search, compare, and qualify.") and a primary "Upload Spec Sheet" button.
-- Top metric strip: total specs, vendors, categories, # in inventory.
-- Filter bar: search box (vendor / product / family / chemistry / applications), and dropdowns for Vendor, Material Category, Resin Chemistry, Product Form, OOA Capable.
-- Table columns (default, others behind a column toggle): Vendor, Product, Category, Chemistry, Form, Cure °C, Max Service °C, Tg °C, OOA, Out Life, Freezer Life, **In Inventory** badge, Source.
-- Click a row → side drawer / detail view with the full 36-field spec sheet, qualifications, crossovers, and any matching inventory lots.
+## 6. `/procurement` page
+Two stacked sections:
 
-"Upload Spec Sheet" reuses a generalized version of the existing `StockReportUpload` component (same XLSX/CSV parser, same auto-mapping flow). Mappings are aimed at the master-spec schema; unrecognized columns are flagged but not stored (master schema is fixed). On confirm: rows upsert into `master_specs` keyed on `(vendor, product_name)` and the upload is logged in `master_spec_uploads`.
+**A. Active Pick List** (default)
+- Table of `procurement_requests` where status = 'pending'
+- Columns: Engineer · Vendor · Product · Spec summary · Qty · Note · Status · Remove
+- Sort by engineer or vendor (clickable headers)
+- **Procure** button (top): groups pending requests by `chosen_vendor`, looks up `vendor_contacts.email`, sends one email per vendor listing all parts. Marks rows `status = 'sent'`.
 
-Add nav entry "Master Specs" (BookOpen icon) to `DashboardLayout` between Engineer and TSM Compliance.
+**B. Frequent Reorder list** (toggle slider)
+- Reads `master_specs WHERE frequent_reorder = true`
+- Same vendor grouping; "Add to pick list" button per row
 
-## 4. Inventory linkage
+**Settings gear** (bottom-right) → opens dialog managing `vendor_contacts` (add / edit / delete vendor + email).
 
-Each `master_specs` row is matched to inventory by reusing `fuzzyMatch(product_name, materials.product)` plus exact vendor match (case-insensitive). The match is computed client-side from the two stores so no schema-level FK is required and re-uploads on either side stay loosely coupled.
+## 7. Procurement email
+Use **Lovable Cloud email infrastructure** (transactional). Steps:
+1. Check email domain status; if none, prompt setup.
+2. Scaffold transactional email + register `vendor-procurement-request` template (vendor name, list of items, engineer notes).
+3. "Procure" button calls a server function that:
+   - Aggregates pending requests by vendor
+   - Looks up vendor email
+   - Sends one email per vendor via `sendTransactionalEmail`
+   - Logs to `procurement_sends`
+   - Updates request statuses
 
-Result surfaced as:
+If user prefers to skip email setup now, the button can also generate `mailto:` links as a fallback — will ask.
 
-- A green "In Inventory" pill in the Master Spec table
-- On the detail drawer: link to `/material/$id` and a mini summary (available qty, active lots) for the matched inventory item
-
-## 5. Engineer page rework
-
-Switch the Engineer page's primary data source from `useMaterialStore().materials` to the master spec catalog:
-
-- Reverse-lookup search filters (service temp, chemistry, OOA, NASA E595, applications) run against `master_specs`.
-- Each result card shows the spec sheet preview plus an inventory badge:
-  - **In Stock** (green) if a matching inventory row exists with `available_qty > 0`
-  - **Tracked** (muted) if the material exists in inventory but is out of stock
-  - **Not Stocked** (subtle) if no inventory match — with a "Request Sourcing" CTA
-- "Save Kit" continues to work; saved kits reference `master_spec.id` so they survive inventory changes.
-
-## 6. Data layer changes
-
-`src/data/masterSpecs.ts` — mirrors the pattern in `src/data/materials.ts`:
-
-- `MasterSpec` type
-- `useMasterSpecStore()` hook hydrating from Supabase
-- `addMasterSpecs(specs, upload)` upsert helper used by the spec uploader
-- `getInventoryMatch(spec, materials)` helper returning `{ status: "in-stock" | "tracked" | "none", material? }`
-
-Engineer page imports `useMasterSpecStore` and `useMaterialStore` together.
+## Files to touch / create
+- `supabase/migrations/...` — new tables + columns
+- `src/components/DashboardLayout.tsx` — hide nav items, add Procurement
+- `src/data/procurement.ts` — new store (requests, vendor contacts, frequent reorder)
+- `src/data/masterSpecs.ts` — add `frequent_reorder` field + toggle helper
+- `src/pages/Engineer.tsx` — full filter panel, checkbox/star columns, drawer
+- `src/pages/MasterSpecs.tsx` — compliance grouping, frequent_reorder badge
+- `src/pages/Procurement.tsx` (new) + `src/routes/procurement.tsx`
+- `src/components/VendorContactsDialog.tsx` (new)
+- `src/routes/index.tsx` — redirect to `/engineer`
+- Email template + send helper (if email path approved)
 
 ## Out of scope
-
-- Authentication / per-user spec lists (still permissive RLS pending the auth pass)
-- COA/COC document linkage from master specs
-- AI-assisted natural-language spec search
-
-## Technical notes
-
-```text
-src/
-  data/
-    masterSpecs.ts          (new — Supabase-backed store)
-  pages/
-    MasterSpecs.tsx         (new)
-    Engineer.tsx            (refactor to use master spec store)
-  routes/
-    master-specs.tsx        (new file route → /master-specs)
-  components/
-    StockReportUpload.tsx   (extract upload modal into a reusable
-                             SpreadsheetUpload with a `mode` prop:
-                             "stock-report" | "master-spec")
-    DashboardLayout.tsx     (add Master Specs nav item)
-
-supabase migration:
-  - create master_specs (36 fields + uploaded_from + timestamps)
-  - create master_spec_uploads
-  - unique(vendor, product_name) on master_specs
-  - permissive RLS policies (read/insert/update/delete)
-  - seed 203 rows from the attached dataset
-```
+- Authentication (engineer name stays free-text)
+- Real ERP/PO integration
+- Quantity unit normalization
