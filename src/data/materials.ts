@@ -1,17 +1,18 @@
 /*
  * Traceum — Material Data Layer
- * 
- * All data starts EMPTY. Materials are populated exclusively via the
- * "Upload Stock Report" feature on the Inventory page.
- * 
- * This module provides:
- *  - Type definitions for materials, lots, COA/COC records
- *  - A reactive store (useMaterialStore) so all pages share the same state
- *  - Tooltip definitions for every status, color, and badge in the system
- *  - Fuzzy matching utilities for deduplicating uploaded products
+ *
+ * Persistent backend: data lives in Supabase (tables `materials` and
+ * `stock_reports`). This module keeps the original in-memory store API
+ * (useMaterialStore / addMaterials / clearAllData / getStore) so existing
+ * pages keep working, but every mutation is mirrored to Supabase and the
+ * store is hydrated from Supabase on first use.
+ *
+ * Lots, COA, and COC records are not yet persisted (no source of truth
+ * exists for them yet) and remain in-memory placeholders.
  */
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // ─── Type Definitions ───────────────────────────────────────────────
 
@@ -22,9 +23,9 @@ export interface MaterialLot {
   unit: string;
   receivedDate: string;
   expirationDate: string;
-  freezerLife: number; // days remaining
-  outTime: number; // cumulative hours out of freezer
-  maxOutTime: number; // max allowed hours
+  freezerLife: number;
+  outTime: number;
+  maxOutTime: number;
   location: string;
   status: "compliant" | "warning" | "critical" | "expired";
   coaId: string;
@@ -83,16 +84,13 @@ export interface Material {
   ooaCapable: string;
   nasaE595: string;
   notes: string | null;
-  // Inventory volumes
   availableQty: number;
   availableUnit: string;
   incomingQty: number;
   incomingEta: string | null;
   totalLots: number;
   activeLots: number;
-  // Custom columns from stock report uploads
   customFields?: Record<string, string>;
-  // Source tracking
   source?: "manual" | "stock-report";
   stockReportName?: string;
 }
@@ -104,10 +102,6 @@ export interface StockReportRecord {
   customColumns: string[];
 }
 
-// ─── Reactive Store ─────────────────────────────────────────────────
-// All pages subscribe to this shared state. When a stock report is
-// ingested on the Inventory page, every other page sees the update.
-
 interface MaterialStore {
   materials: Material[];
   lots: MaterialLot[];
@@ -116,26 +110,20 @@ interface MaterialStore {
   stockReports: StockReportRecord[];
 }
 
-const STORAGE_KEY = "traceum_material_store";
+// ─── Reactive Store (in-memory cache, hydrated from Supabase) ───────
 
-function loadStore(): MaterialStore {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore parse errors */ }
-  return { materials: [], lots: [], coaRecords: [], cocRecords: [], stockReports: [] };
-}
-
-function saveStore(store: MaterialStore) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-}
-
-// Global in-memory state + listeners
-let _store: MaterialStore = loadStore();
+let _store: MaterialStore = {
+  materials: [],
+  lots: [],
+  coaRecords: [],
+  cocRecords: [],
+  stockReports: [],
+};
 const _listeners = new Set<() => void>();
+let _hydrated = false;
+let _hydrating: Promise<void> | null = null;
 
 function notify() {
-  saveStore(_store);
   _listeners.forEach((fn) => fn());
 }
 
@@ -143,27 +131,143 @@ export function getStore(): MaterialStore {
   return _store;
 }
 
+// ─── Supabase row mapping ───────────────────────────────────────────
+
+type MaterialRow = {
+  id: string;
+  supplier: string;
+  product: string;
+  former_name: string | null;
+  form: string;
+  chemistry: string;
+  max_service_temp: string;
+  cure_temp: string;
+  ooa_capable: string;
+  nasa_e595: string;
+  notes: string | null;
+  available_qty: number | string;
+  available_unit: string;
+  incoming_qty: number | string;
+  incoming_eta: string | null;
+  total_lots: number;
+  active_lots: number;
+  custom_fields: Record<string, string> | null;
+  source: string | null;
+  stock_report_name: string | null;
+};
+
+type StockReportRow = {
+  file_name: string;
+  uploaded_at: string;
+  row_count: number;
+  custom_columns: string[] | null;
+};
+
+function rowToMaterial(r: MaterialRow): Material {
+  return {
+    id: r.id,
+    supplier: r.supplier,
+    product: r.product,
+    formerName: r.former_name,
+    form: r.form,
+    chemistry: r.chemistry,
+    maxServiceTemp: r.max_service_temp,
+    cureTemp: r.cure_temp,
+    ooaCapable: r.ooa_capable,
+    nasaE595: r.nasa_e595,
+    notes: r.notes,
+    availableQty: Number(r.available_qty) || 0,
+    availableUnit: r.available_unit,
+    incomingQty: Number(r.incoming_qty) || 0,
+    incomingEta: r.incoming_eta,
+    totalLots: r.total_lots,
+    activeLots: r.active_lots,
+    customFields: r.custom_fields ?? undefined,
+    source: (r.source as Material["source"]) ?? undefined,
+    stockReportName: r.stock_report_name ?? undefined,
+  };
+}
+
+function materialToRow(m: Material): MaterialRow {
+  return {
+    id: m.id,
+    supplier: m.supplier,
+    product: m.product,
+    former_name: m.formerName,
+    form: m.form,
+    chemistry: m.chemistry,
+    max_service_temp: m.maxServiceTemp,
+    cure_temp: m.cureTemp,
+    ooa_capable: m.ooaCapable,
+    nasa_e595: m.nasaE595,
+    notes: m.notes,
+    available_qty: m.availableQty,
+    available_unit: m.availableUnit,
+    incoming_qty: m.incomingQty,
+    incoming_eta: m.incomingEta,
+    total_lots: m.totalLots,
+    active_lots: m.activeLots,
+    custom_fields: m.customFields ?? null,
+    source: m.source ?? null,
+    stock_report_name: m.stockReportName ?? null,
+  };
+}
+
+async function hydrate(): Promise<void> {
+  if (_hydrated) return;
+  if (_hydrating) return _hydrating;
+  _hydrating = (async () => {
+    const [matRes, repRes] = await Promise.all([
+      supabase.from("materials" as never).select("*").order("product"),
+      supabase.from("stock_reports" as never).select("*").order("uploaded_at", { ascending: false }),
+    ]);
+    if (!matRes.error && Array.isArray(matRes.data)) {
+      _store = {
+        ..._store,
+        materials: (matRes.data as unknown as MaterialRow[]).map(rowToMaterial),
+      };
+    }
+    if (!repRes.error && Array.isArray(repRes.data)) {
+      _store = {
+        ..._store,
+        stockReports: (repRes.data as unknown as StockReportRow[]).map((r) => ({
+          fileName: r.file_name,
+          uploadedAt: new Date(r.uploaded_at).toLocaleString(),
+          rowCount: r.row_count,
+          customColumns: r.custom_columns ?? [],
+        })),
+      };
+    }
+    _hydrated = true;
+    notify();
+  })();
+  return _hydrating;
+}
+
+// ─── Public mutations ───────────────────────────────────────────────
+
 export function setMaterials(materials: Material[]) {
   _store = { ..._store, materials };
   notify();
 }
 
-export function addMaterials(newMaterials: Material[], report: StockReportRecord) {
+export async function addMaterials(newMaterials: Material[], report: StockReportRecord) {
+  // Ensure cache reflects DB before merging so fuzzy matching works correctly
+  await hydrate();
   const existing = [..._store.materials];
-  
+
   for (const incoming of newMaterials) {
-    const matchIdx = existing.findIndex((m) => fuzzyMatch(m.product, incoming.product) || fuzzyMatch(m.id, incoming.id));
+    const matchIdx = existing.findIndex(
+      (m) => fuzzyMatch(m.product, incoming.product) || fuzzyMatch(m.id, incoming.id),
+    );
     if (matchIdx >= 0) {
-      // Merge: update existing with any new fields from the upload
       const merged = { ...existing[matchIdx] };
-      // Update fields that were empty or default
       if (incoming.formerName && !merged.formerName) merged.formerName = incoming.formerName;
       if (incoming.notes && !merged.notes) merged.notes = incoming.notes;
       if (incoming.maxServiceTemp && incoming.maxServiceTemp !== "—") merged.maxServiceTemp = incoming.maxServiceTemp;
       if (incoming.cureTemp && incoming.cureTemp !== "—") merged.cureTemp = incoming.cureTemp;
       if (incoming.ooaCapable) merged.ooaCapable = incoming.ooaCapable;
       if (incoming.nasaE595) merged.nasaE595 = incoming.nasaE595;
-      // Merge custom fields
       if (incoming.customFields) {
         merged.customFields = { ...(merged.customFields || {}), ...incoming.customFields };
       }
@@ -171,37 +275,61 @@ export function addMaterials(newMaterials: Material[], report: StockReportRecord
       merged.stockReportName = report.fileName;
       existing[matchIdx] = merged;
     } else {
-      // New product — add it
       incoming.source = "stock-report";
       incoming.stockReportName = report.fileName;
       existing.push(incoming);
     }
   }
-  
+
+  // Persist all touched materials (upsert) and the stock report
+  const rows = existing.map(materialToRow);
+  const upsert = await supabase
+    .from("materials" as never)
+    .upsert(rows as never, { onConflict: "id" });
+  if (upsert.error) {
+    console.error("Failed to persist materials", upsert.error);
+    throw upsert.error;
+  }
+
+  const repInsert = await supabase
+    .from("stock_reports" as never)
+    .insert({
+      file_name: report.fileName,
+      row_count: report.rowCount,
+      custom_columns: report.customColumns,
+    } as never);
+  if (repInsert.error) console.error("Failed to persist stock report", repInsert.error);
+
   _store = {
     ..._store,
     materials: existing,
-    stockReports: [..._store.stockReports, report],
+    stockReports: [report, ..._store.stockReports],
   };
   notify();
 }
 
-export function clearAllData() {
+export async function clearAllData() {
+  const [m, r] = await Promise.all([
+    supabase.from("materials" as never).delete().not("id", "is", null),
+    supabase.from("stock_reports" as never).delete().not("id", "is", null),
+  ]);
+  if (m.error) console.error("Failed to clear materials", m.error);
+  if (r.error) console.error("Failed to clear stock reports", r.error);
+
   _store = { materials: [], lots: [], coaRecords: [], cocRecords: [], stockReports: [] };
   notify();
 }
 
 export function useMaterialStore(): MaterialStore {
-  // Hold actual store snapshot in state so React re-renders when data changes.
-  // Using a snapshot (not just a tick counter) ensures the component always
-  // reads the latest data after notify() fires.
   const [snapshot, setSnapshot] = useState<MaterialStore>(() => _store);
   useEffect(() => {
-    // Sync immediately in case store was updated before this component mounted
-    setSnapshot({ ..._store });
     const listener = () => setSnapshot({ ..._store });
     _listeners.add(listener);
-    return () => { _listeners.delete(listener); };
+    setSnapshot({ ..._store });
+    void hydrate();
+    return () => {
+      _listeners.delete(listener);
+    };
   }, []);
   return snapshot;
 }
