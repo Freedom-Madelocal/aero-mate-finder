@@ -25,6 +25,7 @@ import { Route as DemoExpiredRouteImport } from './routes/demo-expired'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgTeamRouteImport } from './routes/org.team'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
@@ -113,6 +114,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInviteRoute = AcceptInviteRouteImport.update({
+  id: '/accept-invite',
+  path: '/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -151,6 +157,7 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -202,6 +210,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accept-invite'
     | '/compliance'
     | '/console'
     | '/dashboard'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accept-invite'
     | '/compliance'
     | '/console'
     | '/dashboard'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accept-invite'
     | '/compliance'
     | '/console'
     | '/dashboard'
@@ -305,6 +317,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcceptInviteRoute: typeof AcceptInviteRoute
   ComplianceRoute: typeof ComplianceRoute
   ConsoleRoute: typeof ConsoleRouteWithChildren
   DashboardRoute: typeof DashboardRoute
@@ -442,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComplianceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accept-invite': {
+      id: '/accept-invite'
+      path: '/accept-invite'
+      fullPath: '/accept-invite'
+      preLoaderRoute: typeof AcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -507,6 +527,7 @@ const ConsoleRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcceptInviteRoute: AcceptInviteRoute,
   ComplianceRoute: ComplianceRoute,
   ConsoleRoute: ConsoleRouteWithChildren,
   DashboardRoute: DashboardRoute,

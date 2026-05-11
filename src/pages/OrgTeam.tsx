@@ -70,14 +70,19 @@ export default function OrgTeam() {
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgId) return toast.error("You must belong to an organization to invite users.");
-    const token = randomToken();
-    const { error } = await supabase.from("org_invitations").insert({
-      organization_id: orgId, email: email.trim().toLowerCase(), role, token, invited_by: user?.id,
+    const { data, error } = await supabase.functions.invoke("invite-user", {
+      body: {
+        email: email.trim().toLowerCase(),
+        role,
+        organization_id: orgId,
+        redirectTo: `${window.location.origin}/accept-invite`,
+      },
     });
-    if (error) return toast.error(error.message);
-    const url = `${window.location.origin}/invite/${token}`;
-    await navigator.clipboard.writeText(url).catch(() => {});
-    toast.success("Invite created. Link copied to clipboard.");
+    if (error || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error || error?.message || "Failed to send invite";
+      return toast.error(msg);
+    }
+    toast.success("Invite email sent.");
     setEmail("");
     load();
   };
