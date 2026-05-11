@@ -88,6 +88,7 @@ export interface ExtractedSpec {
   minimumOrderQuantity: string | null;
   profiles: string[];
   keySpecs: string[];
+  customers: string[];
 }
 
 const MISSING = "none given";
