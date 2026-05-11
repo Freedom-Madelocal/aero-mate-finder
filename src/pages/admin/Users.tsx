@@ -19,6 +19,14 @@ interface Row {
   demo_mode: boolean;
   first_login_at: string | null;
   extension_requested_at: string | null;
+  last_login_at: string | null;
+}
+
+interface ActivityRow {
+  id: string;
+  event_type: "login" | "page_view";
+  path: string | null;
+  created_at: string;
 }
 
 export default function AdminUsers() {
