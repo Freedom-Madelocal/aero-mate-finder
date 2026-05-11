@@ -154,22 +154,10 @@ export default function Engineer() {
   const { profile, user } = useAuth();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
-  const [engineerName, setEngineerName] = useState<string>("");
   const [picking, setPicking] = useState<string | null>(null);
 
-  // Default engineer name from profile/email; allow override via local storage
-  useEffect(() => {
-    const stored = localStorage.getItem("traceum.engineerName");
-    if (stored) {
-      setEngineerName(stored);
-      return;
-    }
-    const fallback = profile?.full_name || profile?.email || user?.email || "";
-    if (fallback) setEngineerName(fallback);
-  }, [profile, user]);
-  useEffect(() => {
-    if (engineerName) localStorage.setItem("traceum.engineerName", engineerName);
-  }, [engineerName]);
+  // Engineer name is auto-derived from the signed-in user's profile.
+  const engineerName = (profile?.full_name || profile?.email || user?.email || "").trim();
 
   const vendors = useMemo(() => uniqueOf(specs.map((s) => s.vendor)), [specs]);
   const categories = useMemo(() => uniqueOf(specs.map((s) => s.materialCategory)), [specs]);
@@ -294,15 +282,6 @@ export default function Engineer() {
               Search the master spec catalog by any property. Mark what you need
               for procurement and star items you reorder often.
             </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Engineer</label>
-            <Input
-              value={engineerName}
-              onChange={(e) => setEngineerName(e.target.value)}
-              placeholder="Your name"
-              className="h-8 w-44 bg-secondary border-border text-sm"
-            />
           </div>
         </div>
 
@@ -595,11 +574,6 @@ export default function Engineer() {
                 </div>
               </div>
 
-              {!engineerName && (
-                <div className="text-xs text-muted-foreground flex items-center gap-2 px-1">
-                  <Info className="w-3 h-3" /> Enter your name above so procurement knows who requested each part.
-                </div>
-              )}
             </section>
           </div>
         )}
