@@ -527,6 +527,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                       <th className="text-left px-3 py-2 font-medium">Category</th>
                       <th className="text-left px-3 py-2 font-medium">Cure °C</th>
                       <th className="text-left px-3 py-2 font-medium">Tg °C</th>
+                      <th className="text-left px-3 py-2 font-medium">Key Specs</th>
                       <th className="text-left px-3 py-2 font-medium">Profiles</th>
                     </tr>
                   </thead>
@@ -550,6 +551,19 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                           <Cell value={r.spec.materialCategory} />
                           <Cell value={r.spec.cureTemperatureC} />
                           <Cell value={r.spec.dryTgOnsetC ?? r.spec.peakTgC} />
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1 max-w-[180px]">
+                              {(r.spec.keySpecs ?? []).length === 0 ? (
+                                <span className="text-xs text-muted-foreground italic">none</span>
+                              ) : (
+                                r.spec.keySpecs!.map((k) => (
+                                  <span key={k} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-foreground/10 text-foreground border border-border">
+                                    {k}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </td>
                           <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
                               {(r.spec.profiles ?? []).length === 0 ? (
