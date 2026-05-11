@@ -24,7 +24,10 @@ export default function Settings() {
     { icon: Users, label: "Users & Roles", enabled: false },
     { icon: Building2, label: "Facilities", enabled: false },
     ...(isSuperAdmin
-      ? [{ icon: Globe, label: "Landing Page", enabled: true }]
+      ? [
+          { icon: Globe, label: "Landing Page", enabled: true },
+          { icon: Download, label: "Lead Magnet", enabled: true },
+        ]
       : []),
   ];
 
