@@ -574,11 +574,6 @@ export default function Engineer() {
                 </div>
               </div>
 
-              {!engineerName && (
-                <div className="text-xs text-muted-foreground flex items-center gap-2 px-1">
-                  <Info className="w-3 h-3" /> Enter your name above so procurement knows who requested each part.
-                </div>
-              )}
             </section>
           </div>
         )}
