@@ -19,7 +19,7 @@ import { toast } from "sonner";
  * - PDF flow: Lovable AI (Gemini 2.5 Pro) extracts canonical rows + profile tags
  *   from section headings; user reviews & accepts/rejects rows. */
 
-const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" }[] = [
+const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" | "keyspec" }[] = [
   { key: "vendor", type: "text", aliases: ["vendor", "supplier", "manufacturer", "mfg", "brand"] },
   { key: "productName", type: "text", aliases: ["product name", "product", "grade", "material", "material name", "part number", "p/n"] },
   { key: "productFamily", type: "text", aliases: ["product family", "family"] },
@@ -56,6 +56,23 @@ const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "num
   { key: "notes", type: "text", aliases: ["notes", "comments", "remarks", "description"] },
   { key: "minimumOrderQuantity", type: "text", aliases: ["minimum order quantity (moq)", "minimum order quantity", "moq"] },
   { key: "sourceDocument", type: "text", aliases: ["source document", "source"] },
+  // Key Spec — universal/OEM spec numbers (BMS, AMS, MIL, AIMS, etc.). Multiple
+  // columns can map to keySpecs (e.g. one per OEM); values are unioned. Cell
+  // values may also be comma/semicolon-separated lists.
+  { key: "keySpecs", type: "keyspec", aliases: [
+    "key spec", "key specs", "key specification", "key specification number", "key spec number", "key spec numbers",
+    "spec number", "specification number", "spec no", "spec #",
+    "boeing spec", "boeing", "bms",
+    "airbus spec", "airbus", "aims", "abs",
+    "bell spec", "bell", "bps",
+    "lockheed spec", "lockheed", "stm",
+    "northrop spec", "northrop", "nai",
+    "sikorsky spec", "sikorsky",
+    "mil spec", "mil-spec", "military spec",
+    "ams", "sae ams", "ams spec",
+    "astm", "iso spec", "en spec", "din spec",
+    "oem spec", "qualified to", "qpl",
+  ] },
 ];
 
 interface ParsedRow { [k: string]: string | number | null }
