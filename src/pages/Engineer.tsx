@@ -198,6 +198,10 @@ export default function Engineer() {
       if (filters.reinforcements.length && !filters.reinforcements.includes(s.reinforcement ?? "")) return false;
       if (filters.forms.length && !filters.forms.includes(s.productForm ?? "")) return false;
       if (filters.processMethods.length && !filters.processMethods.includes(s.processMethod ?? "")) return false;
+      if (filters.profiles.length) {
+        const sp = getSpecProfiles(s);
+        if (!filters.profiles.some((p) => sp.includes(p as Profile))) return false;
+      }
       if (!inRange(s.cureTemperatureC, filters.cureC)) return false;
       if (!inRange(s.peakTgC ?? s.dryTgOnsetC, filters.peakTgC)) return false;
       if (!inRange(s.maxServiceTemperatureC, filters.maxServiceC)) return false;
