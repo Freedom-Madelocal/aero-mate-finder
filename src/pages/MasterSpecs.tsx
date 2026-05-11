@@ -26,6 +26,7 @@ export default function MasterSpecs() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
 
   const vendors = useMemo(
     () => ["All", ...Array.from(new Set(specs.map((s) => s.vendor))).sort()],
