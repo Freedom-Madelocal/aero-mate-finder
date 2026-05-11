@@ -53,6 +53,7 @@ export interface MasterSpec {
   engineerDefaultName: string | null;
   profiles: string[];
   keySpecs: string[];
+  customers: string[];
 }
 
 export interface MasterSpecUpload {
@@ -104,6 +105,7 @@ interface SpecRow {
   engineer_default_name: string | null;
   profiles: string[] | null;
   key_specs: string[] | null;
+  customers: string[] | null;
 }
 
 const num = (v: number | string | null): number | null =>
@@ -153,6 +155,7 @@ function rowToSpec(r: SpecRow): MasterSpec {
     engineerDefaultName: r.engineer_default_name,
     profiles: Array.isArray(r.profiles) ? r.profiles : [],
     keySpecs: Array.isArray(r.key_specs) ? r.key_specs : [],
+    customers: Array.isArray(r.customers) ? r.customers : [],
   };
 }
 
@@ -328,6 +331,7 @@ export async function addMasterSpecs(
       uploaded_from: fileName,
       profiles: dedupeStrings([...(e?.profiles ?? []), ...(Array.isArray(s.profiles) ? s.profiles : [])]),
       key_specs: dedupeStrings([...(e?.keySpecs ?? []), ...(Array.isArray(s.keySpecs) ? s.keySpecs : [])]),
+      customers: dedupeStrings([...(e?.customers ?? []), ...(Array.isArray(s.customers) ? s.customers : [])]),
     };
   });
 

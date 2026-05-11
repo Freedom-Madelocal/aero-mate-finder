@@ -191,6 +191,7 @@ export type Database = {
           crossover_vendor: string | null
           cure_temperature_c: number | null
           cure_time: string | null
+          customers: string[]
           cvcm_pct: number | null
           dry_tg_onset_c: number | null
           engineer_default_name: string | null
@@ -237,6 +238,7 @@ export type Database = {
           crossover_vendor?: string | null
           cure_temperature_c?: number | null
           cure_time?: string | null
+          customers?: string[]
           cvcm_pct?: number | null
           dry_tg_onset_c?: number | null
           engineer_default_name?: string | null
@@ -283,6 +285,7 @@ export type Database = {
           crossover_vendor?: string | null
           cure_temperature_c?: number | null
           cure_time?: string | null
+          customers?: string[]
           cvcm_pct?: number | null
           dry_tg_onset_c?: number | null
           engineer_default_name?: string | null

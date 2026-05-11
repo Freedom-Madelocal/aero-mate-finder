@@ -19,7 +19,7 @@ import { toast } from "sonner";
  * - PDF flow: Lovable AI (Gemini 2.5 Pro) extracts canonical rows + profile tags
  *   from section headings; user reviews & accepts/rejects rows. */
 
-const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" | "keyspec" }[] = [
+const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" | "keyspec" | "customer" }[] = [
   { key: "vendor", type: "text", aliases: ["vendor", "supplier", "manufacturer", "mfg", "brand"] },
   { key: "productName", type: "text", aliases: ["product name", "product", "grade", "material", "material name", "part number", "p/n"] },
   { key: "productFamily", type: "text", aliases: ["product family", "family"] },
@@ -72,6 +72,13 @@ const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "num
     "ams", "sae ams", "ams spec",
     "astm", "iso spec", "en spec", "din spec",
     "oem spec", "qualified to", "qpl",
+  ] },
+  // Customer — OEMs / end-users this part is qualified for. Multiple columns
+  // can map (e.g. "Customer", "OEM", "End User"); values are comma/semicolon-
+  // separated lists and unioned across mapped columns.
+  { key: "customers", type: "customer", aliases: [
+    "customer", "customers", "customer name", "end user", "end-user", "enduser",
+    "oem", "oems", "platform", "operator", "approved by", "qualified for",
   ] },
 ];
 
@@ -228,6 +235,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
             minimumOrderQuantity: r.minimumOrderQuantity,
             profiles: r.profiles,
             keySpecs: r.keySpecs,
+            customers: r.customers,
           },
         };
       });
@@ -289,6 +297,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
       const specs: Partial<MasterSpec>[] = rawData.map((row) => {
         const out: Partial<MasterSpec> = {};
         const keySpecBuf: string[] = [];
+        const customerBuf: string[] = [];
         for (const [src, val] of Object.entries(row)) {
           const target = lookup.get(src);
           if (!target) continue;
@@ -297,14 +306,16 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
           if (fdef.type === "bool") (out as Record<string, unknown>)[target] = coerceBool(val);
           else if (fdef.type === "number") (out as Record<string, unknown>)[target] = coerceNumber(val);
           else if (fdef.type === "keyspec") keySpecBuf.push(...splitKeySpecCell(val));
+          else if (fdef.type === "customer") customerBuf.push(...splitKeySpecCell(val));
           else (out as Record<string, unknown>)[target] = val == null ? null : String(val);
         }
-        if (keySpecBuf.length > 0) {
-          // dedupe (case-insensitive)
+        const dedupe = (arr: string[]) => {
           const seen = new Map<string, string>();
-          for (const k of keySpecBuf) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
-          out.keySpecs = Array.from(seen.values());
-        }
+          for (const k of arr) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
+          return Array.from(seen.values());
+        };
+        if (keySpecBuf.length > 0) out.keySpecs = dedupe(keySpecBuf);
+        if (customerBuf.length > 0) out.customers = dedupe(customerBuf);
         return out;
       });
       const valid = specs.filter((s) => s.vendor && s.productName);
@@ -528,6 +539,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                       <th className="text-left px-3 py-2 font-medium">Cure °C</th>
                       <th className="text-left px-3 py-2 font-medium">Tg °C</th>
                       <th className="text-left px-3 py-2 font-medium">Key Specs</th>
+                      <th className="text-left px-3 py-2 font-medium">Customers</th>
                       <th className="text-left px-3 py-2 font-medium">Profiles</th>
                     </tr>
                   </thead>
@@ -559,6 +571,19 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                                 r.spec.keySpecs!.map((k) => (
                                   <span key={k} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-foreground/10 text-foreground border border-border">
                                     {k}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1 max-w-[160px]">
+                              {(r.spec.customers ?? []).length === 0 ? (
+                                <span className="text-xs text-muted-foreground italic">none</span>
+                              ) : (
+                                r.spec.customers!.map((c) => (
+                                  <span key={c} className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-foreground/10 text-foreground border border-border">
+                                    {c}
                                   </span>
                                 ))
                               )}

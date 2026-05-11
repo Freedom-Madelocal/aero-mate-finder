@@ -33,6 +33,27 @@ function scoreSpec(s: MasterSpec, q: string): Suggestion | null {
     }
   }
 
+  // Customer/OEM exact match (Boeing, Lockheed, etc.) ranks just below key specs.
+  for (const c of s.customers ?? []) {
+    const lc = c.toLowerCase();
+    if (lc === q) {
+      return {
+        spec: s,
+        label: s.productName,
+        sub: `${s.vendor} · Customer ${c}`,
+        score: 800,
+      };
+    }
+    if (lc.includes(q)) {
+      return {
+        spec: s,
+        label: s.productName,
+        sub: `${s.vendor} · Customer ${c}`,
+        score: 400,
+      };
+    }
+  }
+
   const fields: { val: string | null | undefined; weight: number }[] = [
     { val: s.productName, weight: 100 },
     { val: s.productFamily, weight: 60 },

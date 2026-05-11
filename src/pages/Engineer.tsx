@@ -65,6 +65,7 @@ interface FilterState {
   processMethods: string[];
   profiles: string[];
   keySpecs: string[];
+  customers: string[];
   cureC: NumRange;
   peakTgC: NumRange;
   maxServiceC: NumRange;
@@ -94,6 +95,7 @@ const EMPTY_FILTERS: FilterState = {
   processMethods: [],
   profiles: [],
   keySpecs: [],
+  customers: [],
   cureC: {},
   peakTgC: {},
   maxServiceC: {},
@@ -213,6 +215,7 @@ export default function Engineer() {
   const forms = useMemo(() => uniqueOf(specs.map((s) => s.productForm)), [specs]);
   const processMethods = useMemo(() => uniqueOf(specs.map((s) => s.processMethod)), [specs]);
   const allKeySpecs = useMemo(() => uniqueOf(specs.flatMap((s) => s.keySpecs ?? [])), [specs]);
+  const allCustomers = useMemo(() => uniqueOf(specs.flatMap((s) => s.customers ?? [])), [specs]);
 
   // Track which specs are already pending in the pick list (per current engineer)
   const pendingForMe = useMemo(() => {
@@ -244,6 +247,10 @@ export default function Engineer() {
         const ks = (s.keySpecs ?? []).map(canon);
         if (!filters.keySpecs.some((k) => ks.includes(canon(k)))) return false;
       }
+      if (filters.customers.length) {
+        const cs = (s.customers ?? []).map(canon);
+        if (!filters.customers.some((c) => cs.includes(canon(c)))) return false;
+      }
       if (!inRange(s.cureTemperatureC, filters.cureC)) return false;
       if (!inRange(s.peakTgC ?? s.dryTgOnsetC, filters.peakTgC)) return false;
       if (!inRange(s.maxServiceTemperatureC, filters.maxServiceC)) return false;
@@ -274,6 +281,7 @@ export default function Engineer() {
           s.applications, s.qualificationsStandards, s.notes,
           s.crossoverProduct, s.crossoverVendor,
           ...(s.keySpecs ?? []),
+          ...(s.customers ?? []),
         ].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -363,6 +371,7 @@ export default function Engineer() {
     filters.reinforcements.length + filters.forms.length + filters.processMethods.length +
     filters.profiles.length +
     filters.keySpecs.length +
+    filters.customers.length +
     Object.values(filters.flags).filter((v) => v !== undefined).length +
     [filters.cureC, filters.peakTgC, filters.maxServiceC, filters.outLifeDays, filters.tmlPct, filters.cvcmPct]
       .filter((r) => r.min !== undefined || r.max !== undefined).length +
@@ -473,6 +482,13 @@ export default function Engineer() {
                   options={allKeySpecs}
                   selected={filters.keySpecs}
                   onChange={(v) => setFilters({ ...filters, keySpecs: v })}
+                />
+
+                <ChipFilter
+                  title="Customer"
+                  options={allCustomers}
+                  selected={filters.customers}
+                  onChange={(v) => setFilters({ ...filters, customers: v })}
                 />
 
                 <ChipFilter
@@ -937,6 +953,18 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
                 {spec.keySpecs.map((k) => (
                   <span key={k} className="text-xs font-mono px-2 py-1 rounded border border-border bg-background text-foreground">
                     {k}
+                  </span>
+                ))}
+              </div>
+            </DrawerSection>
+          )}
+
+          {(spec.customers ?? []).length > 0 && (
+            <DrawerSection title="Customers / OEMs" tone="primary">
+              <div className="flex flex-wrap gap-1.5">
+                {spec.customers.map((c) => (
+                  <span key={c} className="text-xs uppercase tracking-wider px-2 py-1 rounded border border-border bg-background text-foreground">
+                    {c}
                   </span>
                 ))}
               </div>
