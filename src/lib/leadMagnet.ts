@@ -8,6 +8,7 @@ export interface LeadMagnetContent {
   successMessage: string;
   fileUrl: string;
   fileName: string;
+  previewImageUrl?: string;
 }
 
 export const DEFAULT_LEAD_MAGNET: LeadMagnetContent = {
