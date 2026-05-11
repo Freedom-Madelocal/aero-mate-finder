@@ -959,6 +959,18 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
             </DrawerSection>
           )}
 
+          {(spec.customers ?? []).length > 0 && (
+            <DrawerSection title="Customers / OEMs" tone="primary">
+              <div className="flex flex-wrap gap-1.5">
+                {spec.customers.map((c) => (
+                  <span key={c} className="text-xs uppercase tracking-wider px-2 py-1 rounded border border-border bg-background text-foreground">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </DrawerSection>
+          )}
+
           {/* Compliance & Qualifications — surfaced first */}
           <DrawerSection title="Compliance & Qualifications" tone="primary">
             <Row label="NASA E595 (TML ≤ 1%, CVCM ≤ 0.1%)"
