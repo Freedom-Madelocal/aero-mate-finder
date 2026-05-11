@@ -160,8 +160,6 @@ export default function OrgTeam() {
                   <div className="text-xs text-muted-foreground">{i.role} · expires {new Date(i.expires_at).toLocaleDateString()}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/invite/${i.token}`); toast.success("Link copied"); }}
-                    className="text-xs text-muted-foreground hover:text-foreground">Copy link</button>
                   <button onClick={() => revoke(i.id)} className="text-xs text-red-400 hover:text-red-300">Revoke</button>
                 </div>
               </div>
