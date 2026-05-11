@@ -288,12 +288,12 @@ export const extractSpecsFromPdf = createServerFn({ method: "POST" })
     const rows: ExtractedSpec[] = [];
     for (const r of parsed.rows ?? []) {
       const v = ExtractedSpecSchema.safeParse(r);
-      if (v.success) rows.push(v.data);
+      if (v.success) rows.push(normalize(v.data));
     }
 
     const profilesDetected = Array.from(
-      new Set(rows.flatMap((r) => r.profiles ?? []).filter((p) => p && p.trim().length > 0)),
+      new Set(rows.flatMap((r) => r.profiles).filter((p) => p && p.trim().length > 0)),
     ).sort();
 
-    return { rows: rows as Record<string, unknown>[], profilesDetected };
+    return { rows, profilesDetected };
   });
