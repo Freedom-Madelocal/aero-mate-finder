@@ -201,6 +201,7 @@ export type Database = {
           high_temperature: boolean
           id: string
           impact_resistant: boolean
+          key_specs: string[]
           low_dielectric: boolean
           low_moisture_absorption: boolean
           material_category: string | null
@@ -246,6 +247,7 @@ export type Database = {
           high_temperature?: boolean
           id?: string
           impact_resistant?: boolean
+          key_specs?: string[]
           low_dielectric?: boolean
           low_moisture_absorption?: boolean
           material_category?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           high_temperature?: boolean
           id?: string
           impact_resistant?: boolean
+          key_specs?: string[]
           low_dielectric?: boolean
           low_moisture_absorption?: boolean
           material_category?: string | null
