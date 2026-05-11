@@ -8,6 +8,7 @@ export interface LeadMagnetContent {
   successMessage: string;
   fileUrl: string;
   fileName: string;
+  previewImageUrl?: string;
 }
 
 export const DEFAULT_LEAD_MAGNET: LeadMagnetContent = {
@@ -18,6 +19,7 @@ export const DEFAULT_LEAD_MAGNET: LeadMagnetContent = {
   successMessage: "Check your inbox — your download is on its way. You can also grab it again below.",
   fileUrl: "",
   fileName: "",
+  previewImageUrl: "",
 };
 
 // Common consumer / free-mail providers — block these to require a work email.

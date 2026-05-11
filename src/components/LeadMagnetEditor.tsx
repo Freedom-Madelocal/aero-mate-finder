@@ -31,6 +31,8 @@ export default function LeadMagnetEditor() {
   const [signups, setSignups] = useState<Signup[]>([]);
   const [signupsLoading, setSignupsLoading] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<HTMLInputElement>(null);
+  const [uploadingPreview, setUploadingPreview] = useState(false);
 
   useEffect(() => {
     loadLeadMagnet().then((c) => {
@@ -103,6 +105,39 @@ export default function LeadMagnetEditor() {
   const removeFile = () => {
     setContent((c) => ({ ...c, fileUrl: "", fileName: "" }));
     toast("File removed from page. Save to apply.");
+  };
+
+  const onPreviewFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Preview must be an image (PNG, JPG, WebP).");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Preview image must be under 10 MB.");
+      return;
+    }
+    setUploadingPreview(true);
+    const path = `previews/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error } = await supabase.storage
+      .from("lead-magnet")
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+    if (error) {
+      setUploadingPreview(false);
+      toast.error(error.message || "Upload failed");
+      return;
+    }
+    const { data: pub } = supabase.storage.from("lead-magnet").getPublicUrl(path);
+    setContent((c) => ({ ...c, previewImageUrl: pub.publicUrl }));
+    setUploadingPreview(false);
+    toast.success("Preview uploaded. Don't forget to save.");
+    if (previewRef.current) previewRef.current.value = "";
+  };
+
+  const removePreview = () => {
+    setContent((c) => ({ ...c, previewImageUrl: "" }));
+    toast("Preview removed. Save to apply.");
   };
 
   const exportCsv = () => {
@@ -242,6 +277,54 @@ export default function LeadMagnetEditor() {
               >
                 <Upload className="w-3.5 h-3.5 mr-1.5" />
                 {uploading ? "Uploading…" : content.fileUrl ? "Replace file" : "Upload file"}
+              </Button>
+            </div>
+          </Field>
+
+          <Field label="Preview screenshot (shown on /free-guide)">
+            {content.previewImageUrl ? (
+              <div className="flex items-start gap-3 bg-secondary border border-border rounded-md p-2">
+                <img
+                  src={content.previewImageUrl}
+                  alt="Lead magnet preview"
+                  className="h-20 w-auto rounded border border-border object-cover"
+                />
+                <div className="flex-1 min-w-0 text-xs text-muted-foreground">
+                  Replace or remove this screenshot anytime. PNG, JPG, or WebP up to 10 MB.
+                </div>
+                <button
+                  onClick={removePreview}
+                  className="text-muted-foreground hover:text-red-500"
+                  aria-label="Remove preview"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No preview screenshot uploaded. Upload one to show visitors what they'll get.
+              </p>
+            )}
+            <div className="mt-2">
+              <input
+                ref={previewRef}
+                type="file"
+                onChange={onPreviewFile}
+                className="hidden"
+                accept="image/png,image/jpeg,image/webp"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => previewRef.current?.click()}
+                disabled={uploadingPreview}
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {uploadingPreview
+                  ? "Uploading…"
+                  : content.previewImageUrl
+                  ? "Replace screenshot"
+                  : "Upload screenshot"}
               </Button>
             </div>
           </Field>
