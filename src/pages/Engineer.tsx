@@ -182,6 +182,25 @@ export default function Engineer() {
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
 
+  // Apply incoming search params from the global search bar
+  useEffect(() => {
+    if (search.q && search.q !== filters.q) {
+      setFilters((f) => ({ ...f, q: search.q ?? "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.q]);
+
+  useEffect(() => {
+    if (!search.spec) return;
+    const found = specs.find((s) => s.id === search.spec);
+    if (found) {
+      setSelected(found);
+      // clear param so closing the drawer doesn't reopen it
+      navigate({ to: "/engineer", search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.spec, specs]);
+
   // Engineer name is auto-derived from the signed-in user's profile.
   const engineerName = (profile?.full_name || profile?.email || user?.email || "").trim();
 
