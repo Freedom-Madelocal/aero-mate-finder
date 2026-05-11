@@ -227,6 +227,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
             notes: r.notes,
             minimumOrderQuantity: r.minimumOrderQuantity,
             profiles: r.profiles,
+            keySpecs: r.keySpecs,
           },
         };
       });
@@ -273,12 +274,21 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     return Number.isFinite(n) ? n : null;
   };
 
+  const splitKeySpecCell = (v: unknown): string[] => {
+    if (v === null || v === undefined) return [];
+    return String(v)
+      .split(/[,;|\n\r/]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && s.toLowerCase() !== "none given" && s.toLowerCase() !== "n/a" && s !== "—");
+  };
+
   const handleIngestSpreadsheet = async () => {
     setIsProcessing(true);
     try {
       const lookup = new Map(mappings.filter((m) => m.target).map((m) => [m.source, m.target!]));
       const specs: Partial<MasterSpec>[] = rawData.map((row) => {
         const out: Partial<MasterSpec> = {};
+        const keySpecBuf: string[] = [];
         for (const [src, val] of Object.entries(row)) {
           const target = lookup.get(src);
           if (!target) continue;
@@ -286,7 +296,14 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
           if (!fdef) continue;
           if (fdef.type === "bool") (out as Record<string, unknown>)[target] = coerceBool(val);
           else if (fdef.type === "number") (out as Record<string, unknown>)[target] = coerceNumber(val);
+          else if (fdef.type === "keyspec") keySpecBuf.push(...splitKeySpecCell(val));
           else (out as Record<string, unknown>)[target] = val == null ? null : String(val);
+        }
+        if (keySpecBuf.length > 0) {
+          // dedupe (case-insensitive)
+          const seen = new Map<string, string>();
+          for (const k of keySpecBuf) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
+          out.keySpecs = Array.from(seen.values());
         }
         return out;
       });
