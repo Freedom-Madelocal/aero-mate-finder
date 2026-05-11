@@ -65,6 +65,7 @@ interface FilterState {
   processMethods: string[];
   profiles: string[];
   keySpecs: string[];
+  customers: string[];
   cureC: NumRange;
   peakTgC: NumRange;
   maxServiceC: NumRange;
