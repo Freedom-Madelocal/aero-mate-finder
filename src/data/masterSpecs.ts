@@ -149,6 +149,7 @@ function rowToSpec(r: SpecRow): MasterSpec {
     uploadedFrom: r.uploaded_from,
     frequentReorder: !!r.frequent_reorder,
     engineerDefaultName: r.engineer_default_name,
+    profiles: Array.isArray(r.profiles) ? r.profiles : [],
   };
 }
 
