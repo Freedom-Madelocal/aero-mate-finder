@@ -30,6 +30,9 @@ export default function Settings() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
+        </Link>
         {/* Page header */}
         <div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">
