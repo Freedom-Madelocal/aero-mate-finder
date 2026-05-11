@@ -100,6 +100,7 @@ const EMPTY_FILTERS: FilterState = {
   cvcmPct: {},
   flags: {},
   inventory: "any",
+  e595: "any",
 };
 
 const FLAG_LABELS: Record<keyof FilterState["flags"], string> = {
