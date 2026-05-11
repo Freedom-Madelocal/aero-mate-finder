@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, UserPlus, Activity, X } from "lucide-react";
+import { ArrowLeft, UserPlus, Activity, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -176,7 +176,12 @@ export default function AdminUsers() {
     toast.success(mode === "recovery" ? "Password setup email resent." : "Invite email resent.");
   };
 
-  if (loading || !isSuperAdmin) return <div className="min-h-screen bg-background" />;
+  const restartTour = async (r: Row) => {
+    if (!confirm(`Restart guided tour for ${r.full_name || r.email}? It will show on their next login.`)) return;
+    const { error } = await supabase.from("profiles").update({ tour_completed_at: null }).eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success("Tour reset · will trigger on next login");
+  };
 
   return (
     <div className="min-h-screen bg-background p-6 sm:p-10">
