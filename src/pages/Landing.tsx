@@ -350,16 +350,12 @@ export default function Landing() {
               </div>
             </div>
             <div className="order-1 md:order-2 md:col-span-6">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">For procurement</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.procurement_eyebrow}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-                Stop chasing emails. Aggregate demand, then send.
+                {c.procurement_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Every "procure" flag set by an engineer flows into a shared queue.
-                Traceium groups items by vendor, looks up your saved contacts, and
-                drafts a single email per supplier — so Henkel gets one message
-                with three parts, not three messages from three engineers.
-                Frequent reorders are starred and surface automatically.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.procurement_body}
               </p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
