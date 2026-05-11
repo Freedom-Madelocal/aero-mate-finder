@@ -188,6 +188,7 @@ export default function Settings() {
                     description="COC generated, material received, order fulfilled"
                   />
                 </div>
+              </div>
             </div>
             </div>
             )}
