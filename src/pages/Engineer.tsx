@@ -135,8 +135,21 @@ function getSpecProfiles(spec: MasterSpec): Profile[] {
   return out;
 }
 
+function canon(v: string | null | undefined): string {
+  return (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+// Case- and whitespace-insensitive dedupe. Keeps the first cleaned variant as display.
 function uniqueOf(values: (string | null | undefined)[]): string[] {
-  return Array.from(new Set(values.filter((v): v is string => !!v))).sort();
+  const map = new Map<string, string>();
+  for (const raw of values) {
+    if (!raw) continue;
+    const trimmed = raw.trim().replace(/\s+/g, " ");
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (!map.has(key)) map.set(key, trimmed);
+  }
+  return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
 }
 
 function inRange(v: number | null, r: NumRange): boolean {
@@ -180,12 +193,14 @@ export default function Engineer() {
   const matched = useMemo(() => {
     const q = filters.q.toLowerCase().trim();
     return specs.filter((s) => {
-      if (filters.vendors.length && !filters.vendors.includes(s.vendor)) return false;
-      if (filters.categories.length && !filters.categories.includes(s.materialCategory ?? "")) return false;
-      if (filters.chemistries.length && !filters.chemistries.includes(s.resinChemistry ?? "")) return false;
-      if (filters.reinforcements.length && !filters.reinforcements.includes(s.reinforcement ?? "")) return false;
-      if (filters.forms.length && !filters.forms.includes(s.productForm ?? "")) return false;
-      if (filters.processMethods.length && !filters.processMethods.includes(s.processMethod ?? "")) return false;
+      const matchAny = (sel: string[], val: string | null | undefined) =>
+        sel.length === 0 || sel.some((x) => canon(x) === canon(val));
+      if (!matchAny(filters.vendors, s.vendor)) return false;
+      if (!matchAny(filters.categories, s.materialCategory)) return false;
+      if (!matchAny(filters.chemistries, s.resinChemistry)) return false;
+      if (!matchAny(filters.reinforcements, s.reinforcement)) return false;
+      if (!matchAny(filters.forms, s.productForm)) return false;
+      if (!matchAny(filters.processMethods, s.processMethod)) return false;
       if (filters.profiles.length) {
         const sp = getSpecProfiles(s);
         if (!filters.profiles.some((p) => sp.includes(p as Profile))) return false;
@@ -632,29 +647,89 @@ function FilterSection({
   );
 }
 
+function groupByKeyword(options: string[]): {
+  groups: { keyword: string; options: string[] }[];
+  singles: string[];
+} {
+  const buckets = new Map<string, string[]>();
+  for (const opt of options) {
+    const words = opt.split(/\s+/);
+    if (words.length < 2) continue;
+    const last = words[words.length - 1].toLowerCase();
+    const arr = buckets.get(last) ?? [];
+    arr.push(opt);
+    buckets.set(last, arr);
+  }
+  const grouped = new Set<string>();
+  const groups: { keyword: string; options: string[] }[] = [];
+  for (const [key, opts] of buckets) {
+    if (opts.length >= 2) {
+      opts.forEach((o) => grouped.add(o));
+      groups.push({
+        keyword: key.charAt(0).toUpperCase() + key.slice(1),
+        options: opts.slice().sort((a, b) => a.localeCompare(b)),
+      });
+    }
+  }
+  groups.sort((a, b) => a.keyword.localeCompare(b.keyword));
+  const singles = options.filter((o) => !grouped.has(o));
+  return { groups, singles };
+}
+
 function ChipFilter({
   title, options, selected, onChange,
 }: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
   if (options.length === 0) return null;
+  const { groups, singles } = groupByKeyword(options);
+
+  const Pill = ({ opt }: { opt: string }) => {
+    const on = selected.some((v) => canon(v) === canon(opt));
+    return (
+      <button
+        onClick={() =>
+          onChange(on ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt])
+        }
+        className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+          on
+            ? "border-foreground bg-foreground text-background"
+            : "border-border text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {opt}
+      </button>
+    );
+  };
+
   return (
     <FilterSection title={title}>
-      <div className="flex flex-wrap gap-1">
-        {options.map((opt) => {
-          const on = selected.includes(opt);
+      <div className="space-y-2">
+        {singles.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {singles.map((opt) => <Pill key={opt} opt={opt} />)}
+          </div>
+        )}
+        {groups.map((g) => {
+          const selectedCount = g.options.filter((o) =>
+            selected.some((v) => canon(v) === canon(o)),
+          ).length;
           return (
-            <button
-              key={opt}
-              onClick={() =>
-                onChange(on ? selected.filter((v) => v !== opt) : [...selected, opt])
-              }
-              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
-                on
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {opt}
-            </button>
+            <details key={g.keyword} className="group/sub" open={selectedCount > 0}>
+              <summary className="flex items-center justify-between cursor-pointer list-none py-1 px-2 -mx-2 rounded hover:bg-accent/50">
+                <span className="text-[11px] text-foreground flex items-center gap-1.5">
+                  <ChevronDown className="w-3 h-3 transition-transform group-open/sub:rotate-0 -rotate-90" />
+                  {g.keyword}
+                  <span className="text-muted-foreground">({g.options.length})</span>
+                  {selectedCount > 0 && (
+                    <span className="text-[10px] font-mono px-1 rounded bg-foreground text-background">
+                      {selectedCount}
+                    </span>
+                  )}
+                </span>
+              </summary>
+              <div className="flex flex-wrap gap-1 pl-4 pt-1.5">
+                {g.options.map((opt) => <Pill key={opt} opt={opt} />)}
+              </div>
+            </details>
           );
         })}
       </div>
