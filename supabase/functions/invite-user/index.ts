@@ -39,6 +39,8 @@ Deno.serve(async (req) => {
     const role = (body?.role ?? "").toString();
     const organization_id = (body?.organization_id ?? "").toString();
     const redirectTo = (body?.redirectTo ?? "").toString();
+    const demo_mode = Boolean(body?.demo_mode);
+    const full_name = (body?.full_name ?? "").toString().trim();
 
     if (!email || !role || !organization_id) {
       return json(400, { error: "email, role, organization_id required" });
@@ -83,7 +85,7 @@ Deno.serve(async (req) => {
     // and finish their setup. This makes "Resend invite" work for both
     // pending and previously-invited users.
     const { error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: { organization_id, role, invited_by: callerId },
+      data: { organization_id, role, invited_by: callerId, demo_mode, ...(full_name ? { full_name } : {}) },
       redirectTo: redirectTo || undefined,
     });
 
