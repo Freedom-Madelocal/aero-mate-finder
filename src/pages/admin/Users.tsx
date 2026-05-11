@@ -49,11 +49,17 @@ export default function AdminUsers() {
 
   const load = useCallback(async () => {
     setBusy(true);
-    const [{ data: profiles }, { data: rolesData }, { data: demos }, { data: orgsData }] = await Promise.all([
+    const [{ data: profiles }, { data: rolesData }, { data: demos }, { data: orgsData }, { data: logins }] = await Promise.all([
       supabase.from("profiles").select("id,email,full_name,organization_id"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("user_demo_settings").select("*"),
       supabase.from("organizations").select("id,name"),
+      supabase
+        .from("user_activity")
+        .select("user_id, created_at")
+        .eq("event_type", "login")
+        .order("created_at", { ascending: false })
+        .limit(2000),
     ]);
     const orgMap = new Map((orgsData ?? []).map((o) => [o.id, o.name]));
     setOrgs(orgsData ?? []);
@@ -62,6 +68,10 @@ export default function AdminUsers() {
       rolesByUser.set(r.user_id, [...(rolesByUser.get(r.user_id) ?? []), r.role]);
     });
     const demoByUser = new Map((demos ?? []).map((d) => [d.user_id, d]));
+    const lastLoginByUser = new Map<string, string>();
+    (logins ?? []).forEach((l: { user_id: string; created_at: string }) => {
+      if (!lastLoginByUser.has(l.user_id)) lastLoginByUser.set(l.user_id, l.created_at);
+    });
     const out: Row[] = (profiles ?? []).map((p) => {
       const d = demoByUser.get(p.id);
       return {
@@ -74,6 +84,7 @@ export default function AdminUsers() {
         demo_mode: d?.demo_mode ?? false,
         first_login_at: d?.first_login_at ?? null,
         extension_requested_at: d?.extension_requested_at ?? null,
+        last_login_at: lastLoginByUser.get(p.id) ?? null,
       };
     });
     setRows(out);
