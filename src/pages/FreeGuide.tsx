@@ -197,31 +197,50 @@ export default function FreeGuide() {
   );
 }
 
-function GuidePreview({ url, name }: { url: string; name?: string }) {
-  const lower = url.toLowerCase().split("?")[0];
+function GuidePreview({
+  url,
+  name,
+  previewImageUrl,
+}: {
+  url: string;
+  name?: string;
+  previewImageUrl?: string;
+}) {
+  const lower = (url || "").toLowerCase().split("?")[0];
   const isPdf = lower.endsWith(".pdf");
   const isImage = /\.(png|jpe?g|webp|gif|svg)$/.test(lower);
   const displayName = name || "Lead magnet preview";
+  // Shrunk by 60% from original 360px → 144px
+  const boxHeight = 144;
+  const hasScreenshot = !!previewImageUrl;
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-secondary/30">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <FileText className="w-3.5 h-3.5" />
-          <span className="truncate max-w-[280px]">{displayName}</span>
-          <span className="text-[10px] uppercase tracking-wider opacity-70">Preview</span>
+    <div className="rounded-xl border border-border bg-card overflow-hidden max-w-md">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-secondary/30">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
+          <FileText className="w-3 h-3 shrink-0" />
+          <span className="truncate">{displayName}</span>
+          <span className="text-[9px] uppercase tracking-wider opacity-70 shrink-0">Preview</span>
         </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-        >
-          Open full <ArrowRight className="w-3 h-3" />
-        </a>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 shrink-0"
+          >
+            Open <ArrowRight className="w-2.5 h-2.5" />
+          </a>
+        )}
       </div>
-      <div className="relative bg-secondary/20" style={{ height: 360 }}>
-        {isPdf ? (
+      <div className="relative bg-secondary/20" style={{ height: boxHeight }}>
+        {hasScreenshot ? (
+          <img
+            src={previewImageUrl}
+            alt={displayName}
+            className="w-full h-full object-cover object-top"
+          />
+        ) : isPdf ? (
           <iframe
             src={`${url}#toolbar=0&navpanes=0&view=FitH`}
             title={displayName}
@@ -230,11 +249,11 @@ function GuidePreview({ url, name }: { url: string; name?: string }) {
         ) : isImage ? (
           <img src={url} alt={displayName} className="w-full h-full object-contain" />
         ) : (
-          <div className="flex items-center justify-center h-full text-xs text-muted-foreground p-6 text-center">
-            Preview not available for this file type. Submit your work email to download.
+          <div className="flex items-center justify-center h-full text-[11px] text-muted-foreground p-4 text-center">
+            Submit your work email to download.
           </div>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent" />
       </div>
     </div>
   );
