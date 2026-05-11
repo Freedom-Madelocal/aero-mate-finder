@@ -31,6 +31,8 @@ export default function LeadMagnetEditor() {
   const [signups, setSignups] = useState<Signup[]>([]);
   const [signupsLoading, setSignupsLoading] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<HTMLInputElement>(null);
+  const [uploadingPreview, setUploadingPreview] = useState(false);
 
   useEffect(() => {
     loadLeadMagnet().then((c) => {
