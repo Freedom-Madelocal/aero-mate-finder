@@ -830,9 +830,9 @@ function groupByKeyword(options: string[]): {
 }
 
 function ChipFilter({
-  title, options, selected, onChange,
-}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
-  if (options.length === 0) return null;
+  title, options, selected, onChange, emptyHint,
+}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void; emptyHint?: string }) {
+  if (options.length === 0 && !emptyHint) return null;
   const { groups, singles } = groupByKeyword(options);
 
   const Pill = ({ opt }: { opt: string }) => {
