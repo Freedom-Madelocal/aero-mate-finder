@@ -15,6 +15,9 @@ import traceumWordmark from "@/assets/traceium-wordmark.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import ProfileDrawer from "@/components/ProfileDrawer";
+import MessageDialog from "@/components/MessageDialog";
+import { useOrgPresence, type OnlineMember } from "@/hooks/useOrgPresence";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const baseNavItems = [
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
@@ -68,6 +71,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [msgRecipient, setMsgRecipient] = useState<OnlineMember | null>(null);
+  const onlineMembers = useOrgPresence();
   const { isSuperAdmin, profile, user } = useAuth();
   const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
@@ -188,6 +193,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            {onlineMembers.length > 0 && (
+              <div className="hidden sm:flex items-center -space-x-2 mr-1">
+                {onlineMembers.slice(0, 5).map((m) => {
+                  const label = m.full_name || m.email || "Teammate";
+                  const init = label
+                    .split(/\s+/)
+                    .map((s) => s[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+                  return (
+                    <Tooltip key={m.user_id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setMsgRecipient(m)}
+                          className="relative w-8 h-8 rounded-full bg-secondary border-2 border-background overflow-hidden flex items-center justify-center hover:z-10 hover:ring-2 hover:ring-ring transition"
+                          aria-label={`Message ${label}`}
+                        >
+                          {m.avatar_url ? (
+                            <img src={m.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-medium text-foreground">{init}</span>
+                          )}
+                          <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-background" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{label} — click to message</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {onlineMembers.length > 5 && (
+                  <span className="ml-3 text-xs text-muted-foreground">
+                    +{onlineMembers.length - 5}
+                  </span>
+                )}
+              </div>
+            )}
             <button
               onClick={() => setProfileOpen(true)}
               className="w-8 h-8 rounded-full bg-secondary border border-border overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-ring transition"
@@ -205,6 +248,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
       </div>
       <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
+      <MessageDialog
+        open={!!msgRecipient}
+        onOpenChange={(v) => !v && setMsgRecipient(null)}
+        recipient={msgRecipient}
+      />
     </div>
   );
 }
