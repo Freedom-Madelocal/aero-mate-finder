@@ -9,7 +9,7 @@ import {
 } from "@/lib/leadMagnet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, ArrowRight, ShieldCheck } from "lucide-react";
+import { Download, ArrowRight, ShieldCheck, ArrowLeft, FileText } from "lucide-react";
 import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
 
@@ -67,12 +67,20 @@ export default function FreeGuide() {
             <img src={traceumIcon} alt="Traceium" className="h-7 w-auto" />
             <img src={traceumWordmark} alt="Traceium" className="h-4 w-auto" />
           </Link>
-          <Link
-            to="/login"
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-          >
-            Sign in <ArrowRight className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/"
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" /> Back to home
+            </Link>
+            <Link
+              to="/login"
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              Sign in <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -98,6 +106,8 @@ export default function FreeGuide() {
                 {content.body}
               </p>
             )}
+
+            {content.fileUrl && <GuidePreview url={content.fileUrl} name={content.fileName} />}
 
             <div className="bg-card border border-border rounded-xl p-6 md:p-8">
               {success ? (
@@ -177,6 +187,49 @@ export default function FreeGuide() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function GuidePreview({ url, name }: { url: string; name?: string }) {
+  const lower = url.toLowerCase().split("?")[0];
+  const isPdf = lower.endsWith(".pdf");
+  const isImage = /\.(png|jpe?g|webp|gif|svg)$/.test(lower);
+  const displayName = name || "Lead magnet preview";
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-secondary/30">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <FileText className="w-3.5 h-3.5" />
+          <span className="truncate max-w-[280px]">{displayName}</span>
+          <span className="text-[10px] uppercase tracking-wider opacity-70">Preview</span>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
+          Open full <ArrowRight className="w-3 h-3" />
+        </a>
+      </div>
+      <div className="relative bg-secondary/20" style={{ height: 360 }}>
+        {isPdf ? (
+          <iframe
+            src={`${url}#toolbar=0&navpanes=0&view=FitH`}
+            title={displayName}
+            className="w-full h-full"
+          />
+        ) : isImage ? (
+          <img src={url} alt={displayName} className="w-full h-full object-contain" />
+        ) : (
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground p-6 text-center">
+            Preview not available for this file type. Submit your work email to download.
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent" />
+      </div>
     </div>
   );
 }
