@@ -32,6 +32,7 @@ const superAdminNavItems = [
   { path: "/master-specs", label: "Master Specs", icon: BookOpen },
   { path: "/admin/users", label: "Users", icon: Settings },
   { path: "/admin/organizations", label: "Organizations", icon: Settings },
+  { path: "/admin/crm", label: "CRM", icon: Settings },
 ];
 
 type NavItem = { path: string; label: string; icon: typeof Package };
