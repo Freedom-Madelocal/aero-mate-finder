@@ -188,11 +188,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="w-2 h-2 rounded-full bg-[var(--status-compliant)]" />
-              <span>All systems nominal</span>
-            </div>
-
             <button
               onClick={() => setProfileOpen(true)}
               className="w-8 h-8 rounded-full bg-secondary border border-border overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-ring transition"
