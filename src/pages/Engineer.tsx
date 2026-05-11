@@ -124,16 +124,22 @@ export default function Engineer() {
   const { specs } = useMasterSpecStore();
   const { materials } = useMaterialStore();
   const { requests } = useProcurementStore();
+  const { profile, user } = useAuth();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [engineerName, setEngineerName] = useState<string>("");
   const [picking, setPicking] = useState<string | null>(null);
 
-  // Persist engineer name locally
+  // Default engineer name from profile/email; allow override via local storage
   useEffect(() => {
-    const n = localStorage.getItem("traceum.engineerName");
-    if (n) setEngineerName(n);
-  }, []);
+    const stored = localStorage.getItem("traceum.engineerName");
+    if (stored) {
+      setEngineerName(stored);
+      return;
+    }
+    const fallback = profile?.full_name || profile?.email || user?.email || "";
+    if (fallback) setEngineerName(fallback);
+  }, [profile, user]);
   useEffect(() => {
     if (engineerName) localStorage.setItem("traceum.engineerName", engineerName);
   }, [engineerName]);
