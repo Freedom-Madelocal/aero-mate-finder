@@ -170,6 +170,15 @@ export default function Engineer() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
+  type SortKey =
+    | "procure" | "star" | "product" | "vendor" | "form" | "chemistry"
+    | "cure" | "service" | "e595" | "inventory";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "product",
+    dir: "asc",
+  });
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
 
   // Engineer name is auto-derived from the signed-in user's profile.
   const engineerName = (profile?.full_name || profile?.email || user?.email || "").trim();
