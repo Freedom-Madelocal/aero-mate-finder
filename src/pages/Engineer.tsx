@@ -135,8 +135,21 @@ function getSpecProfiles(spec: MasterSpec): Profile[] {
   return out;
 }
 
+function canon(v: string | null | undefined): string {
+  return (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+// Case- and whitespace-insensitive dedupe. Keeps the first cleaned variant as display.
 function uniqueOf(values: (string | null | undefined)[]): string[] {
-  return Array.from(new Set(values.filter((v): v is string => !!v))).sort();
+  const map = new Map<string, string>();
+  for (const raw of values) {
+    if (!raw) continue;
+    const trimmed = raw.trim().replace(/\s+/g, " ");
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (!map.has(key)) map.set(key, trimmed);
+  }
+  return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
 }
 
 function inRange(v: number | null, r: NumRange): boolean {
