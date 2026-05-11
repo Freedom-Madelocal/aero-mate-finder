@@ -3,7 +3,6 @@ import {
   Package,
   Settings,
   Search,
-
   ChevronRight,
   Lightbulb,
   BookOpen,
@@ -11,7 +10,6 @@ import {
   Menu,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
 import { useAuth } from "@/hooks/useAuth";
