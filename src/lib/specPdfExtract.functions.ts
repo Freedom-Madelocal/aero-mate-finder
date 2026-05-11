@@ -47,6 +47,7 @@ const ExtractedSpecSchema = z
     minimumOrderQuantity: z.string().nullable().optional(),
     profiles: z.array(z.string()).optional(),
     keySpecs: z.array(z.string()).optional(),
+    customers: z.array(z.string()).optional(),
   });
 
 export interface ExtractedSpec {
