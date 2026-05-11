@@ -48,7 +48,92 @@ const ExtractedSpecSchema = z
     profiles: z.array(z.string()).optional(),
   });
 
-export type ExtractedSpec = z.infer<typeof ExtractedSpecSchema>;
+export interface ExtractedSpec {
+  vendor: string | null;
+  productName: string | null;
+  productFamily: string | null;
+  materialCategory: string | null;
+  resinChemistry: string | null;
+  reinforcement: string | null;
+  productForm: string | null;
+  cureTemperatureC: number | null;
+  cureTime: string | null;
+  dryTgOnsetC: number | null;
+  wetTgC: number | null;
+  peakTgC: number | null;
+  maxServiceTemperatureC: number | null;
+  outLifeDays: number | null;
+  freezerLifeMonths: number | null;
+  tmlPct: number | null;
+  cvcmPct: number | null;
+  tensileLapShearMpa: number | null;
+  tPeelN25mm: number | null;
+  flatwiseTensionMpa: number | null;
+  climbingDrumPeelInLbIn: number | null;
+  processMethod: string | null;
+  ooaVboCapable: boolean;
+  toughened: boolean;
+  flameRetardant: boolean;
+  lowDielectric: boolean;
+  lowMoistureAbsorption: boolean;
+  impactResistant: boolean;
+  highTemperature: boolean;
+  applications: string | null;
+  qualificationsStandards: string | null;
+  crossoverProduct: string | null;
+  crossoverVendor: string | null;
+  notes: string | null;
+  minimumOrderQuantity: string | null;
+  profiles: string[];
+}
+
+const MISSING = "none given";
+const txt = (v: unknown): string | null =>
+  typeof v === "string" && v.trim().length > 0 ? v : MISSING;
+const numOrNull = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) ? v : null;
+const boolOr = (v: unknown): boolean => v === true;
+
+function normalize(r: z.infer<typeof ExtractedSpecSchema>): ExtractedSpec {
+  return {
+    vendor: txt(r.vendor),
+    productName: txt(r.productName),
+    productFamily: txt(r.productFamily),
+    materialCategory: txt(r.materialCategory),
+    resinChemistry: txt(r.resinChemistry),
+    reinforcement: txt(r.reinforcement),
+    productForm: txt(r.productForm),
+    cureTemperatureC: numOrNull(r.cureTemperatureC),
+    cureTime: txt(r.cureTime),
+    dryTgOnsetC: numOrNull(r.dryTgOnsetC),
+    wetTgC: numOrNull(r.wetTgC),
+    peakTgC: numOrNull(r.peakTgC),
+    maxServiceTemperatureC: numOrNull(r.maxServiceTemperatureC),
+    outLifeDays: numOrNull(r.outLifeDays),
+    freezerLifeMonths: numOrNull(r.freezerLifeMonths),
+    tmlPct: numOrNull(r.tmlPct),
+    cvcmPct: numOrNull(r.cvcmPct),
+    tensileLapShearMpa: numOrNull(r.tensileLapShearMpa),
+    tPeelN25mm: numOrNull(r.tPeelN25mm),
+    flatwiseTensionMpa: numOrNull(r.flatwiseTensionMpa),
+    climbingDrumPeelInLbIn: numOrNull(r.climbingDrumPeelInLbIn),
+    processMethod: txt(r.processMethod),
+    ooaVboCapable: boolOr(r.ooaVboCapable),
+    toughened: boolOr(r.toughened),
+    flameRetardant: boolOr(r.flameRetardant),
+    lowDielectric: boolOr(r.lowDielectric),
+    lowMoistureAbsorption: boolOr(r.lowMoistureAbsorption),
+    impactResistant: boolOr(r.impactResistant),
+    highTemperature: boolOr(r.highTemperature),
+    applications: txt(r.applications),
+    qualificationsStandards: txt(r.qualificationsStandards),
+    crossoverProduct: txt(r.crossoverProduct),
+    crossoverVendor: txt(r.crossoverVendor),
+    notes: txt(r.notes),
+    minimumOrderQuantity: txt(r.minimumOrderQuantity),
+    profiles: Array.isArray(r.profiles) ? r.profiles.filter((p): p is string => typeof p === "string" && p.trim().length > 0) : [],
+  };
+}
 
 const InputSchema = z.object({
   fileBase64: z.string().min(100).max(25_000_000), // ~18 MB raw
