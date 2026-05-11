@@ -9,6 +9,7 @@ import {
   Star as StarOutline,
   Info,
   CheckSquare,
+  ChevronDown,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useMaterialStore } from "@/data/materials";
