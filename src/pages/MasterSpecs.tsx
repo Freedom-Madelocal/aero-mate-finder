@@ -72,6 +72,7 @@ export default function MasterSpecs() {
         s.qualificationsStandards, s.notes, s.crossoverProduct,
         ...(s.profiles ?? []),
         ...(s.keySpecs ?? []),
+        ...(s.customers ?? []),
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
