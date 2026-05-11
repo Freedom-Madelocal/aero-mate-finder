@@ -485,6 +485,13 @@ export default function Engineer() {
                 />
 
                 <ChipFilter
+                  title="Customer"
+                  options={allCustomers}
+                  selected={filters.customers}
+                  onChange={(v) => setFilters({ ...filters, customers: v })}
+                />
+
+                <ChipFilter
                   title="Profile"
                   options={[...PROFILE_OPTIONS]}
                   selected={filters.profiles}
