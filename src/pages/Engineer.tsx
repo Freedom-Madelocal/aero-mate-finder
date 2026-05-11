@@ -223,6 +223,13 @@ export default function Engineer() {
         if (filters.inventory === "tracked" && inv !== "tracked") return false;
         if (filters.inventory === "not-stocked" && inv !== "none") return false;
       }
+      if (filters.e595 !== "any") {
+        const pass =
+          s.tmlPct !== null && s.tmlPct <= 1.0 &&
+          s.cvcmPct !== null && s.cvcmPct <= 0.1;
+        if (filters.e595 === "pass" && !pass) return false;
+        if (filters.e595 === "fail" && pass) return false;
+      }
       if (q) {
         const hay = [
           s.vendor, s.productName, s.productFamily, s.materialCategory,
