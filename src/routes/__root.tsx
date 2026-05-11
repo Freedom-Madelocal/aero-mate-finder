@@ -126,7 +126,7 @@ function RootComponent() {
         <ThemeProvider defaultTheme="dark">
           <AuthProvider>
             <TooltipProvider delayDuration={200}>
-              <Toaster />
+              <Toaster position="top-right" />
               <Outlet />
             </TooltipProvider>
           </AuthProvider>
