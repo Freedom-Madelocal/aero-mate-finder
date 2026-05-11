@@ -575,6 +575,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          path: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          path?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_demo_settings: {
         Row: {
           demo_mode: boolean

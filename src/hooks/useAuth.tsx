@@ -64,6 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       if (s?.user) {
         setTimeout(() => loadUserData(s.user.id), 0);
+        if (_e === "SIGNED_IN") {
+          import("@/lib/userActivity").then((m) => m.logLogin(s.user.id));
+        }
       } else {
         setProfile(null);
         setRoles([]);
