@@ -256,17 +256,12 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-6 py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-6">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">For engineers</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.features_eyebrow}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-                Find the right material in seconds, not days.
+                {c.features_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Traceium's engineer workspace is built around the questions you
-                actually ask: <em>what's qualified for a 350°F autoclave cure with
-                CVCM &lt; 0.1?</em> Filter by chemistry, form, cure window, Tg,
-                outgassing, mechanical properties, and process compatibility.
-                Click any result for the full datasheet, qualification evidence,
-                and current stock — without leaving the page.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.features_body}
               </p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
