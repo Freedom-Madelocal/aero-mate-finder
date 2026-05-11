@@ -3,7 +3,7 @@ import {
   Package,
   Settings,
   Search,
-  Bell,
+
   ChevronRight,
   Lightbulb,
   BookOpen,
@@ -194,15 +194,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="w-2 h-2 rounded-full bg-[var(--status-compliant)]" />
               <span>All systems nominal</span>
             </div>
-
-            <button
-              onClick={() => toast("Notifications coming soon")}
-              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell className="w-4 h-4" />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--status-warning)]" />
-            </button>
 
             <button
               onClick={() => setProfileOpen(true)}
