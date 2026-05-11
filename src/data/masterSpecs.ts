@@ -155,6 +155,7 @@ function rowToSpec(r: SpecRow): MasterSpec {
     engineerDefaultName: r.engineer_default_name,
     profiles: Array.isArray(r.profiles) ? r.profiles : [],
     keySpecs: Array.isArray(r.key_specs) ? r.key_specs : [],
+    customers: Array.isArray(r.customers) ? r.customers : [],
   };
 }
 
