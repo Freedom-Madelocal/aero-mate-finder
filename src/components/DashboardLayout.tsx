@@ -74,6 +74,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileOpen, setProfileOpen] = useState(false);
   const [msgRecipient, setMsgRecipient] = useState<OnlineMember | null>(null);
   const onlineMembers = useOrgPresence();
+  const unreadSenders = useUnreadMessages();
+
+  // Merge: online members + offline members who have unread messages.
+  // Map sender_id -> unread count for badges.
+  const unreadMap = new Map(unreadSenders.map((s) => [s.user_id, s.count]));
+  const onlineIds = new Set(onlineMembers.map((m) => m.user_id));
+  const offlineWithUnread: OnlineMember[] = unreadSenders
+    .filter((s) => !onlineIds.has(s.user_id))
+    .map((s) => ({
+      user_id: s.user_id,
+      full_name: s.full_name,
+      email: s.email,
+      avatar_url: s.avatar_url,
+      online_at: "",
+    }));
+  // Senders with unread come first, then the rest of online members.
+  const headerMembers: OnlineMember[] = [
+    ...onlineMembers.filter((m) => unreadMap.has(m.user_id)),
+    ...offlineWithUnread,
+    ...onlineMembers.filter((m) => !unreadMap.has(m.user_id)),
+  ];
   const { isSuperAdmin, profile, user } = useAuth();
   const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
