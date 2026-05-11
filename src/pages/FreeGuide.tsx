@@ -107,7 +107,13 @@ export default function FreeGuide() {
               </p>
             )}
 
-            {content.fileUrl && <GuidePreview url={content.fileUrl} name={content.fileName} />}
+            {(content.previewImageUrl || content.fileUrl) && (
+              <GuidePreview
+                url={content.fileUrl}
+                name={content.fileName}
+                previewImageUrl={content.previewImageUrl}
+              />
+            )}
 
             <div className="bg-card border border-border rounded-xl p-6 md:p-8">
               {success ? (
