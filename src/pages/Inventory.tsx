@@ -177,8 +177,8 @@ export default function Inventory() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Page header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-foreground tracking-tight">
               Material Inventory
             </h1>
@@ -291,7 +291,7 @@ export default function Inventory() {
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <StatusTooltip content={METRIC_TOOLTIPS.unitsAvailable}>
                 <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-4 w-full">
                   <div className="w-10 h-10 rounded bg-secondary flex items-center justify-center">
@@ -327,8 +327,8 @@ export default function Inventory() {
 
             {/* Search and filters */}
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1 max-w-md">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[200px] max-w-md">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
