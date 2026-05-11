@@ -24,6 +24,7 @@ import {
 } from "@/data/procurement";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 /*
  * Engineer Workspace
