@@ -469,6 +469,13 @@ export default function Engineer() {
                 </FilterSection>
 
                 <ChipFilter
+                  title="Key Spec"
+                  options={allKeySpecs}
+                  selected={filters.keySpecs}
+                  onChange={(v) => setFilters({ ...filters, keySpecs: v })}
+                />
+
+                <ChipFilter
                   title="Profile"
                   options={[...PROFILE_OPTIONS]}
                   selected={filters.profiles}
@@ -921,6 +928,21 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
         </div>
 
         <div className="p-5 space-y-5">
+          {(spec.keySpecs ?? []).length > 0 && (
+            <DrawerSection title="Key Specifications" tone="primary">
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Universal/OEM spec numbers. Search any of these in the search bar to find every manufacturer's equivalent.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {spec.keySpecs.map((k) => (
+                  <span key={k} className="text-xs font-mono px-2 py-1 rounded border border-border bg-background text-foreground">
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </DrawerSection>
+          )}
+
           {/* Compliance & Qualifications — surfaced first */}
           <DrawerSection title="Compliance & Qualifications" tone="primary">
             <Row label="NASA E595 (TML ≤ 1%, CVCM ≤ 0.1%)"
