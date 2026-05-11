@@ -62,7 +62,7 @@ export default function LeadMagnetEditor() {
       .upsert(
         {
           id: "lead_magnet",
-          content: content as unknown as Record<string, unknown>,
+          content: JSON.parse(JSON.stringify(content)),
           updated_by: user?.id ?? null,
           updated_at: new Date().toISOString(),
         },
