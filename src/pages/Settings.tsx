@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 export default function Settings() {
   const { isSuperAdmin } = useAuth();
-  const [active, setActive] = (require("react") as typeof import("react")).useState<string>("Storage Thresholds");
+  const [active, setActive] = useState<string>("Storage Thresholds");
 
   const navItems: Array<{ icon: typeof Thermometer; label: string; enabled: boolean }> = [
     { icon: Thermometer, label: "Storage Thresholds", enabled: true },
