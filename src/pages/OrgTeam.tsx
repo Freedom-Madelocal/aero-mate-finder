@@ -26,7 +26,7 @@ interface Invitation {
 
 export default function OrgTeam() {
   const navigate = useNavigate();
-  const { profile, hasRole, isSuperAdmin, loading, user } = useAuth();
+  const { profile, hasRole, isSuperAdmin, loading } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invitation[]>([]);
   const [email, setEmail] = useState("");

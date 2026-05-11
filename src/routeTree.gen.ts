@@ -29,7 +29,6 @@ import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgTeamRouteImport } from './routes/org.team'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
-import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
@@ -134,11 +133,6 @@ const MaterialIdRoute = MaterialIdRouteImport.update({
   path: '/material/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InviteTokenRoute = InviteTokenRouteImport.update({
-  id: '/invite/$token',
-  path: '/invite/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -177,7 +171,6 @@ export interface FileRoutesByFullPath {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
 }
@@ -203,7 +196,6 @@ export interface FileRoutesByTo {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
 }
@@ -230,7 +222,6 @@ export interface FileRoutesById {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
 }
@@ -258,7 +249,6 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/invite/$token'
     | '/material/$id'
     | '/org/team'
   fileRoutesByTo: FileRoutesByTo
@@ -284,7 +274,6 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/invite/$token'
     | '/material/$id'
     | '/org/team'
   id:
@@ -310,7 +299,6 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/invite/$token'
     | '/material/$id'
     | '/org/team'
   fileRoutesById: FileRoutesById
@@ -336,7 +324,6 @@ export interface RootRouteChildren {
   SuppliersRoute: typeof SuppliersRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  InviteTokenRoute: typeof InviteTokenRoute
   MaterialIdRoute: typeof MaterialIdRoute
   OrgTeamRoute: typeof OrgTeamRoute
 }
@@ -483,13 +470,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MaterialIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/invite/$token': {
-      id: '/invite/$token'
-      path: '/invite/$token'
-      fullPath: '/invite/$token'
-      preLoaderRoute: typeof InviteTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/console/login': {
       id: '/console/login'
       path: '/login'
@@ -546,10 +526,19 @@ const rootRouteChildren: RootRouteChildren = {
   SuppliersRoute: SuppliersRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
-  InviteTokenRoute: InviteTokenRoute,
   MaterialIdRoute: MaterialIdRoute,
   OrgTeamRoute: OrgTeamRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

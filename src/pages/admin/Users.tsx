@@ -23,7 +23,7 @@ interface Row {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const { isSuperAdmin, loading, user } = useAuth();
+  const { isSuperAdmin, loading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([]);
   const [busy, setBusy] = useState(false);
