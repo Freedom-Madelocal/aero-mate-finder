@@ -393,6 +393,18 @@ function SpecDrawer({
             </Section>
           )}
 
+          {(spec.customers ?? []).length > 0 && (
+            <Section title="Customers / OEMs">
+              <div className="flex flex-wrap gap-1.5">
+                {spec.customers.map((c) => (
+                  <span key={c} className="text-xs uppercase tracking-wider px-2 py-1 rounded border border-border bg-secondary/40 text-foreground">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
+
           <Section title="Thermal & Cure">
             <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °C")} />
             <Row label="Cure Time" value={spec.cureTime} />
