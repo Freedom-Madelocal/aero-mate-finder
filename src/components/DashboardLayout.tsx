@@ -201,17 +201,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
 
             {/* Desktop search */}
-            <div className="relative hidden md:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search materials, lots, orders..."
-                className="bg-secondary border border-border rounded-md pl-9 pr-4 py-1.5 text-sm text-foreground placeholder:text-muted-foreground w-56 lg:w-72 focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-accent px-1.5 py-0.5 rounded hidden lg:block">
-                ⌘K
-              </kbd>
-            </div>
+            <GlobalSearch />
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
