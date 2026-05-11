@@ -67,12 +67,20 @@ export default function FreeGuide() {
             <img src={traceumIcon} alt="Traceium" className="h-7 w-auto" />
             <img src={traceumWordmark} alt="Traceium" className="h-4 w-auto" />
           </Link>
-          <Link
-            to="/login"
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-          >
-            Sign in <ArrowRight className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/"
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" /> Back to home
+            </Link>
+            <Link
+              to="/login"
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              Sign in <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </header>
 
