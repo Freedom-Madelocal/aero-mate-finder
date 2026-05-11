@@ -52,6 +52,7 @@ export interface MasterSpec {
   frequentReorder: boolean;
   engineerDefaultName: string | null;
   profiles: string[];
+  keySpecs: string[];
 }
 
 export interface MasterSpecUpload {
@@ -102,6 +103,7 @@ interface SpecRow {
   frequent_reorder: boolean | null;
   engineer_default_name: string | null;
   profiles: string[] | null;
+  key_specs: string[] | null;
 }
 
 const num = (v: number | string | null): number | null =>
@@ -150,7 +152,31 @@ function rowToSpec(r: SpecRow): MasterSpec {
     frequentReorder: !!r.frequent_reorder,
     engineerDefaultName: r.engineer_default_name,
     profiles: Array.isArray(r.profiles) ? r.profiles : [],
+    keySpecs: Array.isArray(r.key_specs) ? r.key_specs : [],
   };
+}
+
+/** Case-insensitively dedupe a string array, preserving the first variant. */
+function dedupeStrings(arr: (string | null | undefined)[]): string[] {
+  const seen = new Map<string, string>();
+  for (const v of arr) {
+    if (!v) continue;
+    const t = String(v).trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (!seen.has(key)) seen.set(key, t);
+  }
+  return Array.from(seen.values());
+}
+
+/** Treat AI placeholder "none given" and empty strings as missing. */
+function isMissing(v: unknown): boolean {
+  if (v === null || v === undefined) return true;
+  if (typeof v === "string") {
+    const t = v.trim().toLowerCase();
+    return t === "" || t === "none given";
+  }
+  return false;
 }
 
 interface SpecStore {
