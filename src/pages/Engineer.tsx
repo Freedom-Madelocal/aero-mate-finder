@@ -547,31 +547,31 @@ export default function Engineer() {
                   <table className="w-full text-sm">
                     <thead className="bg-secondary/40 text-xs uppercase text-muted-foreground">
                       <tr>
-                        <th className="text-center px-2 py-2 font-medium w-12" title="Procure">
+                        <SortHeader sortKey="procure" sort={sort} onClick={toggleSort} align="center" className="px-2 w-12" title="Procure">
                           <span className="inline-flex items-center gap-1">
                             <CheckSquare className="w-3.5 h-3.5" /> Procure
                           </span>
-                        </th>
-                        <th className="text-center px-2 py-2 font-medium w-10" title="Frequent reorder">★</th>
-                        <th className="text-left px-3 py-2 font-medium">Product</th>
-                        <th className="text-left px-3 py-2 font-medium">Vendor</th>
-                        <th className="text-left px-3 py-2 font-medium">Form</th>
-                        <th className="text-left px-3 py-2 font-medium">Chemistry</th>
-                        <th className="text-center px-3 py-2 font-medium">Cure °C</th>
-                        <th className="text-center px-3 py-2 font-medium">Service °C</th>
-                        <th className="text-center px-3 py-2 font-medium">E595</th>
-                        <th className="text-right px-3 py-2 font-medium">Inventory</th>
+                        </SortHeader>
+                        <SortHeader sortKey="star" sort={sort} onClick={toggleSort} align="center" className="px-2 w-10" title="Frequent reorder">★</SortHeader>
+                        <SortHeader sortKey="product" sort={sort} onClick={toggleSort} align="left">Product</SortHeader>
+                        <SortHeader sortKey="vendor" sort={sort} onClick={toggleSort} align="left">Vendor</SortHeader>
+                        <SortHeader sortKey="form" sort={sort} onClick={toggleSort} align="left">Form</SortHeader>
+                        <SortHeader sortKey="chemistry" sort={sort} onClick={toggleSort} align="left">Chemistry</SortHeader>
+                        <SortHeader sortKey="cure" sort={sort} onClick={toggleSort} align="center">Cure °C</SortHeader>
+                        <SortHeader sortKey="service" sort={sort} onClick={toggleSort} align="center">Service °C</SortHeader>
+                        <SortHeader sortKey="e595" sort={sort} onClick={toggleSort} align="center">E595</SortHeader>
+                        <SortHeader sortKey="inventory" sort={sort} onClick={toggleSort} align="right">Inventory</SortHeader>
                       </tr>
                     </thead>
                     <tbody>
-                      {matched.length === 0 ? (
+                      {sorted.length === 0 ? (
                         <tr>
                           <td colSpan={10} className="text-center py-12 text-muted-foreground text-sm">
                             No specs match these filters.
                           </td>
                         </tr>
                       ) : (
-                        matched.map((spec) => {
+                        sorted.map((spec) => {
                           const inv = getInventoryMatch(spec, materials);
                           const e595Pass =
                             spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
