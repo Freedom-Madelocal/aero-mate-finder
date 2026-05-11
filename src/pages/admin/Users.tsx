@@ -322,6 +322,69 @@ export default function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {auditUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setAuditUser(null)} />
+          <div className="relative w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl flex flex-col max-h-[80vh]">
+            <div className="flex items-start justify-between p-4 border-b border-border">
+              <div>
+                <h2 className="text-sm font-semibold">Activity audit</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {auditUser.full_name || auditUser.email} · last 500 events
+                </p>
+              </div>
+              <button
+                onClick={() => setAuditUser(null)}
+                className="text-muted-foreground hover:text-foreground p-1"
+                aria-label="Close audit"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-auto">
+              {auditLoading ? (
+                <div className="p-8 text-center text-xs text-muted-foreground">Loading…</div>
+              ) : auditRows.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground">No activity recorded yet.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border bg-secondary/40">
+                    <tr>
+                      <th className="text-left font-medium px-4 py-2">When</th>
+                      <th className="text-left font-medium px-4 py-2">Event</th>
+                      <th className="text-left font-medium px-4 py-2">Path</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditRows.map((a) => (
+                      <tr key={a.id} className="border-b border-border/60 hover:bg-accent/30">
+                        <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(a.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-2">
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider ${
+                              a.event_type === "login"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                : "bg-secondary text-muted-foreground border border-border"
+                            }`}
+                          >
+                            {a.event_type === "login" ? "Login" : "Page view"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-xs font-mono text-muted-foreground">
+                          {a.path || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
