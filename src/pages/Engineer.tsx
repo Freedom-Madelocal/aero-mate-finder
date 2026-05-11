@@ -283,15 +283,6 @@ export default function Engineer() {
               for procurement and star items you reorder often.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Engineer</label>
-            <Input
-              value={engineerName}
-              onChange={(e) => setEngineerName(e.target.value)}
-              placeholder="Your name"
-              className="h-8 w-44 bg-secondary border-border text-sm"
-            />
-          </div>
         </div>
 
         {isEmpty ? (
