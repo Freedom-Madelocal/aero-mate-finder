@@ -159,7 +159,7 @@ export default function GlobalSearch() {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder="Search master specs…"
+        placeholder="Search specs or key spec #…"
         className="bg-secondary border border-border rounded-md pl-9 pr-10 py-1.5 text-sm text-foreground placeholder:text-muted-foreground w-56 lg:w-72 focus:outline-none focus:ring-1 focus:ring-ring"
       />
       <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-accent px-1.5 py-0.5 rounded hidden lg:block pointer-events-none">
