@@ -297,6 +297,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
       const specs: Partial<MasterSpec>[] = rawData.map((row) => {
         const out: Partial<MasterSpec> = {};
         const keySpecBuf: string[] = [];
+        const customerBuf: string[] = [];
         for (const [src, val] of Object.entries(row)) {
           const target = lookup.get(src);
           if (!target) continue;
@@ -305,14 +306,16 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
           if (fdef.type === "bool") (out as Record<string, unknown>)[target] = coerceBool(val);
           else if (fdef.type === "number") (out as Record<string, unknown>)[target] = coerceNumber(val);
           else if (fdef.type === "keyspec") keySpecBuf.push(...splitKeySpecCell(val));
+          else if (fdef.type === "customer") customerBuf.push(...splitKeySpecCell(val));
           else (out as Record<string, unknown>)[target] = val == null ? null : String(val);
         }
-        if (keySpecBuf.length > 0) {
-          // dedupe (case-insensitive)
+        const dedupe = (arr: string[]) => {
           const seen = new Map<string, string>();
-          for (const k of keySpecBuf) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
-          out.keySpecs = Array.from(seen.values());
-        }
+          for (const k of arr) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
+          return Array.from(seen.values());
+        };
+        if (keySpecBuf.length > 0) out.keySpecs = dedupe(keySpecBuf);
+        if (customerBuf.length > 0) out.customers = dedupe(customerBuf);
         return out;
       });
       const valid = specs.filter((s) => s.vendor && s.productName);
