@@ -855,37 +855,41 @@ function ChipFilter({
 
   return (
     <FilterSection title={title}>
-      <div className="space-y-2">
-        {singles.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {singles.map((opt) => <Pill key={opt} opt={opt} />)}
-          </div>
-        )}
-        {groups.map((g) => {
-          const selectedCount = g.options.filter((o) =>
-            selected.some((v) => canon(v) === canon(o)),
-          ).length;
-          return (
-            <details key={g.keyword} className="group/sub" open={selectedCount > 0}>
-              <summary className="flex items-center justify-between cursor-pointer list-none py-1 px-2 -mx-2 rounded hover:bg-accent/50">
-                <span className="text-[11px] text-foreground flex items-center gap-1.5">
-                  <ChevronDown className="w-3 h-3 transition-transform group-open/sub:rotate-0 -rotate-90" />
-                  {g.keyword}
-                  <span className="text-muted-foreground">({g.options.length})</span>
-                  {selectedCount > 0 && (
-                    <span className="text-[10px] font-mono px-1 rounded bg-foreground text-background">
-                      {selectedCount}
-                    </span>
-                  )}
-                </span>
-              </summary>
-              <div className="flex flex-wrap gap-1 pl-4 pt-1.5">
-                {g.options.map((opt) => <Pill key={opt} opt={opt} />)}
-              </div>
-            </details>
-          );
-        })}
-      </div>
+      {options.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground italic">{emptyHint}</p>
+      ) : (
+        <div className="space-y-2">
+          {singles.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {singles.map((opt) => <Pill key={opt} opt={opt} />)}
+            </div>
+          )}
+          {groups.map((g) => {
+            const selectedCount = g.options.filter((o) =>
+              selected.some((v) => canon(v) === canon(o)),
+            ).length;
+            return (
+              <details key={g.keyword} className="group/sub" open={selectedCount > 0}>
+                <summary className="flex items-center justify-between cursor-pointer list-none py-1 px-2 -mx-2 rounded hover:bg-accent/50">
+                  <span className="text-[11px] text-foreground flex items-center gap-1.5">
+                    <ChevronDown className="w-3 h-3 transition-transform group-open/sub:rotate-0 -rotate-90" />
+                    {g.keyword}
+                    <span className="text-muted-foreground">({g.options.length})</span>
+                    {selectedCount > 0 && (
+                      <span className="text-[10px] font-mono px-1 rounded bg-foreground text-background">
+                        {selectedCount}
+                      </span>
+                    )}
+                  </span>
+                </summary>
+                <div className="flex flex-wrap gap-1 pl-4 pt-1.5">
+                  {g.options.map((opt) => <Pill key={opt} opt={opt} />)}
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
     </FilterSection>
   );
 }
