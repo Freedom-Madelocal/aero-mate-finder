@@ -9,6 +9,7 @@ export interface Profile {
   email: string;
   full_name: string | null;
   organization_id: string | null;
+  avatar_url: string | null;
 }
 
 export interface DemoSettings {
