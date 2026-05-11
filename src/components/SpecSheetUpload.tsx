@@ -3,17 +3,22 @@ import {
   Upload,
   X,
   FileSpreadsheet,
+  FileText,
   AlertCircle,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { useServerFn } from "@tanstack/react-start";
 import { addMasterSpecs, type MasterSpec } from "@/data/masterSpecs";
+import { extractSpecsFromPdf } from "@/lib/specPdfExtract.functions";
 import { toast } from "sonner";
 
-/* Spec sheet uploader — parses CSV/XLSX and upserts into master_specs. */
+/* Spec sheet uploader — parses CSV/XLSX/PDF and upserts into master_specs.
+ * - Spreadsheet flow: column-mapping → ingest.
+ * - PDF flow: Lovable AI (Gemini 2.5 Pro) extracts canonical rows + profile tags
+ *   from section headings; user reviews & accepts/rejects rows. */
 
-// Source-column → MasterSpec field mapping. Each entry lists header aliases
-// (lowercased). Anything not matched is dropped (master schema is fixed).
 const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" }[] = [
   { key: "vendor", type: "text", aliases: ["vendor", "supplier", "manufacturer", "mfg", "brand"] },
   { key: "productName", type: "text", aliases: ["product name", "product", "grade", "material", "material name", "part number", "p/n"] },
@@ -73,23 +78,38 @@ function autoMap(header: string): keyof MasterSpec | null {
   return null;
 }
 
+type Mode = "spreadsheet" | "pdf";
+
+interface PdfReviewRow {
+  spec: Partial<MasterSpec>;
+  selected: boolean;
+}
+
 export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecSheetUploadProps) {
   const [step, setStep] = useState<1 | 2>(1);
+  const [mode, setMode] = useState<Mode>("spreadsheet");
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState("");
   const [rawData, setRawData] = useState<ParsedRow[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mappings, setMappings] = useState<{ source: string; target: keyof MasterSpec | null }[]>([]);
+  const [pdfRows, setPdfRows] = useState<PdfReviewRow[]>([]);
+  const [pdfProfiles, setPdfProfiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const extractPdf = useServerFn(extractSpecsFromPdf);
+
   const reset = useCallback(() => {
     setStep(1);
+    setMode("spreadsheet");
     setFileName("");
     setRawData([]);
     setHeaders([]);
     setMappings([]);
+    setPdfRows([]);
+    setPdfProfiles([]);
     setError(null);
     setIsProcessing(false);
     setIsDragging(false);
@@ -100,9 +120,10 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     onClose();
   };
 
-  const parseFile = async (file: File) => {
+  const parseSpreadsheet = async (file: File) => {
     setIsProcessing(true);
     setError(null);
+    setMode("spreadsheet");
     setFileName(file.name);
     try {
       const buf = await file.arrayBuffer();
@@ -127,21 +148,100 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     }
   };
 
-  const isValidFile = (f: File) =>
-    /\.(xlsx|xls|csv)$/i.test(f.name);
+  const parsePdf = async (file: File) => {
+    setIsProcessing(true);
+    setError(null);
+    setMode("pdf");
+    setFileName(file.name);
+    try {
+      const buf = await file.arrayBuffer();
+      // Convert to base64 in chunks (avoid large-string call stack issues)
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+      }
+      const fileBase64 = btoa(bin);
+      const result = await extractPdf({ data: { fileBase64, fileName: file.name } });
+      if (!result.rows || result.rows.length === 0) {
+        setError("AI did not find any products in this PDF.");
+        setIsProcessing(false);
+        return;
+      }
+      const reviewRows: PdfReviewRow[] = result.rows.map((r) => {
+        const hasIdentity = r.vendor && r.vendor !== "none given" && r.productName && r.productName !== "none given";
+        return {
+          selected: !!hasIdentity,
+          spec: {
+            vendor: r.vendor ?? undefined,
+            productName: r.productName ?? undefined,
+            productFamily: r.productFamily,
+            materialCategory: r.materialCategory,
+            resinChemistry: r.resinChemistry,
+            reinforcement: r.reinforcement,
+            productForm: r.productForm,
+            cureTemperatureC: r.cureTemperatureC,
+            cureTime: r.cureTime,
+            dryTgOnsetC: r.dryTgOnsetC,
+            wetTgC: r.wetTgC,
+            peakTgC: r.peakTgC,
+            maxServiceTemperatureC: r.maxServiceTemperatureC,
+            outLifeDays: r.outLifeDays,
+            freezerLifeMonths: r.freezerLifeMonths,
+            tmlPct: r.tmlPct,
+            cvcmPct: r.cvcmPct,
+            tensileLapShearMpa: r.tensileLapShearMpa,
+            tPeelN25mm: r.tPeelN25mm,
+            flatwiseTensionMpa: r.flatwiseTensionMpa,
+            climbingDrumPeelInLbIn: r.climbingDrumPeelInLbIn,
+            processMethod: r.processMethod,
+            ooaVboCapable: r.ooaVboCapable,
+            toughened: r.toughened,
+            flameRetardant: r.flameRetardant,
+            lowDielectric: r.lowDielectric,
+            lowMoistureAbsorption: r.lowMoistureAbsorption,
+            impactResistant: r.impactResistant,
+            highTemperature: r.highTemperature,
+            applications: r.applications,
+            qualificationsStandards: r.qualificationsStandards,
+            crossoverProduct: r.crossoverProduct,
+            crossoverVendor: r.crossoverVendor,
+            notes: r.notes,
+            minimumOrderQuantity: r.minimumOrderQuantity,
+            profiles: r.profiles,
+          },
+        };
+      });
+      setPdfRows(reviewRows);
+      setPdfProfiles(result.profilesDetected);
+      setIsProcessing(false);
+      setStep(2);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze PDF.");
+      setIsProcessing(false);
+    }
+  };
+
+  const isSpreadsheet = (f: File) => /\.(xlsx|xls|csv)$/i.test(f.name);
+  const isPdf = (f: File) => /\.pdf$/i.test(f.name);
+
+  const handleFile = (f: File) => {
+    if (isPdf(f)) return parsePdf(f);
+    if (isSpreadsheet(f)) return parseSpreadsheet(f);
+    setError("Please upload an Excel (.xlsx, .xls), CSV (.csv), or PDF (.pdf) file.");
+  };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const f = e.dataTransfer.files[0];
-    if (f && isValidFile(f)) parseFile(f);
-    else setError("Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.");
+    if (f) handleFile(f);
   };
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f && isValidFile(f)) parseFile(f);
-    else setError("Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.");
+    if (f) handleFile(f);
   };
 
   const coerceBool = (v: unknown): boolean => {
@@ -156,7 +256,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     return Number.isFinite(n) ? n : null;
   };
 
-  const handleIngest = async () => {
+  const handleIngestSpreadsheet = async () => {
     setIsProcessing(true);
     try {
       const lookup = new Map(mappings.filter((m) => m.target).map((m) => [m.source, m.target!]));
@@ -179,7 +279,30 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
         setIsProcessing(false);
         return;
       }
-      await addMasterSpecs(valid, fileName);
+      await addMasterSpecs(valid, fileName, "spreadsheet");
+      toast.success(`Added ${valid.length} spec${valid.length === 1 ? "" : "s"} from ${fileName}`);
+      onComplete?.();
+      handleClose();
+    } catch (err) {
+      toast.error("Failed to save specs", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+      setIsProcessing(false);
+    }
+  };
+
+  const handleIngestPdf = async () => {
+    setIsProcessing(true);
+    try {
+      const valid = pdfRows
+        .filter((r) => r.selected && r.spec.vendor && r.spec.productName)
+        .map((r) => r.spec);
+      if (valid.length === 0) {
+        toast.error("Select at least one row with both Vendor and Product Name.");
+        setIsProcessing(false);
+        return;
+      }
+      await addMasterSpecs(valid, fileName, "pdf");
       toast.success(`Added ${valid.length} spec${valid.length === 1 ? "" : "s"} from ${fileName}`);
       onComplete?.();
       handleClose();
@@ -197,20 +320,29 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
   const unmapped = mappings.length - mapped;
   const hasVendor = mappings.some((m) => m.target === "vendor");
   const hasProduct = mappings.some((m) => m.target === "productName");
+  const selectedCount = pdfRows.filter((r) => r.selected).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-secondary flex items-center justify-center">
-              <FileSpreadsheet className="w-4 h-4 text-muted-foreground" />
+              {mode === "pdf" ? (
+                <FileText className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 text-muted-foreground" />
+              )}
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground">Upload Spec Sheet</h2>
               <p className="text-xs text-muted-foreground">
-                {step === 1 ? "Add to the canonical master spec list" : "Confirm column mappings"}
+                {step === 1
+                  ? "Add to the canonical master spec list"
+                  : mode === "pdf"
+                    ? "Review AI-extracted products"
+                    : "Confirm column mappings"}
               </p>
             </div>
           </div>
@@ -234,7 +366,12 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                 {isProcessing ? (
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-10 h-10 text-muted-foreground animate-spin" />
-                    <p className="text-sm text-muted-foreground">Analyzing {fileName}...</p>
+                    <p className="text-sm text-muted-foreground">
+                      {mode === "pdf" ? `Analyzing ${fileName} with AI…` : `Analyzing ${fileName}…`}
+                    </p>
+                    {mode === "pdf" && (
+                      <p className="text-xs text-muted-foreground">This can take 20–60 seconds for large PDFs.</p>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
@@ -242,12 +379,15 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                       <Upload className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm text-foreground font-medium">Drop a spec sheet here, or click to browse</p>
+                      <p className="text-sm text-foreground font-medium">Drop a spec sheet or PDF here, or click to browse</p>
                       <p className="text-xs text-muted-foreground mt-1">.xlsx, .xls, .csv — must include Vendor and Product Name columns</p>
+                      <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> .pdf — AI extracts products and tags them by section (MRO, Interiors, …)
+                      </p>
                     </div>
                   </div>
                 )}
-                <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleSelect} className="hidden" />
+                <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv,.pdf" onChange={handleSelect} className="hidden" />
               </div>
               {error && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-[oklch(0.63_0.2_25_/_0.08)] border border-[oklch(0.63_0.2_25_/_0.2)]">
@@ -258,7 +398,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
             </div>
           )}
 
-          {step === 2 && (
+          {step === 2 && mode === "spreadsheet" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -313,22 +453,138 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
               </div>
             </div>
           )}
+
+          {step === 2 && mode === "pdf" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-4 py-3 flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-foreground font-medium">{fileName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {pdfRows.length} products extracted · {selectedCount} selected
+                      {pdfProfiles.length > 0 && <> · profiles: {pdfProfiles.join(", ")}</>}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPdfRows((rs) => rs.map((r) => ({ ...r, selected: true })))}
+                    className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    onClick={() => setPdfRows((rs) => rs.map((r) => ({ ...r, selected: false })))}
+                    className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="border border-border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-secondary/50 text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-medium w-8"></th>
+                      <th className="text-left px-3 py-2 font-medium">Vendor</th>
+                      <th className="text-left px-3 py-2 font-medium">Product</th>
+                      <th className="text-left px-3 py-2 font-medium">Category</th>
+                      <th className="text-left px-3 py-2 font-medium">Cure °C</th>
+                      <th className="text-left px-3 py-2 font-medium">Tg °C</th>
+                      <th className="text-left px-3 py-2 font-medium">Profiles</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pdfRows.map((r, i) => {
+                      const incomplete = !r.spec.vendor || r.spec.vendor === "none given" || !r.spec.productName || r.spec.productName === "none given";
+                      return (
+                        <tr key={i} className={`border-t border-border ${incomplete ? "bg-[oklch(0.7_0.15_70_/_0.04)]" : ""}`}>
+                          <td className="px-3 py-2">
+                            <input
+                              type="checkbox"
+                              checked={r.selected}
+                              disabled={incomplete}
+                              onChange={(e) =>
+                                setPdfRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, selected: e.target.checked } : x)))
+                              }
+                            />
+                          </td>
+                          <Cell value={r.spec.vendor} />
+                          <Cell value={r.spec.productName} bold />
+                          <Cell value={r.spec.materialCategory} />
+                          <Cell value={r.spec.cureTemperatureC} />
+                          <Cell value={r.spec.dryTgOnsetC ?? r.spec.peakTgC} />
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1">
+                              {(r.spec.profiles ?? []).length === 0 ? (
+                                <span className="text-xs text-muted-foreground italic">none</span>
+                              ) : (
+                                r.spec.profiles!.map((p) => (
+                                  <span key={p} className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary text-foreground">
+                                    {p}
+                                  </span>
+                                ))
+                              )}
+                              {incomplete && (
+                                <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--status-warning)]/15 text-[var(--status-warning)]">
+                                  incomplete
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fields marked <em>none given</em> were missing from the PDF — find that data and add it later, or edit the row in master specs.
+              </p>
+            </div>
+          )}
         </div>
 
         {step === 2 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-secondary/20">
             <button onClick={handleClose} className="text-sm text-muted-foreground hover:text-foreground">Cancel</button>
-            <button
-              onClick={handleIngest}
-              disabled={isProcessing || !hasVendor || !hasProduct}
-              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
-            >
-              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Add {rawData.length} row{rawData.length === 1 ? "" : "s"} to master list
-            </button>
+            {mode === "spreadsheet" ? (
+              <button
+                onClick={handleIngestSpreadsheet}
+                disabled={isProcessing || !hasVendor || !hasProduct}
+                className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
+              >
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Add {rawData.length} row{rawData.length === 1 ? "" : "s"} to master list
+              </button>
+            ) : (
+              <button
+                onClick={handleIngestPdf}
+                disabled={isProcessing || selectedCount === 0}
+                className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
+              >
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Add {selectedCount} selected to master list
+              </button>
+            )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function Cell({ value, bold }: { value: string | number | null | undefined; bold?: boolean }) {
+  const isMissing = value === null || value === undefined || value === "none given";
+  return (
+    <td className={`px-3 py-2 ${bold ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+      {isMissing ? (
+        <span className="text-xs italic text-muted-foreground">none given</span>
+      ) : (
+        String(value)
+      )}
+    </td>
   );
 }
