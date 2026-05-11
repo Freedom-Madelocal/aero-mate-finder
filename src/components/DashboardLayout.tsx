@@ -20,6 +20,7 @@ import { useOrgPresence, type OnlineMember } from "@/hooks/useOrgPresence";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import GlobalSearch from "@/components/GlobalSearch";
+import GuidedTour from "@/components/GuidedTour";
 
 const baseNavItems = [
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
