@@ -1,5 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save } from "lucide-react";
+import LandingEditor from "@/components/LandingEditor";
+import { useAuth } from "@/hooks/useAuth";
+import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 /*
