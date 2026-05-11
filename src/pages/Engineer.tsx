@@ -482,6 +482,7 @@ export default function Engineer() {
                   options={allKeySpecs}
                   selected={filters.keySpecs}
                   onChange={(v) => setFilters({ ...filters, keySpecs: v })}
+                  emptyHint="No key spec numbers tagged yet. Re-upload a spec sheet or PDF on the Master Specs page to populate (e.g. BMS5-101, AMS3819, MIL-PRF-83282)."
                 />
 
                 <ChipFilter
@@ -489,6 +490,7 @@ export default function Engineer() {
                   options={allCustomers}
                   selected={filters.customers}
                   onChange={(v) => setFilters({ ...filters, customers: v })}
+                  emptyHint="No customers tagged yet. Re-upload a spec sheet or PDF on the Master Specs page to populate (Boeing, Lockheed, Bell, Airbus, etc.)."
                 />
 
                 <ChipFilter
