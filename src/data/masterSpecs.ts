@@ -101,6 +101,7 @@ interface SpecRow {
   uploaded_from: string | null;
   frequent_reorder: boolean | null;
   engineer_default_name: string | null;
+  profiles: string[] | null;
 }
 
 const num = (v: number | string | null): number | null =>
