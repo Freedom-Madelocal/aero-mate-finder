@@ -95,6 +95,7 @@ const EMPTY_FILTERS: FilterState = {
   processMethods: [],
   profiles: [],
   keySpecs: [],
+  customers: [],
   cureC: {},
   peakTgC: {},
   maxServiceC: {},
