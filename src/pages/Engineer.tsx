@@ -247,6 +247,10 @@ export default function Engineer() {
         const ks = (s.keySpecs ?? []).map(canon);
         if (!filters.keySpecs.some((k) => ks.includes(canon(k)))) return false;
       }
+      if (filters.customers.length) {
+        const cs = (s.customers ?? []).map(canon);
+        if (!filters.customers.some((c) => cs.includes(canon(c)))) return false;
+      }
       if (!inRange(s.cureTemperatureC, filters.cureC)) return false;
       if (!inRange(s.peakTgC ?? s.dryTgOnsetC, filters.peakTgC)) return false;
       if (!inRange(s.maxServiceTemperatureC, filters.maxServiceC)) return false;
