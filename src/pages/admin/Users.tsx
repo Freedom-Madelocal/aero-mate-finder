@@ -276,6 +276,15 @@ export default function AdminUsers() {
                         </button>
                       )}
                     </td>
+                    <td className="p-3 text-xs whitespace-nowrap">
+                      {r.last_login_at ? (
+                        <span className="text-foreground" title={new Date(r.last_login_at).toLocaleString()}>
+                          {new Date(r.last_login_at).toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">never</span>
+                      )}
+                    </td>
                     <td className="p-3 text-xs">
                       {r.demo_mode ? (
                         r.first_login_at
@@ -295,11 +304,19 @@ export default function AdminUsers() {
                         Resend invite
                       </button>
                     </td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => openAudit(r)}
+                        className="inline-flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1 text-xs hover:bg-secondary"
+                      >
+                        <Activity className="w-3 h-3" /> Audit
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
               {rows.length === 0 && !busy && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground text-sm">No users yet.</td></tr>
+                <tr><td colSpan={7} className="p-6 text-center text-muted-foreground text-sm">No users yet.</td></tr>
               )}
             </tbody>
           </table>
