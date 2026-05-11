@@ -376,6 +376,24 @@ export default function Engineer() {
                   </div>
                 </FilterSection>
 
+                <FilterSection title="NASA E595">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(["any", "pass", "fail"] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setFilters({ ...filters, e595: v })}
+                        className={`text-xs px-2 py-1.5 rounded border ${
+                          filters.e595 === v
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {v === "any" ? "Any" : v === "pass" ? "Pass" : "Fail"}
+                      </button>
+                    ))}
+                  </div>
+                </FilterSection>
+
                 <ChipFilter
                   title="Profile"
                   options={[...PROFILE_OPTIONS]}
