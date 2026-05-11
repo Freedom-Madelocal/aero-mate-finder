@@ -18,6 +18,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as FreeGuideRouteImport } from './routes/free-guide'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as EngineerRouteImport } from './routes/engineer'
 import { Route as DocumentsRouteImport } from './routes/documents'
@@ -76,6 +77,11 @@ const LoginRoute = LoginRouteImport.update({
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FreeGuideRoute = FreeGuideRouteImport.update({
+  id: '/free-guide',
+  path: '/free-guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/free-guide': typeof FreeGuideRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/free-guide': typeof FreeGuideRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/documents': typeof DocumentsRoute
   '/engineer': typeof EngineerRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/free-guide': typeof FreeGuideRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/engineer'
     | '/forgot-password'
+    | '/free-guide'
     | '/inventory'
     | '/login'
     | '/master-specs'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/engineer'
     | '/forgot-password'
+    | '/free-guide'
     | '/inventory'
     | '/login'
     | '/master-specs'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/engineer'
     | '/forgot-password'
+    | '/free-guide'
     | '/inventory'
     | '/login'
     | '/master-specs'
@@ -313,6 +325,7 @@ export interface RootRouteChildren {
   DocumentsRoute: typeof DocumentsRoute
   EngineerRoute: typeof EngineerRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  FreeGuideRoute: typeof FreeGuideRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   MasterSpecsRoute: typeof MasterSpecsRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/free-guide': {
+      id: '/free-guide'
+      path: '/free-guide'
+      fullPath: '/free-guide'
+      preLoaderRoute: typeof FreeGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -515,6 +535,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentsRoute: DocumentsRoute,
   EngineerRoute: EngineerRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  FreeGuideRoute: FreeGuideRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   MasterSpecsRoute: MasterSpecsRoute,
