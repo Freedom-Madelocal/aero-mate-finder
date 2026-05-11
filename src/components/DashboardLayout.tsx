@@ -16,6 +16,7 @@ import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import ProfileDrawer from "@/components/ProfileDrawer";
 
 const baseNavItems = [
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
