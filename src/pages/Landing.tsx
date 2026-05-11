@@ -56,7 +56,7 @@ export default function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       {/* NAV */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <img src={traceumIcon} alt="" className="h-7 w-auto" />
             <img src={traceumWordmark} alt="Traceium" className="h-4 w-auto" />
@@ -96,13 +96,13 @@ export default function Landing() {
             backgroundSize: "48px 48px",
           }}
         />
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pt-20 pb-24 md:grid-cols-12 md:pt-28">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 sm:pb-24 md:grid-cols-12 md:gap-12 md:pt-28">
           <div className="md:col-span-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
               {c.hero_eyebrow}
             </div>
-            <h1 className="mt-6 text-5xl font-semibold tracking-tight md:text-6xl">
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               {c.hero_title_top}
               <br />
               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
