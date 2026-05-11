@@ -190,3 +190,46 @@ export default function FreeGuide() {
     </div>
   );
 }
+
+function GuidePreview({ url, name }: { url: string; name?: string }) {
+  const lower = url.toLowerCase().split("?")[0];
+  const isPdf = lower.endsWith(".pdf");
+  const isImage = /\.(png|jpe?g|webp|gif|svg)$/.test(lower);
+  const displayName = name || "Lead magnet preview";
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-secondary/30">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <FileText className="w-3.5 h-3.5" />
+          <span className="truncate max-w-[280px]">{displayName}</span>
+          <span className="text-[10px] uppercase tracking-wider opacity-70">Preview</span>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
+          Open full <ArrowRight className="w-3 h-3" />
+        </a>
+      </div>
+      <div className="relative bg-secondary/20" style={{ height: 360 }}>
+        {isPdf ? (
+          <iframe
+            src={`${url}#toolbar=0&navpanes=0&view=FitH`}
+            title={displayName}
+            className="w-full h-full"
+          />
+        ) : isImage ? (
+          <img src={url} alt={displayName} className="w-full h-full object-contain" />
+        ) : (
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground p-6 text-center">
+            Preview not available for this file type. Submit your work email to download.
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent" />
+      </div>
+    </div>
+  );
+}
