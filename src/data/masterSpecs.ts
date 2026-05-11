@@ -53,6 +53,7 @@ export interface MasterSpec {
   engineerDefaultName: string | null;
   profiles: string[];
   keySpecs: string[];
+  customers: string[];
 }
 
 export interface MasterSpecUpload {
