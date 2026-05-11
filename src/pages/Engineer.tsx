@@ -371,6 +371,7 @@ export default function Engineer() {
     filters.reinforcements.length + filters.forms.length + filters.processMethods.length +
     filters.profiles.length +
     filters.keySpecs.length +
+    filters.customers.length +
     Object.values(filters.flags).filter((v) => v !== undefined).length +
     [filters.cureC, filters.peakTgC, filters.maxServiceC, filters.outLifeDays, filters.tmlPct, filters.cvcmPct]
       .filter((r) => r.min !== undefined || r.max !== undefined).length +
