@@ -1,38 +1,65 @@
 ## Goal
 
-Replace the token-link invite flow with a real email invite: admin enters email + role, the user receives a branded email, clicks the link, sets a password, and lands in the app already in the right org with the right role.
+Extend the "Upload Spec Sheet" flow on the Master Specs page so users can drop a **PDF** in addition to CSV/XLSX. The PDF is sent to a server function that uses Lovable AI (Gemini 2.5 Pro) to extract a product table, including profile tags (e.g. MRO, Interiors) inferred from PDF section headings. The user reviews the extracted rows in the existing mapping/preview step and accepts or rejects them.
 
-## Flow
+## Schema changes
 
-1. Org admin / super admin opens the team / users page, enters email + role (+ org for super admin), clicks **Send invite**.
-2. Backend (edge function with service role) calls `supabase.auth.admin.inviteUserByEmail(email, { data: { organization_id, role, invited_by }, redirectTo: <app>/accept-invite })`.
-3. Supabase sends the invite email (using Lovable's auth email templates) with a recovery-style link.
-4. User clicks the link → lands on `/accept-invite` with a temporary session.
-5. `/accept-invite` shows a "Set your password" form (+ optional full name) and calls `supabase.auth.updateUser({ password, data: { full_name } })`.
-6. `handle_new_user` trigger (already exists) reads `organization_id` and `role` from the user metadata at signup time and wires up `profiles` + `user_roles` automatically.
-7. We mark the matching `org_invitations` row as accepted (for audit) via a SECURITY DEFINER RPC.
+`master_specs` table:
+- Add `profiles text[] not null default '{}'` — a row can belong to multiple profiles.
+- Add a GIN index on `profiles` for fast filtering.
 
-## Backend changes
+`master_spec_uploads` table:
+- Add `source_type text not null default 'spreadsheet'` (`'spreadsheet' | 'pdf'`) for audit.
 
-- New edge function `invite-user` (service role, JWT-verified):
-  - Inputs: `email`, `role`, `organization_id`.
-  - Authorization: caller must be `super_admin`, OR `org_admin` of the same `organization_id`.
-  - Inserts a row in `org_invitations` (for tracking).
-  - Calls `auth.admin.inviteUserByEmail` with `data: { organization_id, role }` and `redirectTo` pointing to `/accept-invite` on the current site origin.
-- New SECURITY DEFINER RPC `mark_invitation_accepted(_email text)` that flips `accepted_at` on any pending invite for that email (called from the accept-invite page after successful password set).
-- Auth email templates: scaffold Lovable's auth email templates so the **Invite user** email is on-brand. (Requires email domain — if not set up yet, surface the email setup dialog.)
+No RLS changes (existing public policies on these tables are unchanged).
 
-## Frontend changes
+## Backend: PDF extraction server function
 
-- `src/pages/OrgTeam.tsx` and `src/pages/admin/Users.tsx`: replace the local `org_invitations.insert` + clipboard-copy flow with a `supabase.functions.invoke("invite-user", { body: { email, role, organization_id } })` call. Toast "Invite email sent."
-- New route `src/routes/accept-invite.tsx` + page `src/pages/AcceptInvite.tsx`:
-  - Reads the session (Supabase establishes it from the invite link automatically).
-  - If no session → show "This invite link is invalid or expired."
-  - Form: full name + new password + confirm.
-  - On submit: `supabase.auth.updateUser({ password, data: { full_name } })`, then `supabase.rpc("mark_invitation_accepted", { _email })`, then redirect to the role's landing route.
-- Delete the now-unused `src/pages/Invite.tsx` and `src/routes/invite.$token.tsx` (token-link flow).
+New file `src/lib/specPdfExtract.functions.ts` (TanStack `createServerFn`, POST, `requireSupabaseAuth`):
 
-## Notes
+- Input: `{ fileBase64: string, fileName: string }` (validated with Zod, size capped ~15 MB).
+- Calls Lovable AI Gateway (`google/gemini-2.5-pro`) with the PDF as an inline part and a strict tool-call schema (`extract_specs`) so the model returns structured JSON, not prose.
+- System prompt instructs the model to:
+  - Walk the document section by section, treating section/category headings (e.g. "MRO", "Interiors", "Structural") as **profiles**.
+  - Emit one row per product, with every numeric/text field mapped to the existing `MasterSpec` fields used by `SpecSheetUpload`.
+  - For any missing field, return the literal string `"none given"` (numbers stay null; the UI surfaces "none given" for text fields and renders nulls as "none given" badges).
+  - Attach `profiles: string[]` per product based on the heading(s) the product appears under. A product that appears under multiple sections gets multiple profile tags.
+- Returns `{ rows: ExtractedSpec[], profilesDetected: string[] }`.
+- Surfaces 429 / 402 from the gateway as friendly errors.
 
-- The existing `handle_new_user` trigger already maps `raw_user_meta_data.organization_id` and `role` into `profiles` and `user_roles`, so passing them through `inviteUserByEmail`'s `data` field is enough — no extra wiring needed.
-- Email domain must be configured for the invite email to actually deliver; we'll surface the email-setup dialog if it isn't.
+## Frontend: SpecSheetUpload changes (`src/components/SpecSheetUpload.tsx`)
+
+- Accept `.pdf` in the dropzone, file picker, and validation.
+- Branch in `parseFile`:
+  - Spreadsheet path: unchanged.
+  - PDF path: read as base64, call the new server function, show a "Analyzing PDF with AI…" state, then jump to **Step 2** with rows pre-mapped (skip the column-mapping table since the AI returns canonical fields). Instead show a **review table** of extracted rows with their `profiles` chips and a per-row checkbox to accept/reject. Bulk select-all/clear at the top.
+- "Add N rows to master list" button ingests only checked rows via the existing `addMasterSpecs` helper, plus the new `profiles` array. Records `source_type='pdf'` on the upload row.
+- `addMasterSpecs` (`src/data/masterSpecs.ts`) and the `MasterSpec` type get a `profiles?: string[]` field wired through to the insert payload.
+
+## Frontend: Master Specs page filter (`src/pages/MasterSpecs.tsx`)
+
+- Compute the union of all `profiles` across loaded specs.
+- Render a chip row above the table: "All" + one chip per profile. Multi-select; a row matches if **any** of its profiles is selected. Empty selection = no profile filter.
+- Show profile chips in the row detail view.
+
+## Review-table UX (Step 2 for PDFs)
+
+```text
+┌─ filename.pdf — 42 products extracted ────────────────────┐
+│ [Select all] [Clear]                                       │
+├────┬─────────────────┬───────────────┬──────────────────┐
+│ ✓  │ Vendor          │ Product       │ Profiles         │
+├────┼─────────────────┼───────────────┼──────────────────┤
+│ ☑  │ Henkel          │ EA 9395       │ [MRO] [Repair]   │
+│ ☑  │ 3M              │ Scotch-Weld…  │ [Interiors]      │
+│ ☐  │ none given      │ none given    │ [Structural]     │
+└────┴─────────────────┴───────────────┴──────────────────┘
+[ Cancel ]                       [ Add 38 selected to master list ]
+```
+
+Rows with missing `vendor` or `product_name` are unchecked by default and flagged with an "incomplete" badge so the user knows to fix them externally.
+
+## Out of scope
+
+- Editing extracted rows inline (user accepts/rejects only this iteration; can re-upload a corrected PDF or edit via existing Master Specs editing).
+- Persisting the PDF file itself (only extracted data is stored).
