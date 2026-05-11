@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import ProfileDrawer from "@/components/ProfileDrawer";
 import MessageDialog from "@/components/MessageDialog";
 import { useOrgPresence, type OnlineMember } from "@/hooks/useOrgPresence";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const baseNavItems = [
