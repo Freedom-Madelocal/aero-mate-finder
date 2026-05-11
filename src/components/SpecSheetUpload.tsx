@@ -539,6 +539,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                       <th className="text-left px-3 py-2 font-medium">Cure °C</th>
                       <th className="text-left px-3 py-2 font-medium">Tg °C</th>
                       <th className="text-left px-3 py-2 font-medium">Key Specs</th>
+                      <th className="text-left px-3 py-2 font-medium">Customers</th>
                       <th className="text-left px-3 py-2 font-medium">Profiles</th>
                     </tr>
                   </thead>
