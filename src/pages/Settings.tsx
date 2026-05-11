@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import DashboardLayout from "@/components/DashboardLayout";
 import LandingEditor from "@/components/LandingEditor";
+import LeadMagnetEditor from "@/components/LeadMagnetEditor";
 import { useAuth } from "@/hooks/useAuth";
-import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save, Globe, ArrowLeft } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save, Globe, Download, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 /*
@@ -23,7 +24,10 @@ export default function Settings() {
     { icon: Users, label: "Users & Roles", enabled: false },
     { icon: Building2, label: "Facilities", enabled: false },
     ...(isSuperAdmin
-      ? [{ icon: Globe, label: "Landing Page", enabled: true }]
+      ? [
+          { icon: Globe, label: "Landing Page", enabled: true },
+          { icon: Download, label: "Lead Magnet", enabled: true },
+        ]
       : []),
   ];
 
@@ -72,6 +76,7 @@ export default function Settings() {
           {/* Settings content */}
           <div className="md:col-span-9 space-y-6 min-w-0">
             {active === "Landing Page" && isSuperAdmin && <LandingEditor />}
+            {active === "Lead Magnet" && isSuperAdmin && <LeadMagnetEditor />}
             {active === "Storage Thresholds" && (<div className="space-y-6">
             {/* Storage Thresholds */}
             <div className="bg-card border border-border rounded-lg">
