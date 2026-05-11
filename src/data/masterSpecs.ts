@@ -51,6 +51,7 @@ export interface MasterSpec {
   uploadedFrom: string | null;
   frequentReorder: boolean;
   engineerDefaultName: string | null;
+  profiles: string[];
 }
 
 export interface MasterSpecUpload {
