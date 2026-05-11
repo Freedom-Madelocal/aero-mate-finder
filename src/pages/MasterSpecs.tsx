@@ -57,6 +57,10 @@ export default function MasterSpecs() {
       if (chemistry !== "All" && s.resinChemistry !== chemistry) return false;
       if (form !== "All" && s.productForm !== form) return false;
       if (ooaOnly && !s.ooaVboCapable) return false;
+      if (activeProfiles.length > 0) {
+        const sp = s.profiles ?? [];
+        if (!activeProfiles.some((p) => sp.includes(p))) return false;
+      }
       if (inStockOnly) {
         const m = getInventoryMatch(s, materials);
         if (m.status !== "in-stock") return false;
@@ -66,10 +70,11 @@ export default function MasterSpecs() {
         s.vendor, s.productName, s.productFamily, s.materialCategory,
         s.resinChemistry, s.reinforcement, s.productForm, s.applications,
         s.qualificationsStandards, s.notes, s.crossoverProduct,
+        ...(s.profiles ?? []),
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly]);
+  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, activeProfiles]);
 
   const inInventoryCount = useMemo(
     () => specs.filter((s) => getInventoryMatch(s, materials).status !== "none").length,
