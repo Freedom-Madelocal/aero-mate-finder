@@ -238,57 +238,98 @@ export function useMasterSpecStore(): SpecStore {
   return snap;
 }
 
-/** Upsert a batch of specs (keyed on vendor + product_name) and log the upload. */
+/**
+ * Upsert a batch of specs (keyed on vendor + product_name) and log the upload.
+ *
+ * Merge semantics on duplicate (existing vendor + product_name match):
+ *   - Scalar text/number/boolean fields: keep the existing value when the new
+ *     row's value is missing ("none given" / null / empty); otherwise the new
+ *     value wins (so users can correct stale data by re-uploading).
+ *   - Array fields (key_specs, profiles): take the case-insensitive UNION of
+ *     existing + new values. New key spec numbers are merged in, never lost.
+ */
 export async function addMasterSpecs(
   specs: Partial<MasterSpec>[],
   fileName: string,
   sourceType: "spreadsheet" | "pdf" = "spreadsheet",
 ) {
   await hydrate();
-  const rows = specs
-    .filter((s) => s.vendor && s.productName)
-    .map((s) => ({
+  const incoming = specs.filter((s) => s.vendor && s.productName);
+  if (incoming.length === 0) return;
+
+  // Look up existing rows keyed by lowercased "vendor||product_name"
+  const keyOf = (vendor: string, product: string) =>
+    `${vendor.trim().toLowerCase()}||${product.trim().toLowerCase()}`;
+  const wanted = Array.from(new Set(incoming.map((s) => keyOf(s.vendor!, s.productName!))));
+  const vendors = Array.from(new Set(incoming.map((s) => s.vendor!.trim())));
+  const products = Array.from(new Set(incoming.map((s) => s.productName!.trim())));
+  const existingResp = await supabase
+    .from("master_specs" as never)
+    .select("*")
+    .in("vendor", vendors as never)
+    .in("product_name", products as never);
+  const existingMap = new Map<string, MasterSpec>();
+  if (!existingResp.error && Array.isArray(existingResp.data)) {
+    for (const r of existingResp.data as unknown as SpecRow[]) {
+      const k = keyOf(r.vendor, r.product_name);
+      if (wanted.includes(k)) existingMap.set(k, rowToSpec(r));
+    }
+  }
+
+  const pickText = (incomingV: unknown, existingV: string | null): string | null => {
+    if (!isMissing(incomingV)) return String(incomingV);
+    return existingV;
+  };
+  const pickNum = (incomingV: number | null | undefined, existingV: number | null) =>
+    incomingV === null || incomingV === undefined ? existingV : incomingV;
+  const pickBool = (incomingV: boolean | undefined, existingV: boolean) =>
+    incomingV === undefined ? existingV : !!incomingV;
+
+  const rows = incoming.map((s) => {
+    const existing = existingMap.get(keyOf(s.vendor!, s.productName!));
+    const e = existing ?? null;
+    return {
       vendor: s.vendor!,
       product_name: s.productName!,
-      product_family: s.productFamily ?? null,
-      material_category: s.materialCategory ?? null,
-      resin_chemistry: s.resinChemistry ?? null,
-      reinforcement: s.reinforcement ?? null,
-      product_form: s.productForm ?? null,
-      cure_temperature_c: s.cureTemperatureC ?? null,
-      cure_time: s.cureTime ?? null,
-      dry_tg_onset_c: s.dryTgOnsetC ?? null,
-      wet_tg_c: s.wetTgC ?? null,
-      peak_tg_c: s.peakTgC ?? null,
-      max_service_temperature_c: s.maxServiceTemperatureC ?? null,
-      out_life_days: s.outLifeDays ?? null,
-      freezer_life_months: s.freezerLifeMonths ?? null,
-      tml_pct: s.tmlPct ?? null,
-      cvcm_pct: s.cvcmPct ?? null,
-      tensile_lap_shear_mpa: s.tensileLapShearMpa ?? null,
-      t_peel_n_per_25mm: s.tPeelN25mm ?? null,
-      flatwise_tension_mpa: s.flatwiseTensionMpa ?? null,
-      climbing_drum_peel_in_lb_per_in: s.climbingDrumPeelInLbIn ?? null,
-      process_method: s.processMethod ?? null,
-      ooa_vbo_capable: !!s.ooaVboCapable,
-      toughened: !!s.toughened,
-      flame_retardant: !!s.flameRetardant,
-      low_dielectric: !!s.lowDielectric,
-      low_moisture_absorption: !!s.lowMoistureAbsorption,
-      impact_resistant: !!s.impactResistant,
-      high_temperature: !!s.highTemperature,
-      applications: s.applications ?? null,
-      qualifications_standards: s.qualificationsStandards ?? null,
-      crossover_product: s.crossoverProduct ?? null,
-      crossover_vendor: s.crossoverVendor ?? null,
-      notes: s.notes ?? null,
-      minimum_order_quantity: s.minimumOrderQuantity ?? null,
-      source_document: s.sourceDocument ?? null,
+      product_family: pickText(s.productFamily, e?.productFamily ?? null),
+      material_category: pickText(s.materialCategory, e?.materialCategory ?? null),
+      resin_chemistry: pickText(s.resinChemistry, e?.resinChemistry ?? null),
+      reinforcement: pickText(s.reinforcement, e?.reinforcement ?? null),
+      product_form: pickText(s.productForm, e?.productForm ?? null),
+      cure_temperature_c: pickNum(s.cureTemperatureC, e?.cureTemperatureC ?? null),
+      cure_time: pickText(s.cureTime, e?.cureTime ?? null),
+      dry_tg_onset_c: pickNum(s.dryTgOnsetC, e?.dryTgOnsetC ?? null),
+      wet_tg_c: pickNum(s.wetTgC, e?.wetTgC ?? null),
+      peak_tg_c: pickNum(s.peakTgC, e?.peakTgC ?? null),
+      max_service_temperature_c: pickNum(s.maxServiceTemperatureC, e?.maxServiceTemperatureC ?? null),
+      out_life_days: pickNum(s.outLifeDays, e?.outLifeDays ?? null),
+      freezer_life_months: pickNum(s.freezerLifeMonths, e?.freezerLifeMonths ?? null),
+      tml_pct: pickNum(s.tmlPct, e?.tmlPct ?? null),
+      cvcm_pct: pickNum(s.cvcmPct, e?.cvcmPct ?? null),
+      tensile_lap_shear_mpa: pickNum(s.tensileLapShearMpa, e?.tensileLapShearMpa ?? null),
+      t_peel_n_per_25mm: pickNum(s.tPeelN25mm, e?.tPeelN25mm ?? null),
+      flatwise_tension_mpa: pickNum(s.flatwiseTensionMpa, e?.flatwiseTensionMpa ?? null),
+      climbing_drum_peel_in_lb_per_in: pickNum(s.climbingDrumPeelInLbIn, e?.climbingDrumPeelInLbIn ?? null),
+      process_method: pickText(s.processMethod, e?.processMethod ?? null),
+      ooa_vbo_capable: pickBool(s.ooaVboCapable, e?.ooaVboCapable ?? false),
+      toughened: pickBool(s.toughened, e?.toughened ?? false),
+      flame_retardant: pickBool(s.flameRetardant, e?.flameRetardant ?? false),
+      low_dielectric: pickBool(s.lowDielectric, e?.lowDielectric ?? false),
+      low_moisture_absorption: pickBool(s.lowMoistureAbsorption, e?.lowMoistureAbsorption ?? false),
+      impact_resistant: pickBool(s.impactResistant, e?.impactResistant ?? false),
+      high_temperature: pickBool(s.highTemperature, e?.highTemperature ?? false),
+      applications: pickText(s.applications, e?.applications ?? null),
+      qualifications_standards: pickText(s.qualificationsStandards, e?.qualificationsStandards ?? null),
+      crossover_product: pickText(s.crossoverProduct, e?.crossoverProduct ?? null),
+      crossover_vendor: pickText(s.crossoverVendor, e?.crossoverVendor ?? null),
+      notes: pickText(s.notes, e?.notes ?? null),
+      minimum_order_quantity: pickText(s.minimumOrderQuantity, e?.minimumOrderQuantity ?? null),
+      source_document: pickText(s.sourceDocument, e?.sourceDocument ?? null),
       uploaded_from: fileName,
-      profiles: Array.isArray(s.profiles) ? s.profiles : [],
-    }));
-
-  if (rows.length === 0) return;
+      profiles: dedupeStrings([...(e?.profiles ?? []), ...(Array.isArray(s.profiles) ? s.profiles : [])]),
+      key_specs: dedupeStrings([...(e?.keySpecs ?? []), ...(Array.isArray(s.keySpecs) ? s.keySpecs : [])]),
+    };
+  });
 
   const up = await supabase
     .from("master_specs" as never)
