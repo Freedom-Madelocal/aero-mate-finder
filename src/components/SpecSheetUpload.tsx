@@ -199,9 +199,9 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
   const hasProduct = mappings.some((m) => m.target === "productName");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-secondary flex items-center justify-center">

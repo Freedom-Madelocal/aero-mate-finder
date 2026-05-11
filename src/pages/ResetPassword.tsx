@@ -22,7 +22,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-sm">
         <h2 className="text-2xl font-semibold mb-6">Set a new password</h2>
         <form onSubmit={handle} className="space-y-4">

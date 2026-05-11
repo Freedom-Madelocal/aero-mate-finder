@@ -56,7 +56,7 @@ export default function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       {/* NAV */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <img src={traceumIcon} alt="" className="h-7 w-auto" />
             <img src={traceumWordmark} alt="Traceium" className="h-4 w-auto" />
@@ -96,13 +96,13 @@ export default function Landing() {
             backgroundSize: "48px 48px",
           }}
         />
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pt-20 pb-24 md:grid-cols-12 md:pt-28">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 sm:pb-24 md:grid-cols-12 md:gap-12 md:pt-28">
           <div className="md:col-span-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
               {c.hero_eyebrow}
             </div>
-            <h1 className="mt-6 text-5xl font-semibold tracking-tight md:text-6xl">
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               {c.hero_title_top}
               <br />
               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -168,7 +168,7 @@ export default function Landing() {
 
       {/* PROBLEM */}
       <section id="problem" className="border-b border-border/60">
-        <div className="mx-auto max-w-7xl px-6 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.problem_eyebrow}</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
@@ -205,7 +205,7 @@ export default function Landing() {
 
       {/* PLATFORM */}
       <section id="platform" className="border-b border-border/60 bg-secondary/20">
-        <div className="mx-auto max-w-7xl px-6 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-5">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.platform_eyebrow}</p>
@@ -253,7 +253,7 @@ export default function Landing() {
 
       {/* FEATURES — engineer-first */}
       <section id="features" className="border-b border-border/60">
-        <div className="mx-auto max-w-7xl px-6 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-6">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.features_eyebrow}</p>
@@ -321,7 +321,7 @@ export default function Landing() {
 
       {/* PROCUREMENT */}
       <section id="procurement" className="border-b border-border/60 bg-secondary/20">
-        <div className="mx-auto max-w-7xl px-6 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="order-2 md:order-1 md:col-span-6">
               <div className="rounded-xl border border-border bg-card p-6">
@@ -377,7 +377,7 @@ export default function Landing() {
 
       {/* SOCIAL PROOF / METRICS */}
       <section className="border-b border-border/60">
-        <div className="mx-auto max-w-7xl px-6 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14 sm:py-20">
           <div className="grid gap-8 md:grid-cols-4">
             {[
               ["200+", "Aerospace specs catalogued at launch"],
@@ -396,7 +396,7 @@ export default function Landing() {
 
       {/* DEMO FORM */}
       <section id="demo" className="border-b border-border/60">
-        <div className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">

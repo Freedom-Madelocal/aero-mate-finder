@@ -43,10 +43,10 @@ export default function Settings() {
           </p>
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Left nav */}
-          <div className="col-span-3">
-            <nav className="space-y-1">
+          <div className="md:col-span-3">
+            <nav className="flex md:block overflow-x-auto md:overflow-visible gap-1 md:gap-0 md:space-y-1 pb-1 md:pb-0">
               {navItems.map((item) => {
                 const isActive = active === item.label;
                 return (
@@ -55,7 +55,7 @@ export default function Settings() {
                     onClick={() =>
                       item.enabled ? setActive(item.label) : toast("Section coming soon")
                     }
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                    className={`shrink-0 md:w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors ${
                       isActive
                         ? "bg-accent text-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -70,7 +70,7 @@ export default function Settings() {
           </div>
 
           {/* Settings content */}
-          <div className="col-span-9 space-y-6">
+          <div className="md:col-span-9 space-y-6 min-w-0">
             {active === "Landing Page" && isSuperAdmin && <LandingEditor />}
             {active === "Storage Thresholds" && (<div className="space-y-6">
             {/* Storage Thresholds */}

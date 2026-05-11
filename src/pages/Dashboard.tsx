@@ -124,7 +124,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Key metrics row */}
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               <StatusTooltip content={METRIC_TOOLTIPS.activeLots}>
                 <div className="bg-card border border-border rounded-lg p-4 w-full">
                   <div className="flex items-center justify-between mb-3">
@@ -184,7 +184,7 @@ export default function Dashboard() {
             </div>
 
             {/* Main content grid */}
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Material Health Overview */}
               <div className="col-span-5 bg-card border border-border rounded-lg p-5">
                 <div className="flex items-center justify-between mb-4">
@@ -335,7 +335,7 @@ export default function Dashboard() {
               </div>
 
               {topMovers.length > 0 ? (
-                <div className="grid grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                   {topMovers.map((m: Material) => {
                     const mLots = lots.filter((l: MaterialLot) => l.materialId === m.id);
                     const hasAlert = mLots.some((l) => l.status === "critical" || l.status === "expired");

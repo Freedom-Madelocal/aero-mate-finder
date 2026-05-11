@@ -1,83 +1,73 @@
 
-# User Management & Auth Plan
+# Mobile & Responsive Pass
 
-## 1. Backend (Lovable Cloud)
+Goal: make the entire app usable on phones and refined on tablets, while keeping the desktop view (≥1024px) pixel-identical.
 
-**Enums**
-- `app_role`: `super_admin`, `org_admin`, `engineer`, `procurement`, `dev`, `integrator`
+Breakpoints (Tailwind defaults):
+- Mobile: `<768px` — major changes
+- Tablet: `768–1023px` — light tweaks
+- Desktop: `≥1024px` — unchanged
 
-**Tables**
-- `organizations`: `id`, `name`, `slug`, `created_at`, `created_by`
-- `profiles`: `id` (= `auth.users.id`), `email`, `full_name`, `organization_id` (nullable for super_admin/dev), `created_at`
-- `user_roles`: `id`, `user_id`, `role` (app_role), unique(`user_id`, `role`)
-- `user_demo_settings`: `user_id` PK, `demo_mode` bool, `first_login_at` timestamptz nullable, `extension_requested_at` timestamptz nullable
-- `org_invitations`: `id`, `organization_id`, `email`, `role`, `token`, `invited_by`, `expires_at`, `accepted_at`
+## 1. App shell (`DashboardLayout.tsx`)
 
-**Security definer functions**
-- `has_role(_user_id, _role)`
-- `is_super_admin(_user_id)`
-- `get_user_org(_user_id)` → uuid
-- `is_demo_active(_user_id)` → bool (true if `demo_mode=false` OR within 48h of `first_login_at`)
+- Replace the always-visible sidebar with a responsive shell:
+  - Desktop (`lg:`): current sidebar + top bar, unchanged.
+  - Tablet: sidebar stays in icon-collapsed mode by default (existing `sidebarExpanded` toggle still works).
+  - Mobile: sidebar hidden; hamburger button in the top bar opens it as a slide-in drawer (using shadcn `Sheet`). Drawer contains the same nav items + Settings link.
+- Top bar on mobile: hamburger (left) → small Traceium icon → bell + avatar (right). Search input moves into the drawer (or hidden behind a search icon — minor; will go with hidden on mobile).
+- Body padding: `p-6` → `p-4 md:p-6`.
+- "All systems nominal" pill hidden on mobile (icon dot only).
 
-**RLS (high level, plain English)**
-- `profiles`: a user can read/update their own profile; super admins can read/update all; org admins can read profiles in their organization.
-- `organizations`: super admins manage all; org admin can read/update their own org.
-- `user_roles`: only super admins can write; users can read their own roles; org admins can read roles inside their org.
-- `user_demo_settings`: super admins manage all; user can read own.
-- `org_invitations`: super admin all; org admin manages invites in their org; invited email can read by token.
+## 2. Landing page (`Landing.tsx`)
 
-**Trigger**
-- On `auth.users` insert → create `profiles` row from metadata (email, full_name, organization_id from invite).
+- Hero: stacks vertically under `md`. Video moves below copy. CTAs become full-width buttons.
+- Section grids (Problem / Platform / Engineer / Procurement): `md:grid-cols-2` → single column on mobile with reduced gap.
+- Typography scales down: `text-6xl` → `text-4xl sm:text-5xl lg:text-6xl`.
+- Header nav: condense to logo + "Book a demo" CTA only on mobile.
+- Demo form: full-width inputs, single column.
 
-## 2. Auth flow
+## 3. Auth + simple pages
 
-- Email + password only (no Google, per request).
-- Email confirmation **disabled** for now (faster onboarding).
-- Public `/login` page (linked from landing footer). Email/password sign in only — no public signup form.
-- Secret `/console` keeps its terminal UI; "log in" option leads to a console-styled login form. Same Supabase auth backend; after sign-in we additionally check `is_super_admin`. If not super admin, sign them out and show "access denied". (Domain restriction deferred per your note.)
-- `/signup` only reachable via invite link: `/invite/:token` — pre-fills email, sets organization + role from invitation, creates user.
+`Login.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`, `Invite.tsx`, `DemoExpired.tsx`, `NotFound.tsx`:
+- Card containers get `w-full max-w-md mx-auto px-4`.
+- Inputs full-width, larger tap targets (`h-11` on mobile).
 
-## 3. Roles & landing pages
+## 4. Data-table pages — hybrid (cards on mobile, table on tablet+)
 
-After login, redirect by primary role:
-- `super_admin`, `org_admin`, `dev`, `integrator` → `/dashboard`
-- `engineer` → `/engineer`
-- `procurement` → `/procurement`
+Affected: `Inventory.tsx`, `Procurement.tsx`, `Engineer.tsx`, `Orders.tsx`, `Suppliers.tsx`, `MasterSpecs.tsx`, `Documents.tsx`, `admin/Users.tsx`, `admin/Organizations.tsx`, `OrgTeam.tsx`.
 
-All roles get full access for now (route guard just requires authenticated). Per-role permissions can be tightened later.
+Pattern per page:
+- Wrap existing `<table>` in `<div className="hidden md:block overflow-x-auto">` so it stays a table on tablet+ with horizontal scroll if needed.
+- Add a `<div className="md:hidden space-y-3">` that renders each row as a `Card` with key fields stacked label/value, and the same row actions (checkbox, buttons, status badges) on the right.
+- Filter/search bars above tables: stack vertically on mobile, full-width controls.
 
-## 4. Demo mode
+## 5. Detail / form pages
 
-- Toggle on each non-super-admin user (managed in admin panel).
-- On first successful login, if `demo_mode=true` and `first_login_at` is null → set it to `now()`.
-- On every login, if demo and `now() - first_login_at > 48h` → sign out and route to `/demo-expired` page with a "Request extension" button (writes `extension_requested_at` and notifies super admin via a row super admins see in their dashboard).
-- Super admin can toggle `demo_mode` off (or reset `first_login_at`) to restore access.
+- `MaterialDetail.tsx`: multi-column spec grid → single column on mobile; sticky action bar becomes a bottom sheet.
+- `Settings.tsx`: tabs already responsive in shadcn; ensure tab list scrolls horizontally on narrow screens; form fields full-width.
+- `LandingEditor.tsx`: textareas full-width; section accordion already works.
+- `Dashboard.tsx`, `Compliance.tsx`, `Console.tsx`: KPI cards `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`.
 
-## 5. UI to build
+## 6. Dialogs
 
-- **Landing footer**: add "Log in" link → `/login`.
-- **`/login`**: email + password, "Forgot password" → `/forgot-password` → `/reset-password`.
-- **`/console` login option**: terminal-styled form, same Supabase signIn; super-admin enforcement.
-- **`/invite/:token`**: accept invite, set password, create account.
-- **`/demo-expired`**: locked screen with extension request button.
-- **`/admin/users`** (super_admin only): list all users, change roles, assign org, toggle demo, reset demo timer, view extension requests.
-- **`/admin/organizations`** (super_admin only): CRUD orgs.
-- **`/org/team`** (org_admin): list org members, invite by email + role (engineer/procurement/org_admin), toggle demo per user, revoke invites.
-- **Auth context / route guards**: `_authenticated` layout route + role-aware redirect on `/`.
+`ManusDialog`, `VendorContactsDialog`, `SpecSheetUpload`, `StockReportUpload`:
+- Add `max-h-[90vh] overflow-y-auto` and `w-[95vw] sm:max-w-lg` so they fit on phone screens.
 
-## 6. Bootstrap
+## 7. Shared utilities
 
-- After migration, you (the first user) sign up via a one-time bootstrap: we'll insert your email into `user_roles` as `super_admin` via an insert call once you give us the email to seed.
+- Add a small `useIsMobile` consolidation (already two duplicate files exist — `use-mobile.tsx` + `useMobile.tsx`); will keep both untouched to avoid rename risk and just import from `useMobile.tsx` where needed.
 
-## Technical notes
+## What stays identical on desktop
 
-- Use `onAuthStateChange` + `getSession` pattern; store session in Supabase client (already configured).
-- Demo enforcement runs in `_authenticated` `beforeLoad` via a server function that checks `is_demo_active`.
-- Invite tokens: random 32-byte url-safe; validated server-side; single-use.
-- All role checks in RLS go through `has_role` security-definer to avoid recursion.
+Every `lg:` and unprefixed class above keeps the current desktop look. No changes to colors, fonts, spacing tokens, sidebar widths, table column counts, or any layout at ≥1024px.
 
-## Out of scope (for later)
+## Out of scope
 
-- Per-role granular permissions (everyone gets full access now).
-- @traceium.com domain restriction on `/console`.
-- Email delivery for invites (we'll show the invite link in the UI for now; wire email later).
+- No business logic changes.
+- No new routes, no DB changes.
+- No redesign of components — just responsive behavior.
+
+## Risks / things I'll flag if encountered
+
+- If a table has truly too many columns to scroll comfortably even on tablet, I'll note it and may hide low-priority columns under `lg:`.
+- Master Specs has a wide filter sidebar; on mobile it will become a collapsible "Filters" sheet — confirming this counts as a structural change worth noting.

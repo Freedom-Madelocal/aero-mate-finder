@@ -26,7 +26,7 @@ export default function DemoExpired() {
   const requested = !!demo?.extension_requested_at;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-md text-center">
         <h1 className="text-2xl font-semibold mb-3">Demo period ended</h1>
         <p className="text-sm text-muted-foreground mb-6">

@@ -76,7 +76,7 @@ export default function Invite() {
   if (!invite) return <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">Invitation not available.</div>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-sm">
         <h2 className="text-2xl font-semibold mb-2">Accept invitation</h2>
         <p className="text-sm text-muted-foreground mb-6">Joining as <span className="text-foreground">{invite.role}</span> · {invite.email}</p>

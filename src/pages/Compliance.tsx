@@ -111,7 +111,7 @@ export default function Compliance() {
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatusTooltip content={STATUS_TOOLTIPS["compliance-pass"]}>
                 <div className="bg-card border border-border rounded-lg p-4 w-full">
                   <div className="flex items-center gap-2 mb-2">
