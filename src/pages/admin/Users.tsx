@@ -117,6 +117,25 @@ export default function AdminUsers() {
     load();
   };
 
+  const resendInvite = async (r: Row) => {
+    if (!r.organization_id) return toast.error("Assign an organization first.");
+    const role = (r.roles[0] as AppRole) || "engineer";
+    const { data, error } = await supabase.functions.invoke("invite-user", {
+      body: {
+        email: r.email.trim().toLowerCase(),
+        role,
+        organization_id: r.organization_id,
+        redirectTo: `${window.location.origin}/accept-invite`,
+      },
+    });
+    if (error || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error || error?.message || "Failed to resend";
+      return toast.error(msg);
+    }
+    const mode = (data as { mode?: string } | null)?.mode;
+    toast.success(mode === "recovery" ? "Password setup email resent." : "Invite email resent.");
+  };
+
   if (loading || !isSuperAdmin) return <div className="min-h-screen bg-background" />;
 
   return (
@@ -226,6 +245,13 @@ export default function AdminUsers() {
                       {r.extension_requested_at && (
                         <div className="mt-1 text-amber-400">⚠ extension requested {new Date(r.extension_requested_at).toLocaleDateString()}</div>
                       )}
+                      <button
+                        onClick={() => resendInvite(r)}
+                        className="mt-2 block text-xs text-muted-foreground hover:text-foreground underline"
+                        title="Resend invite / password setup email"
+                      >
+                        Resend invite
+                      </button>
                     </td>
                   </tr>
                 );
