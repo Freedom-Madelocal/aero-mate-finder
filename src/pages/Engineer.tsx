@@ -373,6 +373,13 @@ export default function Engineer() {
                 </FilterSection>
 
                 <ChipFilter
+                  title="Profile"
+                  options={[...PROFILE_OPTIONS]}
+                  selected={filters.profiles}
+                  onChange={(v) => setFilters({ ...filters, profiles: v })}
+                />
+
+                <ChipFilter
                   title="Vendor" options={vendors}
                   selected={filters.vendors}
                   onChange={(v) => setFilters({ ...filters, vendors: v })}
