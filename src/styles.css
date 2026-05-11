@@ -84,6 +84,13 @@
   --status-warning: oklch(0.75 0.15 75);
   --status-critical: oklch(0.63 0.2 25);
   --status-info: oklch(0.7 0.1 250);
+
+  /* Checkbox accent — dark green */
+  --checkbox-accent: oklch(0.42 0.13 150);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--checkbox-accent);
 }
 
 @layer base {
