@@ -161,9 +161,8 @@ export default function GuidedTour() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={finish} />
-      <div className="relative w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[100] pointer-events-none flex items-end justify-end p-4 sm:p-6">
+      <div className="pointer-events-auto relative w-full max-w-sm bg-card border border-border rounded-xl shadow-2xl overflow-hidden ring-1 ring-foreground/5">
         <button
           onClick={finish}
           disabled={saving}
