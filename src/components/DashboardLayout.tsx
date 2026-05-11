@@ -9,7 +9,8 @@ import {
   ShoppingBasket,
   Menu,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { logPageView } from "@/lib/userActivity";
 import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
 import { useAuth } from "@/hooks/useAuth";
