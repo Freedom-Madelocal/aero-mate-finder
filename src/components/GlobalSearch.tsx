@@ -11,6 +11,28 @@ interface Suggestion {
 }
 
 function scoreSpec(s: MasterSpec, q: string): Suggestion | null {
+  // Key Spec exact (or near-exact) match wins above everything — this is the
+  // universal/OEM number a user typically searches by.
+  for (const k of s.keySpecs ?? []) {
+    const lk = k.toLowerCase();
+    if (lk === q) {
+      return {
+        spec: s,
+        label: s.productName,
+        sub: `${s.vendor} · Key Spec ${k}`,
+        score: 1000,
+      };
+    }
+    if (lk.includes(q)) {
+      return {
+        spec: s,
+        label: s.productName,
+        sub: `${s.vendor} · Key Spec ${k}`,
+        score: 500,
+      };
+    }
+  }
+
   const fields: { val: string | null | undefined; weight: number }[] = [
     { val: s.productName, weight: 100 },
     { val: s.productFamily, weight: 60 },
