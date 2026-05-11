@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Engineer from "@/pages/Engineer";
 
+interface EngineerSearch {
+  spec?: string;
+  q?: string;
+}
+
 export const Route = createFileRoute("/engineer")({
+  validateSearch: (search: Record<string, unknown>): EngineerSearch => ({
+    spec: typeof search.spec === "string" ? search.spec : undefined,
+    q: typeof search.q === "string" ? search.q : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Engineer Workspace — Traceum" },
