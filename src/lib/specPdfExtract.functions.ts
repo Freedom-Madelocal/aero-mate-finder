@@ -137,6 +137,7 @@ function normalize(r: z.infer<typeof ExtractedSpecSchema>): ExtractedSpec {
     minimumOrderQuantity: txt(r.minimumOrderQuantity),
     profiles: Array.isArray(r.profiles) ? r.profiles.filter((p): p is string => typeof p === "string" && p.trim().length > 0) : [],
     keySpecs: Array.isArray(r.keySpecs) ? r.keySpecs.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
+    customers: Array.isArray(r.customers) ? r.customers.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
   };
 }
 
