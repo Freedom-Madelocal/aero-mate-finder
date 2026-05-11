@@ -530,7 +530,7 @@ export default function Engineer() {
                                 <button
                                   onClick={() => handleStar(spec)}
                                   className={`p-1 rounded hover:bg-secondary transition-colors ${
-                                    spec.frequentReorder ? "text-[var(--status-warning)]" : "text-muted-foreground/40"
+                                    spec.frequentReorder ? "text-[var(--metal-silver)] drop-shadow-[0_0_2px_rgba(255,255,255,0.25)]" : "text-muted-foreground/40"
                                   }`}
                                   aria-label={spec.frequentReorder ? "Unstar" : "Mark frequent reorder"}
                                   title={spec.frequentReorder ? "Frequent reorder — starred" : "Mark as frequent reorder"}
