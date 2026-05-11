@@ -292,7 +292,8 @@ export default function Engineer() {
     Object.values(filters.flags).filter((v) => v !== undefined).length +
     [filters.cureC, filters.peakTgC, filters.maxServiceC, filters.outLifeDays, filters.tmlPct, filters.cvcmPct]
       .filter((r) => r.min !== undefined || r.max !== undefined).length +
-    (filters.inventory !== "any" ? 1 : 0);
+    (filters.inventory !== "any" ? 1 : 0) +
+    (filters.e595 !== "any" ? 1 : 0);
 
   return (
     <DashboardLayout>
