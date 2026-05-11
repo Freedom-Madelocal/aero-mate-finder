@@ -675,6 +675,34 @@ export default function Engineer() {
 
 /* --- Filter sub-components --- */
 
+function SortHeader({
+  sortKey, sort, onClick, align = "left", className = "", title, children,
+}: {
+  sortKey: string;
+  sort: { key: string; dir: "asc" | "desc" };
+  onClick: (k: never) => void;
+  align?: "left" | "center" | "right";
+  className?: string;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const active = sort.key === sortKey;
+  const arrow = active ? (sort.dir === "asc" ? "▲" : "▼") : "";
+  const alignCls = align === "center" ? "text-center justify-center" : align === "right" ? "text-right justify-end" : "text-left justify-start";
+  return (
+    <th className={`${align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left"} py-2 font-medium ${className || "px-3"}`} title={title}>
+      <button
+        type="button"
+        onClick={() => onClick(sortKey as never)}
+        className={`inline-flex items-center gap-1 ${alignCls} w-full uppercase ${active ? "text-foreground" : "hover:text-foreground"}`}
+      >
+        {children}
+        {arrow && <span className="text-[9px]">{arrow}</span>}
+      </button>
+    </th>
+  );
+}
+
 function FilterSection({
   title,
   children,
