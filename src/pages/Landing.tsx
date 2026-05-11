@@ -170,16 +170,12 @@ export default function Landing() {
       <section id="problem" className="border-b border-border/60">
         <div className="mx-auto max-w-7xl px-6 py-24">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The problem</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.problem_eyebrow}</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-              You're drinking the ocean through a straw.
+              {c.problem_title}
             </h2>
-            <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-              An aerospace program touches thousands of qualified materials, each
-              with a TDS, an SDS, a NASA outgassing report, a Tg curve, an out-life
-              clock, an MOQ, a dozen vendor crossovers, and a lot history that
-              lives in a binder, an inbox, and three different ERPs. Engineers
-              guess. Buyers chase. Programs slip.
+            <p className="mt-5 text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+              {c.problem_body}
             </p>
           </div>
 
