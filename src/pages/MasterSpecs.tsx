@@ -130,6 +130,29 @@ export default function MasterSpecs() {
             <Toggle active={ooaOnly} onClick={() => setOoaOnly((v) => !v)} label="OOA only" />
             <Toggle active={inStockOnly} onClick={() => setInStockOnly((v) => !v)} label="In stock" />
           </div>
+          {allProfiles.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-xs text-muted-foreground mr-1">Profiles:</span>
+              <button
+                onClick={() => setActiveProfiles([])}
+                className={`text-[11px] px-2 py-0.5 rounded border ${activeProfiles.length === 0 ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground"}`}
+              >
+                All
+              </button>
+              {allProfiles.map((p) => {
+                const on = activeProfiles.includes(p);
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setActiveProfiles((prev) => (on ? prev.filter((x) => x !== p) : [...prev, p]))}
+                    className={`text-[11px] uppercase tracking-wider px-2 py-0.5 rounded border ${on ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             Showing {filtered.length} of {specs.length} specs
             {uploads.length > 0 && (
