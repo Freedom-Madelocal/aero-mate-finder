@@ -29,10 +29,14 @@ interface Row {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const { isSuperAdmin, loading } = useAuth();
+  const { isSuperAdmin, loading, user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([]);
   const [busy, setBusy] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState<AppRole>("engineer");
+  const [newOrg, setNewOrg] = useState<string>("");
 
   useEffect(() => {
     if (!loading && !isSuperAdmin) navigate({ to: "/" });
