@@ -10,6 +10,7 @@ export interface Profile {
   full_name: string | null;
   organization_id: string | null;
   avatar_url: string | null;
+  tour_completed_at: string | null;
 }
 
 export interface DemoSettings {
