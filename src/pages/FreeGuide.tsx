@@ -9,7 +9,7 @@ import {
 } from "@/lib/leadMagnet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, ArrowRight, ShieldCheck } from "lucide-react";
+import { Download, ArrowRight, ShieldCheck, ArrowLeft, FileText } from "lucide-react";
 import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
 
