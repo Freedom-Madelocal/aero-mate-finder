@@ -46,8 +46,7 @@ const ExtractedSpecSchema = z
     notes: z.string().nullable().optional(),
     minimumOrderQuantity: z.string().nullable().optional(),
     profiles: z.array(z.string()).optional(),
-  })
-  .passthrough();
+  });
 
 export type ExtractedSpec = z.infer<typeof ExtractedSpecSchema>;
 
