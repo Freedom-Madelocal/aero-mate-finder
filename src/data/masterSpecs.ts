@@ -105,6 +105,7 @@ interface SpecRow {
   engineer_default_name: string | null;
   profiles: string[] | null;
   key_specs: string[] | null;
+  customers: string[] | null;
 }
 
 const num = (v: number | string | null): number | null =>
