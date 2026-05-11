@@ -293,7 +293,7 @@ export default function Engineer() {
                   <span className="text-xs text-muted-foreground hidden group-open:inline">Hide</span>
                 </summary>
                 <div className="p-4 pt-0 lg:pt-4 space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="hidden lg:flex items-center justify-between">
                   <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Filter className="w-4 h-4" /> Filters
                     {activeFilterCount > 0 && (
