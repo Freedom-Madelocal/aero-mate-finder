@@ -229,7 +229,9 @@ export default function AdminUsers() {
                 <th className="p-3">Organization</th>
                 <th className="p-3">Roles</th>
                 <th className="p-3">Demo</th>
+                <th className="p-3">Last login</th>
                 <th className="p-3">Status</th>
+                <th className="p-3 text-right">Audit</th>
               </tr>
             </thead>
             <tbody>
