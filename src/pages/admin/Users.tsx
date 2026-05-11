@@ -183,6 +183,8 @@ export default function AdminUsers() {
     toast.success("Tour reset · will trigger on next login");
   };
 
+  if (loading || !isSuperAdmin) return <div className="min-h-screen bg-background" />;
+
   return (
     <div className="min-h-screen bg-background p-6 sm:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
