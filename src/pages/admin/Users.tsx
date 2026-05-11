@@ -39,6 +39,9 @@ export default function AdminUsers() {
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState<AppRole>("engineer");
   const [newOrg, setNewOrg] = useState<string>("");
+  const [auditUser, setAuditUser] = useState<Row | null>(null);
+  const [auditRows, setAuditRows] = useState<ActivityRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !isSuperAdmin) navigate({ to: "/" });
