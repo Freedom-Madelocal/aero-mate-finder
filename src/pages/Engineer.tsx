@@ -281,6 +281,7 @@ export default function Engineer() {
           s.applications, s.qualificationsStandards, s.notes,
           s.crossoverProduct, s.crossoverVendor,
           ...(s.keySpecs ?? []),
+          ...(s.customers ?? []),
         ].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
