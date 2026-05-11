@@ -204,14 +204,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--status-warning)]" />
             </button>
 
-            <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center">
-              <span className="text-xs font-medium text-foreground">OP</span>
-            </div>
+            <button
+              onClick={() => setProfileOpen(true)}
+              className="w-8 h-8 rounded-full bg-secondary border border-border overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-ring transition"
+              aria-label="Open profile"
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-medium text-foreground">{initials}</span>
+              )}
+            </button>
           </div>
         </header>
 
         <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
       </div>
+      <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
     </div>
   );
 }
