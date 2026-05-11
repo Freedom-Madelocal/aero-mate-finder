@@ -71,6 +71,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [msgRecipient, setMsgRecipient] = useState<OnlineMember | null>(null);
+  const onlineMembers = useOrgPresence();
   const { isSuperAdmin, profile, user } = useAuth();
   const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
