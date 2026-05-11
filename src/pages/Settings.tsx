@@ -76,6 +76,7 @@ export default function Settings() {
           {/* Settings content */}
           <div className="md:col-span-9 space-y-6 min-w-0">
             {active === "Landing Page" && isSuperAdmin && <LandingEditor />}
+            {active === "Lead Magnet" && isSuperAdmin && <LeadMagnetEditor />}
             {active === "Storage Thresholds" && (<div className="space-y-6">
             {/* Storage Thresholds */}
             <div className="bg-card border border-border rounded-lg">
