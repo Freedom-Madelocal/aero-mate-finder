@@ -86,6 +86,25 @@ export default function OrgTeam() {
     load();
   };
 
+  const resend = async (toEmail: string, toRole: AppRole) => {
+    if (!orgId) return;
+    const { data, error } = await supabase.functions.invoke("invite-user", {
+      body: {
+        email: toEmail.trim().toLowerCase(),
+        role: toRole,
+        organization_id: orgId,
+        redirectTo: `${window.location.origin}/accept-invite`,
+      },
+    });
+    if (error || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error || error?.message || "Failed to resend";
+      return toast.error(msg);
+    }
+    const mode = (data as { mode?: string } | null)?.mode;
+    toast.success(mode === "recovery" ? "Password setup email resent." : "Invite email resent.");
+    load();
+  };
+
   const upsertDemo = async (uid: string, patch: { demo_mode?: boolean; first_login_at?: string | null }) => {
     const { data: ex } = await supabase.from("user_demo_settings").select("user_id").eq("user_id", uid).maybeSingle();
     if (ex) await supabase.from("user_demo_settings").update(patch).eq("user_id", uid);
@@ -143,6 +162,13 @@ export default function OrgTeam() {
                     <button onClick={() => upsertDemo(m.id, { first_login_at: null })}
                       className="text-xs text-muted-foreground hover:text-foreground underline">reset 48h</button>
                   )}
+                  <button
+                    onClick={() => resend(m.email, (m.roles[0] as AppRole) || "engineer")}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                    title="Resend invite / password setup email"
+                  >
+                    Resend invite
+                  </button>
                 </div>
               </div>
             ))}
@@ -159,7 +185,8 @@ export default function OrgTeam() {
                   <div className="text-sm">{i.email}</div>
                   <div className="text-xs text-muted-foreground">{i.role} · expires {new Date(i.expires_at).toLocaleDateString()}</div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => resend(i.email, i.role)} className="text-xs text-muted-foreground hover:text-foreground underline">Resend</button>
                   <button onClick={() => revoke(i.id)} className="text-xs text-red-400 hover:text-red-300">Revoke</button>
                 </div>
               </div>
