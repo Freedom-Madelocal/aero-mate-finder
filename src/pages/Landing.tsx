@@ -69,12 +69,6 @@ export default function Landing() {
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link
-              to="/engineer"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
-            >
-              Sign in
-            </Link>
             <a
               href="#demo"
               className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
