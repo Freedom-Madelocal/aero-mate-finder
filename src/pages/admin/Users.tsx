@@ -118,6 +118,24 @@ export default function AdminUsers() {
     load();
   };
 
+  const openAudit = async (r: Row) => {
+    setAuditUser(r);
+    setAuditRows([]);
+    setAuditLoading(true);
+    const { data, error } = await supabase
+      .from("user_activity")
+      .select("id,event_type,path,created_at")
+      .eq("user_id", r.id)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    setAuditLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setAuditRows((data as ActivityRow[]) ?? []);
+  };
+
   const addUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOrg) return toast.error("Select an organization for the invite.");
