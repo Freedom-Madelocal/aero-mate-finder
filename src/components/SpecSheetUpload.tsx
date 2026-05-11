@@ -19,7 +19,7 @@ import { toast } from "sonner";
  * - PDF flow: Lovable AI (Gemini 2.5 Pro) extracts canonical rows + profile tags
  *   from section headings; user reviews & accepts/rejects rows. */
 
-const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" | "keyspec" }[] = [
+const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" | "keyspec" | "customer" }[] = [
   { key: "vendor", type: "text", aliases: ["vendor", "supplier", "manufacturer", "mfg", "brand"] },
   { key: "productName", type: "text", aliases: ["product name", "product", "grade", "material", "material name", "part number", "p/n"] },
   { key: "productFamily", type: "text", aliases: ["product family", "family"] },
