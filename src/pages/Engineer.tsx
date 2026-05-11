@@ -80,6 +80,7 @@ interface FilterState {
     highTemperature?: boolean;
   };
   inventory: "any" | "in-stock" | "tracked" | "not-stocked";
+  e595: "any" | "pass" | "fail";
 }
 
 const EMPTY_FILTERS: FilterState = {
