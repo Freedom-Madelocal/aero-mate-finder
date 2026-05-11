@@ -235,6 +235,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
             minimumOrderQuantity: r.minimumOrderQuantity,
             profiles: r.profiles,
             keySpecs: r.keySpecs,
+            customers: r.customers,
           },
         };
       });
