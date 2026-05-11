@@ -617,13 +617,27 @@ export default function Engineer() {
 function FilterSection({
   title,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
 }: {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const storageKey = `engineer.filterSection.${title}`;
+  const [open, setOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return defaultOpen;
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored === "1") return true;
+      if (stored === "0") return false;
+    } catch {}
+    return defaultOpen;
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(storageKey, open ? "1" : "0");
+    } catch {}
+  }, [open, storageKey]);
   return (
     <div className="space-y-2">
       <button
