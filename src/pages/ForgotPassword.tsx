@@ -20,7 +20,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-sm">
         <h2 className="text-2xl font-semibold mb-2">Reset password</h2>
         <p className="text-sm text-muted-foreground mb-6">We'll email you a reset link.</p>
