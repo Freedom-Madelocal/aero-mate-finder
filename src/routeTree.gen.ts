@@ -25,10 +25,10 @@ import { Route as DemoExpiredRouteImport } from './routes/demo-expired'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgTeamRouteImport } from './routes/org.team'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
-import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
@@ -113,6 +113,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInviteRoute = AcceptInviteRouteImport.update({
+  id: '/accept-invite',
+  path: '/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -126,11 +131,6 @@ const OrgTeamRoute = OrgTeamRouteImport.update({
 const MaterialIdRoute = MaterialIdRouteImport.update({
   id: '/material/$id',
   path: '/material/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InviteTokenRoute = InviteTokenRouteImport.update({
-  id: '/invite/$token',
-  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
@@ -151,6 +151,7 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -170,12 +171,12 @@ export interface FileRoutesByFullPath {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -195,13 +196,13 @@ export interface FileRoutesByTo {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -221,7 +222,6 @@ export interface FileRoutesById {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
 }
@@ -229,6 +229,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accept-invite'
     | '/compliance'
     | '/console'
     | '/dashboard'
@@ -248,12 +249,12 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/invite/$token'
     | '/material/$id'
     | '/org/team'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accept-invite'
     | '/compliance'
     | '/console'
     | '/dashboard'
@@ -273,12 +274,12 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/invite/$token'
     | '/material/$id'
     | '/org/team'
   id:
     | '__root__'
     | '/'
+    | '/accept-invite'
     | '/compliance'
     | '/console'
     | '/dashboard'
@@ -298,13 +299,13 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/invite/$token'
     | '/material/$id'
     | '/org/team'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcceptInviteRoute: typeof AcceptInviteRoute
   ComplianceRoute: typeof ComplianceRoute
   ConsoleRoute: typeof ConsoleRouteWithChildren
   DashboardRoute: typeof DashboardRoute
@@ -323,7 +324,6 @@ export interface RootRouteChildren {
   SuppliersRoute: typeof SuppliersRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  InviteTokenRoute: typeof InviteTokenRoute
   MaterialIdRoute: typeof MaterialIdRoute
   OrgTeamRoute: typeof OrgTeamRoute
 }
@@ -442,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComplianceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accept-invite': {
+      id: '/accept-invite'
+      path: '/accept-invite'
+      fullPath: '/accept-invite'
+      preLoaderRoute: typeof AcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -461,13 +468,6 @@ declare module '@tanstack/react-router' {
       path: '/material/$id'
       fullPath: '/material/$id'
       preLoaderRoute: typeof MaterialIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invite/$token': {
-      id: '/invite/$token'
-      path: '/invite/$token'
-      fullPath: '/invite/$token'
-      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console/login': {
@@ -507,6 +507,7 @@ const ConsoleRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcceptInviteRoute: AcceptInviteRoute,
   ComplianceRoute: ComplianceRoute,
   ConsoleRoute: ConsoleRouteWithChildren,
   DashboardRoute: DashboardRoute,
@@ -525,7 +526,6 @@ const rootRouteChildren: RootRouteChildren = {
   SuppliersRoute: SuppliersRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
-  InviteTokenRoute: InviteTokenRoute,
   MaterialIdRoute: MaterialIdRoute,
   OrgTeamRoute: OrgTeamRoute,
 }

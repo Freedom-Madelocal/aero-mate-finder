@@ -7,12 +7,6 @@ import { toast } from "sonner";
 
 const INVITABLE: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
 
-function randomToken() {
-  const arr = new Uint8Array(24);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 const ALL_ROLES: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
 
 interface Row {
@@ -29,7 +23,7 @@ interface Row {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const { isSuperAdmin, loading, user } = useAuth();
+  const { isSuperAdmin, loading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -105,18 +99,19 @@ export default function AdminUsers() {
   const addUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOrg) return toast.error("Select an organization for the invite.");
-    const token = randomToken();
-    const { error } = await supabase.from("org_invitations").insert({
-      organization_id: newOrg,
-      email: newEmail.trim().toLowerCase(),
-      role: newRole,
-      token,
-      invited_by: user?.id,
+    const { data, error } = await supabase.functions.invoke("invite-user", {
+      body: {
+        email: newEmail.trim().toLowerCase(),
+        role: newRole,
+        organization_id: newOrg,
+        redirectTo: `${window.location.origin}/accept-invite`,
+      },
     });
-    if (error) return toast.error(error.message);
-    const url = `${window.location.origin}/invite/${token}`;
-    await navigator.clipboard.writeText(url).catch(() => {});
-    toast.success("Invite created. Link copied to clipboard.");
+    if (error || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error || error?.message || "Failed to send invite";
+      return toast.error(msg);
+    }
+    toast.success("Invite email sent.");
     setNewEmail("");
     setShowAdd(false);
     load();
