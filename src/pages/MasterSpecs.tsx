@@ -44,6 +44,10 @@ export default function MasterSpecs() {
     () => ["All", ...Array.from(new Set(specs.map((s) => s.productForm).filter((v): v is string => !!v))).sort()],
     [specs],
   );
+  const allProfiles = useMemo(
+    () => Array.from(new Set(specs.flatMap((s) => s.profiles ?? []))).sort(),
+    [specs],
+  );
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
