@@ -602,6 +602,7 @@ export type Database = {
       }
       is_demo_active: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_invitation_accepted: { Args: { _email: string }; Returns: undefined }
       stamp_first_login: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
