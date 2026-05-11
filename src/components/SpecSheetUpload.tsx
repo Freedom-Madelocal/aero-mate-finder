@@ -73,6 +73,13 @@ const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "num
     "astm", "iso spec", "en spec", "din spec",
     "oem spec", "qualified to", "qpl",
   ] },
+  // Customer — OEMs / end-users this part is qualified for. Multiple columns
+  // can map (e.g. "Customer", "OEM", "End User"); values are comma/semicolon-
+  // separated lists and unioned across mapped columns.
+  { key: "customers", type: "customer", aliases: [
+    "customer", "customers", "customer name", "end user", "end-user", "enduser",
+    "oem", "oems", "platform", "operator", "approved by", "qualified for",
+  ] },
 ];
 
 interface ParsedRow { [k: string]: string | number | null }
