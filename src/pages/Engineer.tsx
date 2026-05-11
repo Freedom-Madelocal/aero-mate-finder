@@ -24,6 +24,7 @@ import {
 } from "@/data/procurement";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 /*
  * Engineer Workspace
@@ -123,16 +124,22 @@ export default function Engineer() {
   const { specs } = useMasterSpecStore();
   const { materials } = useMaterialStore();
   const { requests } = useProcurementStore();
+  const { profile, user } = useAuth();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [engineerName, setEngineerName] = useState<string>("");
   const [picking, setPicking] = useState<string | null>(null);
 
-  // Persist engineer name locally
+  // Default engineer name from profile/email; allow override via local storage
   useEffect(() => {
-    const n = localStorage.getItem("traceum.engineerName");
-    if (n) setEngineerName(n);
-  }, []);
+    const stored = localStorage.getItem("traceum.engineerName");
+    if (stored) {
+      setEngineerName(stored);
+      return;
+    }
+    const fallback = profile?.full_name || profile?.email || user?.email || "";
+    if (fallback) setEngineerName(fallback);
+  }, [profile, user]);
   useEffect(() => {
     if (engineerName) localStorage.setItem("traceum.engineerName", engineerName);
   }, [engineerName]);
@@ -196,10 +203,12 @@ export default function Engineer() {
   const isEmpty = specs.length === 0;
 
   const handleProcure = async (spec: MasterSpec) => {
-    if (!engineerName.trim()) {
-      toast.error("Enter your name first so procurement knows who needs it.");
-      return;
-    }
+    const name =
+      engineerName.trim() ||
+      profile?.full_name ||
+      profile?.email ||
+      user?.email ||
+      "Unknown Engineer";
     if (pendingForMe.has(spec.id)) {
       toast("Already on your pick list.");
       return;
@@ -208,12 +217,15 @@ export default function Engineer() {
     try {
       await addProcurementRequest({
         masterSpecId: spec.id,
-        engineerName: engineerName.trim(),
+        engineerName: name,
         chosenVendor: spec.vendor,
       });
       toast.success(`Added ${spec.productName} to procurement pick list.`);
     } catch (e) {
-      toast.error("Failed to add to pick list.");
+      console.error("addProcurementRequest failed", e);
+      toast.error(
+        e instanceof Error ? `Failed to add: ${e.message}` : "Failed to add to pick list.",
+      );
     } finally {
       setPicking(null);
     }
