@@ -63,6 +63,7 @@ interface FilterState {
   reinforcements: string[];
   forms: string[];
   processMethods: string[];
+  profiles: string[];
   cureC: NumRange;
   peakTgC: NumRange;
   maxServiceC: NumRange;
@@ -89,6 +90,7 @@ const EMPTY_FILTERS: FilterState = {
   reinforcements: [],
   forms: [],
   processMethods: [],
+  profiles: [],
   cureC: {},
   peakTgC: {},
   maxServiceC: {},
@@ -108,6 +110,30 @@ const FLAG_LABELS: Record<keyof FilterState["flags"], string> = {
   impactResistant: "Impact Resistant",
   highTemperature: "High Temperature",
 };
+
+const PROFILE_OPTIONS = ["Space", "MRO", "Interiors", "Radomes", "Structures"] as const;
+type Profile = (typeof PROFILE_OPTIONS)[number];
+
+const PROFILE_KEYWORDS: Record<Profile, RegExp> = {
+  Space: /\b(space|satellite|spacecraft|aerospace|vacuum|cryo|low\s*outgassing)\b/i,
+  MRO: /\b(mro|maintenance|repair|overhaul|field\s*repair)\b/i,
+  Interiors: /\b(interior|cabin|seating|sidewall|trim|galley)\b/i,
+  Radomes: /\b(radome|antenna)\b/i,
+  Structures: /\b(structur|primary\s*structure|airframe|fuselage|wing|spar)\b/i,
+};
+
+function getSpecProfiles(spec: MasterSpec): Profile[] {
+  const hay = [spec.applications, spec.notes, spec.qualificationsStandards, spec.productFamily]
+    .filter(Boolean)
+    .join(" ");
+  const out: Profile[] = [];
+  for (const p of PROFILE_OPTIONS) {
+    if (PROFILE_KEYWORDS[p].test(hay)) out.push(p);
+  }
+  // Radomes also implied by low dielectric flag
+  if (spec.lowDielectric && !out.includes("Radomes")) out.push("Radomes");
+  return out;
+}
 
 function uniqueOf(values: (string | null | undefined)[]): string[] {
   return Array.from(new Set(values.filter((v): v is string => !!v))).sort();
