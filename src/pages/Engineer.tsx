@@ -9,6 +9,7 @@ import {
   Star as StarOutline,
   Info,
   CheckSquare,
+  ChevronDown,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useMaterialStore } from "@/data/materials";
@@ -62,6 +63,7 @@ interface FilterState {
   reinforcements: string[];
   forms: string[];
   processMethods: string[];
+  profiles: string[];
   cureC: NumRange;
   peakTgC: NumRange;
   maxServiceC: NumRange;
@@ -88,6 +90,7 @@ const EMPTY_FILTERS: FilterState = {
   reinforcements: [],
   forms: [],
   processMethods: [],
+  profiles: [],
   cureC: {},
   peakTgC: {},
   maxServiceC: {},
@@ -107,6 +110,30 @@ const FLAG_LABELS: Record<keyof FilterState["flags"], string> = {
   impactResistant: "Impact Resistant",
   highTemperature: "High Temperature",
 };
+
+const PROFILE_OPTIONS = ["Space", "MRO", "Interiors", "Radomes", "Structures"] as const;
+type Profile = (typeof PROFILE_OPTIONS)[number];
+
+const PROFILE_KEYWORDS: Record<Profile, RegExp> = {
+  Space: /\b(space|satellite|spacecraft|aerospace|vacuum|cryo|low\s*outgassing)\b/i,
+  MRO: /\b(mro|maintenance|repair|overhaul|field\s*repair)\b/i,
+  Interiors: /\b(interior|cabin|seating|sidewall|trim|galley)\b/i,
+  Radomes: /\b(radome|antenna)\b/i,
+  Structures: /\b(structur|primary\s*structure|airframe|fuselage|wing|spar)\b/i,
+};
+
+function getSpecProfiles(spec: MasterSpec): Profile[] {
+  const hay = [spec.applications, spec.notes, spec.qualificationsStandards, spec.productFamily]
+    .filter(Boolean)
+    .join(" ");
+  const out: Profile[] = [];
+  for (const p of PROFILE_OPTIONS) {
+    if (PROFILE_KEYWORDS[p].test(hay)) out.push(p);
+  }
+  // Radomes also implied by low dielectric flag
+  if (spec.lowDielectric && !out.includes("Radomes")) out.push("Radomes");
+  return out;
+}
 
 function uniqueOf(values: (string | null | undefined)[]): string[] {
   return Array.from(new Set(values.filter((v): v is string => !!v))).sort();
@@ -171,6 +198,10 @@ export default function Engineer() {
       if (filters.reinforcements.length && !filters.reinforcements.includes(s.reinforcement ?? "")) return false;
       if (filters.forms.length && !filters.forms.includes(s.productForm ?? "")) return false;
       if (filters.processMethods.length && !filters.processMethods.includes(s.processMethod ?? "")) return false;
+      if (filters.profiles.length) {
+        const sp = getSpecProfiles(s);
+        if (!filters.profiles.some((p) => sp.includes(p as Profile))) return false;
+      }
       if (!inRange(s.cureTemperatureC, filters.cureC)) return false;
       if (!inRange(s.peakTgC ?? s.dryTgOnsetC, filters.peakTgC)) return false;
       if (!inRange(s.maxServiceTemperatureC, filters.maxServiceC)) return false;
@@ -245,6 +276,7 @@ export default function Engineer() {
     (filters.q ? 1 : 0) +
     filters.vendors.length + filters.categories.length + filters.chemistries.length +
     filters.reinforcements.length + filters.forms.length + filters.processMethods.length +
+    filters.profiles.length +
     Object.values(filters.flags).filter((v) => v !== undefined).length +
     [filters.cureC, filters.peakTgC, filters.maxServiceC, filters.outLifeDays, filters.tmlPct, filters.cvcmPct]
       .filter((r) => r.min !== undefined || r.max !== undefined).length +
@@ -339,6 +371,13 @@ export default function Engineer() {
                     ))}
                   </div>
                 </FilterSection>
+
+                <ChipFilter
+                  title="Profile"
+                  options={[...PROFILE_OPTIONS]}
+                  selected={filters.profiles}
+                  onChange={(v) => setFilters({ ...filters, profiles: v })}
+                />
 
                 <ChipFilter
                   title="Vendor" options={vendors}
@@ -575,11 +614,32 @@ export default function Engineer() {
 
 /* --- Filter sub-components --- */
 
-function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
-      {children}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between w-full text-left group"
+        aria-expanded={open}
+      >
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
+          {title}
+        </span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open && children}
     </div>
   );
 }
