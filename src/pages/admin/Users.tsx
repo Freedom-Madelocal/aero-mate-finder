@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, UserPlus, Activity, X } from "lucide-react";
+import { ArrowLeft, UserPlus, Activity, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -176,6 +176,13 @@ export default function AdminUsers() {
     toast.success(mode === "recovery" ? "Password setup email resent." : "Invite email resent.");
   };
 
+  const restartTour = async (r: Row) => {
+    if (!confirm(`Restart guided tour for ${r.full_name || r.email}? It will show on their next login.`)) return;
+    const { error } = await supabase.from("profiles").update({ tour_completed_at: null }).eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success("Tour reset · will trigger on next login");
+  };
+
   if (loading || !isSuperAdmin) return <div className="min-h-screen bg-background" />;
 
   return (
@@ -305,12 +312,21 @@ export default function AdminUsers() {
                       </button>
                     </td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => openAudit(r)}
-                        className="inline-flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1 text-xs hover:bg-secondary"
-                      >
-                        <Activity className="w-3 h-3" /> Audit
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => restartTour(r)}
+                          className="inline-flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1 text-xs hover:bg-secondary"
+                          title="Reset guided tour — runs again on next login"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Restart tour
+                        </button>
+                        <button
+                          onClick={() => openAudit(r)}
+                          className="inline-flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1 text-xs hover:bg-secondary"
+                        >
+                          <Activity className="w-3 h-3" /> Audit
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
