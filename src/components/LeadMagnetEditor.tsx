@@ -280,6 +280,54 @@ export default function LeadMagnetEditor() {
               </Button>
             </div>
           </Field>
+
+          <Field label="Preview screenshot (shown on /free-guide)">
+            {content.previewImageUrl ? (
+              <div className="flex items-start gap-3 bg-secondary border border-border rounded-md p-2">
+                <img
+                  src={content.previewImageUrl}
+                  alt="Lead magnet preview"
+                  className="h-20 w-auto rounded border border-border object-cover"
+                />
+                <div className="flex-1 min-w-0 text-xs text-muted-foreground">
+                  Replace or remove this screenshot anytime. PNG, JPG, or WebP up to 10 MB.
+                </div>
+                <button
+                  onClick={removePreview}
+                  className="text-muted-foreground hover:text-red-500"
+                  aria-label="Remove preview"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No preview screenshot uploaded. Upload one to show visitors what they'll get.
+              </p>
+            )}
+            <div className="mt-2">
+              <input
+                ref={previewRef}
+                type="file"
+                onChange={onPreviewFile}
+                className="hidden"
+                accept="image/png,image/jpeg,image/webp"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => previewRef.current?.click()}
+                disabled={uploadingPreview}
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {uploadingPreview
+                  ? "Uploading…"
+                  : content.previewImageUrl
+                  ? "Replace screenshot"
+                  : "Upload screenshot"}
+              </Button>
+            </div>
+          </Field>
         </div>
       </div>
 
