@@ -78,19 +78,33 @@ Deno.serve(async (req) => {
       invited_by: callerId,
     });
 
-    // Send the actual invite email via Supabase auth admin
+    // Try sending an invite email. If the user already exists in auth,
+    // fall back to a password recovery email so they can (re)set a password
+    // and finish their setup. This makes "Resend invite" work for both
+    // pending and previously-invited users.
     const { error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { organization_id, role, invited_by: callerId },
       redirectTo: redirectTo || undefined,
     });
 
     if (inviteErr) {
-      // If user already exists, surface a clear message
-      const msg = inviteErr.message || "Failed to send invite";
-      return json(400, { error: msg });
+      const msg = (inviteErr.message || "").toLowerCase();
+      const alreadyExists =
+        msg.includes("already") ||
+        msg.includes("registered") ||
+        msg.includes("exists");
+      if (alreadyExists) {
+        const { error: resetErr } = await admin.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectTo || undefined,
+        });
+        if (resetErr) return json(400, { error: resetErr.message || "Failed to resend" });
+        return json(200, { ok: true, mode: "recovery" });
+      }
+      return json(400, { error: inviteErr.message || "Failed to send invite" });
     }
 
-    return json(200, { ok: true });
+    return json(200, { ok: true, mode: "invite" });
+
   } catch (e) {
     return json(500, { error: e instanceof Error ? e.message : "Server error" });
   }
