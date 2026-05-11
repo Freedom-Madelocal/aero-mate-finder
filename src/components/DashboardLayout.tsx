@@ -281,6 +281,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onOpenChange={(v) => !v && setMsgRecipient(null)}
         recipient={msgRecipient}
       />
+      <GuidedTour />
     </div>
   );
 }
