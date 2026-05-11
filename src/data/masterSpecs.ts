@@ -331,6 +331,7 @@ export async function addMasterSpecs(
       uploaded_from: fileName,
       profiles: dedupeStrings([...(e?.profiles ?? []), ...(Array.isArray(s.profiles) ? s.profiles : [])]),
       key_specs: dedupeStrings([...(e?.keySpecs ?? []), ...(Array.isArray(s.keySpecs) ? s.keySpecs : [])]),
+      customers: dedupeStrings([...(e?.customers ?? []), ...(Array.isArray(s.customers) ? s.customers : [])]),
     };
   });
 
