@@ -458,6 +458,30 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          content: Json
+          hero_video_url: string | null
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          hero_video_url?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          hero_video_url?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       stock_reports: {
         Row: {
           created_at: string
