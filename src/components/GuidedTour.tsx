@@ -161,6 +161,7 @@ export default function GuidedTour() {
 
   const finish = async () => {
     setSaving(true);
+    sessionStorage.removeItem(STORAGE_KEY);
     try {
       await supabase
         .from("profiles")
