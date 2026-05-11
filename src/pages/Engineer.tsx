@@ -80,6 +80,7 @@ interface FilterState {
     highTemperature?: boolean;
   };
   inventory: "any" | "in-stock" | "tracked" | "not-stocked";
+  e595: "any" | "pass" | "fail";
 }
 
 const EMPTY_FILTERS: FilterState = {
@@ -99,6 +100,7 @@ const EMPTY_FILTERS: FilterState = {
   cvcmPct: {},
   flags: {},
   inventory: "any",
+  e595: "any",
 };
 
 const FLAG_LABELS: Record<keyof FilterState["flags"], string> = {
@@ -168,6 +170,15 @@ export default function Engineer() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
+  type SortKey =
+    | "procure" | "star" | "product" | "vendor" | "form" | "chemistry"
+    | "cure" | "service" | "e595" | "inventory";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "product",
+    dir: "asc",
+  });
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
 
   // Engineer name is auto-derived from the signed-in user's profile.
   const engineerName = (profile?.full_name || profile?.email || user?.email || "").trim();
@@ -221,6 +232,13 @@ export default function Engineer() {
         if (filters.inventory === "tracked" && inv !== "tracked") return false;
         if (filters.inventory === "not-stocked" && inv !== "none") return false;
       }
+      if (filters.e595 !== "any") {
+        const pass =
+          s.tmlPct !== null && s.tmlPct <= 1.0 &&
+          s.cvcmPct !== null && s.cvcmPct <= 0.1;
+        if (filters.e595 === "pass" && !pass) return false;
+        if (filters.e595 === "fail" && pass) return false;
+      }
       if (q) {
         const hay = [
           s.vendor, s.productName, s.productFamily, s.materialCategory,
@@ -233,6 +251,41 @@ export default function Engineer() {
       return true;
     });
   }, [specs, materials, filters]);
+
+  const sorted = useMemo(() => {
+    const e595Pass = (s: MasterSpec) =>
+      s.tmlPct !== null && s.tmlPct <= 1.0 && s.cvcmPct !== null && s.cvcmPct <= 0.1;
+    const invRank = (s: MasterSpec) => {
+      const st = getInventoryMatch(s, materials).status;
+      return st === "in-stock" ? 0 : st === "tracked" ? 1 : 2;
+    };
+    const getKey = (s: MasterSpec): string | number | boolean | null => {
+      switch (sort.key) {
+        case "procure": return pendingForMe.has(s.id) ? 1 : 0;
+        case "star": return s.frequentReorder ? 1 : 0;
+        case "product": return (s.productName ?? "").toLowerCase();
+        case "vendor": return (s.vendor ?? "").toLowerCase();
+        case "form": return (s.productForm ?? "").toLowerCase();
+        case "chemistry": return (s.resinChemistry ?? "").toLowerCase();
+        case "cure": return s.cureTemperatureC;
+        case "service": return s.maxServiceTemperatureC;
+        case "e595":
+          return s.tmlPct === null && s.cvcmPct === null ? -1 : e595Pass(s) ? 1 : 0;
+        case "inventory": return invRank(s);
+      }
+    };
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...matched].sort((a, b) => {
+      const av = getKey(a);
+      const bv = getKey(b);
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [matched, sort, pendingForMe, materials]);
 
   const isEmpty = specs.length === 0;
 
@@ -283,7 +336,8 @@ export default function Engineer() {
     Object.values(filters.flags).filter((v) => v !== undefined).length +
     [filters.cureC, filters.peakTgC, filters.maxServiceC, filters.outLifeDays, filters.tmlPct, filters.cvcmPct]
       .filter((r) => r.min !== undefined || r.max !== undefined).length +
-    (filters.inventory !== "any" ? 1 : 0);
+    (filters.inventory !== "any" ? 1 : 0) +
+    (filters.e595 !== "any" ? 1 : 0);
 
   return (
     <DashboardLayout>
@@ -361,6 +415,24 @@ export default function Engineer() {
                         }`}
                       >
                         {v === "any" ? "Any" : v === "in-stock" ? "In Stock" : v === "tracked" ? "Tracked" : "Not Stocked"}
+                      </button>
+                    ))}
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="NASA E595">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(["any", "pass", "fail"] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setFilters({ ...filters, e595: v })}
+                        className={`text-xs px-2 py-1.5 rounded border ${
+                          filters.e595 === v
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {v === "any" ? "Any" : v === "pass" ? "Pass" : "Fail"}
                       </button>
                     ))}
                   </div>
@@ -475,31 +547,31 @@ export default function Engineer() {
                   <table className="w-full text-sm">
                     <thead className="bg-secondary/40 text-xs uppercase text-muted-foreground">
                       <tr>
-                        <th className="text-center px-2 py-2 font-medium w-12" title="Procure">
+                        <SortHeader sortKey="procure" sort={sort} onClick={toggleSort} align="center" className="px-2 w-12" title="Procure">
                           <span className="inline-flex items-center gap-1">
                             <CheckSquare className="w-3.5 h-3.5" /> Procure
                           </span>
-                        </th>
-                        <th className="text-center px-2 py-2 font-medium w-10" title="Frequent reorder">★</th>
-                        <th className="text-left px-3 py-2 font-medium">Product</th>
-                        <th className="text-left px-3 py-2 font-medium">Vendor</th>
-                        <th className="text-left px-3 py-2 font-medium">Form</th>
-                        <th className="text-left px-3 py-2 font-medium">Chemistry</th>
-                        <th className="text-center px-3 py-2 font-medium">Cure °C</th>
-                        <th className="text-center px-3 py-2 font-medium">Service °C</th>
-                        <th className="text-center px-3 py-2 font-medium">E595</th>
-                        <th className="text-right px-3 py-2 font-medium">Inventory</th>
+                        </SortHeader>
+                        <SortHeader sortKey="star" sort={sort} onClick={toggleSort} align="center" className="px-2 w-10" title="Frequent reorder">★</SortHeader>
+                        <SortHeader sortKey="product" sort={sort} onClick={toggleSort} align="left">Product</SortHeader>
+                        <SortHeader sortKey="vendor" sort={sort} onClick={toggleSort} align="left">Vendor</SortHeader>
+                        <SortHeader sortKey="form" sort={sort} onClick={toggleSort} align="left">Form</SortHeader>
+                        <SortHeader sortKey="chemistry" sort={sort} onClick={toggleSort} align="left">Chemistry</SortHeader>
+                        <SortHeader sortKey="cure" sort={sort} onClick={toggleSort} align="center">Cure °C</SortHeader>
+                        <SortHeader sortKey="service" sort={sort} onClick={toggleSort} align="center">Service °C</SortHeader>
+                        <SortHeader sortKey="e595" sort={sort} onClick={toggleSort} align="center">E595</SortHeader>
+                        <SortHeader sortKey="inventory" sort={sort} onClick={toggleSort} align="right">Inventory</SortHeader>
                       </tr>
                     </thead>
                     <tbody>
-                      {matched.length === 0 ? (
+                      {sorted.length === 0 ? (
                         <tr>
                           <td colSpan={10} className="text-center py-12 text-muted-foreground text-sm">
                             No specs match these filters.
                           </td>
                         </tr>
                       ) : (
-                        matched.map((spec) => {
+                        sorted.map((spec) => {
                           const inv = getInventoryMatch(spec, materials);
                           const e595Pass =
                             spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
@@ -602,6 +674,34 @@ export default function Engineer() {
 }
 
 /* --- Filter sub-components --- */
+
+function SortHeader({
+  sortKey, sort, onClick, align = "left", className = "", title, children,
+}: {
+  sortKey: string;
+  sort: { key: string; dir: "asc" | "desc" };
+  onClick: (k: never) => void;
+  align?: "left" | "center" | "right";
+  className?: string;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const active = sort.key === sortKey;
+  const arrow = active ? (sort.dir === "asc" ? "▲" : "▼") : "";
+  const alignCls = align === "center" ? "text-center justify-center" : align === "right" ? "text-right justify-end" : "text-left justify-start";
+  return (
+    <th className={`${align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left"} py-2 font-medium ${className || "px-3"}`} title={title}>
+      <button
+        type="button"
+        onClick={() => onClick(sortKey as never)}
+        className={`inline-flex items-center gap-1 ${alignCls} w-full uppercase ${active ? "text-foreground" : "hover:text-foreground"}`}
+      >
+        {children}
+        {arrow && <span className="text-[9px]">{arrow}</span>}
+      </button>
+    </th>
+  );
+}
 
 function FilterSection({
   title,
