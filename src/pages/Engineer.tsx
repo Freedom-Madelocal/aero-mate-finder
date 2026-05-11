@@ -422,7 +422,8 @@ export default function Engineer() {
                     ))}
                   </div>
                 </FilterSection>
-              </div>
+                </div>
+              </details>
             </aside>
 
             {/* Results */}
