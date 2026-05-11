@@ -69,8 +69,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const location = useLocation({ select: (l) => l.pathname });
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isSuperAdmin } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const { isSuperAdmin, profile, user } = useAuth();
   const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
+  const initials = (profile?.full_name || profile?.email || user?.email || "?")
+    .split(/\s+/)
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
