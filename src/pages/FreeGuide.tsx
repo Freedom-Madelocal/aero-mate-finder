@@ -101,6 +101,12 @@ export default function FreeGuide() {
               )}
             </div>
 
+            {content.body && (
+              <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                {content.body}
+              </p>
+            )}
+
             {content.fileUrl && <GuidePreview url={content.fileUrl} name={content.fileName} />}
 
             <div className="bg-card border border-border rounded-xl p-6 md:p-8">
