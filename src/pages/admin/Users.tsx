@@ -102,15 +102,70 @@ export default function AdminUsers() {
     load();
   };
 
+  const addUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newOrg) return toast.error("Select an organization for the invite.");
+    const token = randomToken();
+    const { error } = await supabase.from("org_invitations").insert({
+      organization_id: newOrg,
+      email: newEmail.trim().toLowerCase(),
+      role: newRole,
+      token,
+      invited_by: user?.id,
+    });
+    if (error) return toast.error(error.message);
+    const url = `${window.location.origin}/invite/${token}`;
+    await navigator.clipboard.writeText(url).catch(() => {});
+    toast.success("Invite created. Link copied to clipboard.");
+    setNewEmail("");
+    setShowAdd(false);
+    load();
+  };
+
   if (loading || !isSuperAdmin) return <div className="min-h-screen bg-background" />;
 
   return (
     <div className="min-h-screen bg-background p-6 sm:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">User management</h1>
-          <p className="text-sm text-muted-foreground">Super admin · manage all users, roles, organizations, and demo access.</p>
+        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
+        </Link>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">User management</h1>
+            <p className="text-sm text-muted-foreground">Super admin · manage all users, roles, organizations, and demo access.</p>
+          </div>
+          <button onClick={() => setShowAdd((v) => !v)}
+            className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-md text-sm font-medium">
+            <UserPlus className="w-4 h-4" /> Add user
+          </button>
         </div>
+
+        {showAdd && (
+          <form onSubmit={addUser} className="flex flex-wrap gap-2 items-end border border-border rounded-md p-4 bg-secondary/30">
+            <div className="flex-1 min-w-48">
+              <label className="text-xs text-muted-foreground">Email</label>
+              <input type="email" required value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Organization</label>
+              <select value={newOrg} onChange={(e) => setNewOrg(e.target.value)}
+                className="bg-secondary border border-border rounded-md px-3 py-2 text-sm">
+                <option value="">— select —</option>
+                {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Role</label>
+              <select value={newRole} onChange={(e) => setNewRole(e.target.value as AppRole)}
+                className="bg-secondary border border-border rounded-md px-3 py-2 text-sm">
+                {INVITABLE.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <button className="bg-white text-black px-4 py-2 rounded-md text-sm font-medium">Create invite</button>
+          </form>
+        )}
 
         <div className="overflow-x-auto border border-border rounded-md">
           <table className="w-full text-sm">
