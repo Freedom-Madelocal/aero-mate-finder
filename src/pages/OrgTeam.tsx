@@ -24,12 +24,6 @@ interface Invitation {
   expires_at: string;
 }
 
-function randomToken() {
-  const arr = new Uint8Array(24);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 export default function OrgTeam() {
   const navigate = useNavigate();
   const { profile, hasRole, isSuperAdmin, loading, user } = useAuth();

@@ -7,12 +7,6 @@ import { toast } from "sonner";
 
 const INVITABLE: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
 
-function randomToken() {
-  const arr = new Uint8Array(24);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 const ALL_ROLES: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
 
 interface Row {
