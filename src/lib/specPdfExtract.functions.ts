@@ -212,8 +212,3 @@ export const extractSpecsFromPdf = createServerFn({ method: "POST" })
 
     return { rows: rows as Record<string, unknown>[], profilesDetected };
   });
-      new Set(rows.flatMap((r) => r.profiles ?? []).filter((p) => p && p.trim().length > 0)),
-    ).sort();
-
-    return { rows, profilesDetected };
-  });
