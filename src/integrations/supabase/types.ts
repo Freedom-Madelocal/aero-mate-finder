@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      crm_contacts: {
+        Row: {
+          company: string | null
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string | null
+          id: string
+          lead_signup_id: string | null
+          notes: string | null
+          phone: string | null
+          promoted_at: string | null
+          promoted_user_id: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          lead_signup_id?: string | null
+          notes?: string | null
+          phone?: string | null
+          promoted_at?: string | null
+          promoted_user_id?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          lead_signup_id?: string | null
+          notes?: string | null
+          phone?: string | null
+          promoted_at?: string | null
+          promoted_user_id?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       demo_requests: {
         Row: {
           company: string
