@@ -400,15 +400,13 @@ export default function Landing() {
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
-                <Zap className="h-3.5 w-3.5 text-[var(--status-info)]" /> 30-minute working demo
+                <Zap className="h-3.5 w-3.5 text-[var(--status-info)]" /> {c.demo_eyebrow}
               </div>
               <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
-                See Traceium against your own materials list.
+                {c.demo_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Bring a parts list, a spec sheet, or just a problem you keep
-                solving by hand. We'll load it live and show you what an
-                engineer-first material system feels like.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.demo_body}
               </p>
               <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--status-compliant)]" /> No prep required</li>
