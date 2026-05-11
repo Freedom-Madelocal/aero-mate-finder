@@ -107,6 +107,39 @@ export default function LeadMagnetEditor() {
     toast("File removed from page. Save to apply.");
   };
 
+  const onPreviewFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Preview must be an image (PNG, JPG, WebP).");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Preview image must be under 10 MB.");
+      return;
+    }
+    setUploadingPreview(true);
+    const path = `previews/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error } = await supabase.storage
+      .from("lead-magnet")
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+    if (error) {
+      setUploadingPreview(false);
+      toast.error(error.message || "Upload failed");
+      return;
+    }
+    const { data: pub } = supabase.storage.from("lead-magnet").getPublicUrl(path);
+    setContent((c) => ({ ...c, previewImageUrl: pub.publicUrl }));
+    setUploadingPreview(false);
+    toast.success("Preview uploaded. Don't forget to save.");
+    if (previewRef.current) previewRef.current.value = "";
+  };
+
+  const removePreview = () => {
+    setContent((c) => ({ ...c, previewImageUrl: "" }));
+    toast("Preview removed. Save to apply.");
+  };
+
   const exportCsv = () => {
     const header = ["Created at", "Email", "Domain", "Full name", "Company", "Source"];
     const escape = (v: string | null) => {
