@@ -67,6 +67,7 @@ export default function Landing() {
             <a href="#features" className="hover:text-foreground">Features</a>
             <a href="#procurement" className="hover:text-foreground">Procurement</a>
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
+            <Link to="/free-guide" className="hover:text-foreground">Free guide</Link>
           </nav>
           <div className="flex items-center gap-2">
             <a
