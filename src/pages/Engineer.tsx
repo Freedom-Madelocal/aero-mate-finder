@@ -286,7 +286,13 @@ export default function Engineer() {
           <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
             {/* Filter panel */}
             <aside className="space-y-4">
-              <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+              <details className="lg:open:block bg-card border border-border rounded-lg group" open>
+                <summary className="lg:hidden flex items-center justify-between p-4 cursor-pointer text-sm font-medium">
+                  <span className="flex items-center gap-2"><Filter className="w-4 h-4" /> Filters {activeFilterCount > 0 && (<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-foreground text-background">{activeFilterCount}</span>)}</span>
+                  <span className="text-xs text-muted-foreground group-open:hidden">Show</span>
+                  <span className="text-xs text-muted-foreground hidden group-open:inline">Hide</span>
+                </summary>
+                <div className="p-4 pt-0 lg:pt-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Filter className="w-4 h-4" /> Filters
