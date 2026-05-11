@@ -100,33 +100,30 @@ export default function Landing() {
           <div className="md:col-span-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
-              Built for aerospace engineers & procurement
+              {c.hero_eyebrow}
             </div>
             <h1 className="mt-6 text-5xl font-semibold tracking-tight md:text-6xl">
-              Trace the data.
+              {c.hero_title_top}
               <br />
               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Build the future.
+                {c.hero_title_bottom}
               </span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Aerospace is the most complex supply chain on Earth. Today your team
-              sees a sea of data through a straw. Traceium ingests every spec,
-              cert, lot, and inventory record — and turns it into the answer an
-              engineer or buyer actually needed.
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+              {c.hero_body}
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a
                 href="#demo"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Book a demo <ArrowRight className="h-4 w-4" />
+                {c.hero_cta_primary} <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#platform"
                 className="inline-flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
               >
-                See the platform
+                {c.hero_cta_secondary}
               </a>
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
@@ -150,6 +147,7 @@ export default function Landing() {
               </div>
               <div className="aspect-video w-full bg-black">
                 <video
+                  key={heroVideoUrl ?? "default"}
                   className="h-full w-full object-cover"
                   autoPlay
                   loop
@@ -157,12 +155,12 @@ export default function Landing() {
                   playsInline
                   poster="/landing-poster.svg"
                 >
-                  <source src="/traceium-demo.mp4" type="video/mp4" />
+                  <source src={heroVideoUrl ?? "/traceium-demo.mp4"} type="video/mp4" />
                 </video>
               </div>
             </div>
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              Live walkthrough — engineers narrowing 200+ specs to 3 in seconds.
+              {c.hero_video_caption}
             </p>
           </div>
         </div>
