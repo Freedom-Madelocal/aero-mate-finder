@@ -77,6 +77,36 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_magnet_signups: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          email_domain: string
+          full_name: string | null
+          id: string
+          source: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          email_domain: string
+          full_name?: string | null
+          id?: string
+          source?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          email_domain?: string
+          full_name?: string | null
+          id?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       master_spec_uploads: {
         Row: {
           created_at: string
