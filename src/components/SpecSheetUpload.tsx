@@ -577,6 +577,19 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                             </div>
                           </td>
                           <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1 max-w-[160px]">
+                              {(r.spec.customers ?? []).length === 0 ? (
+                                <span className="text-xs text-muted-foreground italic">none</span>
+                              ) : (
+                                r.spec.customers!.map((c) => (
+                                  <span key={c} className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-foreground/10 text-foreground border border-border">
+                                    {c}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
                               {(r.spec.profiles ?? []).length === 0 ? (
                                 <span className="text-xs text-muted-foreground italic">none</span>
