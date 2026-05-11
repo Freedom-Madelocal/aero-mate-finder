@@ -16,11 +16,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import traceumIcon from "@/assets/traceium-icon.png";
 import traceumWordmark from "@/assets/traceium-wordmark.png";
 
 export default function Landing() {
   const [submitting, setSubmitting] = useState(false);
+  const { content: c, heroVideoUrl } = useSiteSettings();
 
   async function handleDemo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -67,12 +69,6 @@ export default function Landing() {
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link
-              to="/engineer"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
-            >
-              Sign in
-            </Link>
             <a
               href="#demo"
               className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -104,33 +100,30 @@ export default function Landing() {
           <div className="md:col-span-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
-              Built for aerospace engineers & procurement
+              {c.hero_eyebrow}
             </div>
             <h1 className="mt-6 text-5xl font-semibold tracking-tight md:text-6xl">
-              Trace the data.
+              {c.hero_title_top}
               <br />
               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Build the future.
+                {c.hero_title_bottom}
               </span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Aerospace is the most complex supply chain on Earth. Today your team
-              sees a sea of data through a straw. Traceium ingests every spec,
-              cert, lot, and inventory record — and turns it into the answer an
-              engineer or buyer actually needed.
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+              {c.hero_body}
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a
                 href="#demo"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Book a demo <ArrowRight className="h-4 w-4" />
+                {c.hero_cta_primary} <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#platform"
                 className="inline-flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
               >
-                See the platform
+                {c.hero_cta_secondary}
               </a>
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
@@ -154,6 +147,7 @@ export default function Landing() {
               </div>
               <div className="aspect-video w-full bg-black">
                 <video
+                  key={heroVideoUrl ?? "default"}
                   className="h-full w-full object-cover"
                   autoPlay
                   loop
@@ -161,12 +155,12 @@ export default function Landing() {
                   playsInline
                   poster="/landing-poster.svg"
                 >
-                  <source src="/traceium-demo.mp4" type="video/mp4" />
+                  <source src={heroVideoUrl ?? "/traceium-demo.mp4"} type="video/mp4" />
                 </video>
               </div>
             </div>
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              Live walkthrough — engineers narrowing 200+ specs to 3 in seconds.
+              {c.hero_video_caption}
             </p>
           </div>
         </div>
@@ -176,16 +170,12 @@ export default function Landing() {
       <section id="problem" className="border-b border-border/60">
         <div className="mx-auto max-w-7xl px-6 py-24">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The problem</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.problem_eyebrow}</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-              You're drinking the ocean through a straw.
+              {c.problem_title}
             </h2>
-            <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-              An aerospace program touches thousands of qualified materials, each
-              with a TDS, an SDS, a NASA outgassing report, a Tg curve, an out-life
-              clock, an MOQ, a dozen vendor crossovers, and a lot history that
-              lives in a binder, an inbox, and three different ERPs. Engineers
-              guess. Buyers chase. Programs slip.
+            <p className="mt-5 text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+              {c.problem_body}
             </p>
           </div>
 
@@ -218,16 +208,12 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-6 py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The platform</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.platform_eyebrow}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-                One source of truth for every material in your program.
+                {c.platform_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Traceium ingests vendor TDS, internal qualification reports, NASA
-                outgassing data, COAs, and your live inventory — and unifies them
-                into a single, queryable model. Engineers search by what matters
-                (cure temp, Tg, TML, chemistry, qualification). Procurement sees
-                the aggregated demand and one-click reorders by vendor.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.platform_body}
               </p>
               <div className="mt-8 space-y-3">
                 {[
@@ -270,17 +256,12 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-6 py-24">
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-6">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">For engineers</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.features_eyebrow}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-                Find the right material in seconds, not days.
+                {c.features_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Traceium's engineer workspace is built around the questions you
-                actually ask: <em>what's qualified for a 350°F autoclave cure with
-                CVCM &lt; 0.1?</em> Filter by chemistry, form, cure window, Tg,
-                outgassing, mechanical properties, and process compatibility.
-                Click any result for the full datasheet, qualification evidence,
-                and current stock — without leaving the page.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.features_body}
               </p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
@@ -369,16 +350,12 @@ export default function Landing() {
               </div>
             </div>
             <div className="order-1 md:order-2 md:col-span-6">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">For procurement</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.procurement_eyebrow}</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-                Stop chasing emails. Aggregate demand, then send.
+                {c.procurement_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Every "procure" flag set by an engineer flows into a shared queue.
-                Traceium groups items by vendor, looks up your saved contacts, and
-                drafts a single email per supplier — so Henkel gets one message
-                with three parts, not three messages from three engineers.
-                Frequent reorders are starred and surface automatically.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.procurement_body}
               </p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
@@ -423,15 +400,13 @@ export default function Landing() {
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
-                <Zap className="h-3.5 w-3.5 text-[var(--status-info)]" /> 30-minute working demo
+                <Zap className="h-3.5 w-3.5 text-[var(--status-info)]" /> {c.demo_eyebrow}
               </div>
               <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
-                See Traceium against your own materials list.
+                {c.demo_title}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-                Bring a parts list, a spec sheet, or just a problem you keep
-                solving by hand. We'll load it live and show you what an
-                engineer-first material system feels like.
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                {c.demo_body}
               </p>
               <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--status-compliant)]" /> No prep required</li>

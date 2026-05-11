@@ -1,5 +1,8 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save } from "lucide-react";
+import LandingEditor from "@/components/LandingEditor";
+import { useAuth } from "@/hooks/useAuth";
+import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 /*
@@ -9,6 +12,20 @@ import { toast } from "sonner";
  */
 
 export default function Settings() {
+  const { isSuperAdmin } = useAuth();
+  const [active, setActive] = useState<string>("Storage Thresholds");
+
+  const navItems: Array<{ icon: typeof Thermometer; label: string; enabled: boolean }> = [
+    { icon: Thermometer, label: "Storage Thresholds", enabled: true },
+    { icon: Bell, label: "Notifications", enabled: false },
+    { icon: Shield, label: "Compliance Rules", enabled: false },
+    { icon: Users, label: "Users & Roles", enabled: false },
+    { icon: Building2, label: "Facilities", enabled: false },
+    ...(isSuperAdmin
+      ? [{ icon: Globe, label: "Landing Page", enabled: true }]
+      : []),
+  ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -26,31 +43,32 @@ export default function Settings() {
           {/* Left nav */}
           <div className="col-span-3">
             <nav className="space-y-1">
-              {[
-                { icon: Thermometer, label: "Storage Thresholds", active: true },
-                { icon: Bell, label: "Notifications", active: false },
-                { icon: Shield, label: "Compliance Rules", active: false },
-                { icon: Users, label: "Users & Roles", active: false },
-                { icon: Building2, label: "Facilities", active: false },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => item.active ? null : toast("Section coming soon")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-                    item.active
-                      ? "bg-accent text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
-                </button>
-              ))}
+              {navItems.map((item) => {
+                const isActive = active === item.label;
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() =>
+                      item.enabled ? setActive(item.label) : toast("Section coming soon")
+                    }
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                      isActive
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
           {/* Settings content */}
           <div className="col-span-9 space-y-6">
+            {active === "Landing Page" && isSuperAdmin && <LandingEditor />}
+            {active === "Storage Thresholds" && (<div className="space-y-6">
             {/* Storage Thresholds */}
             <div className="bg-card border border-border rounded-lg">
               <div className="px-6 py-4 border-b border-border">
@@ -172,6 +190,8 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+            </div>
+            )}
           </div>
         </div>
       </div>
