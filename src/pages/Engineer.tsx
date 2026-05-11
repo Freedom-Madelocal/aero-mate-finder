@@ -215,6 +215,7 @@ export default function Engineer() {
   const forms = useMemo(() => uniqueOf(specs.map((s) => s.productForm)), [specs]);
   const processMethods = useMemo(() => uniqueOf(specs.map((s) => s.processMethod)), [specs]);
   const allKeySpecs = useMemo(() => uniqueOf(specs.flatMap((s) => s.keySpecs ?? [])), [specs]);
+  const allCustomers = useMemo(() => uniqueOf(specs.flatMap((s) => s.customers ?? [])), [specs]);
 
   // Track which specs are already pending in the pick list (per current engineer)
   const pendingForMe = useMemo(() => {
