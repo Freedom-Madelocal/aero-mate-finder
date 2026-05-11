@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -41,6 +42,9 @@ export default function AdminOrganizations() {
   return (
     <div className="min-h-screen bg-background p-6 sm:p-10">
       <div className="max-w-4xl mx-auto space-y-6">
+        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
+        </Link>
         <div>
           <h1 className="text-2xl font-semibold">Organizations</h1>
           <p className="text-sm text-muted-foreground">Create and manage tenant organizations.</p>
