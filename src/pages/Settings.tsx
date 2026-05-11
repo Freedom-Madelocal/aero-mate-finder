@@ -68,7 +68,7 @@ export default function Settings() {
           {/* Settings content */}
           <div className="col-span-9 space-y-6">
             {active === "Landing Page" && isSuperAdmin && <LandingEditor />}
-            {active === "Storage Thresholds" && (<>
+            {active === "Storage Thresholds" && (<div className="space-y-6">
             {/* Storage Thresholds */}
             <div className="bg-card border border-border rounded-lg">
               <div className="px-6 py-4 border-b border-border">
