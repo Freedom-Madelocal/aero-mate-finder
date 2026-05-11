@@ -110,6 +110,8 @@ const STEPS: TourStep[] = [
   },
 ];
 
+const STORAGE_KEY = "traceium.tour.step";
+
 export default function GuidedTour() {
   const { profile, isAuthenticated, isSuperAdmin, refresh, loading } = useAuth();
   const navigate = useNavigate();
@@ -123,13 +125,24 @@ export default function GuidedTour() {
   );
 
   // Show automatically the first time a signed-in user has no completion timestamp.
+  // Persist the current step to sessionStorage so navigating between routes
+  // (which remounts DashboardLayout and this component) doesn't reset progress.
   useEffect(() => {
     if (loading) return;
     if (!isAuthenticated || !profile) return;
-    if (profile.tour_completed_at) return;
-    setIndex(0);
+    if (profile.tour_completed_at) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    const saved = Number(sessionStorage.getItem(STORAGE_KEY) ?? "0");
+    const safe = Number.isFinite(saved) ? Math.min(Math.max(saved, 0), steps.length - 1) : 0;
+    setIndex(safe);
     setOpen(true);
-  }, [loading, isAuthenticated, profile]);
+  }, [loading, isAuthenticated, profile, steps.length]);
+
+  useEffect(() => {
+    if (open) sessionStorage.setItem(STORAGE_KEY, String(index));
+  }, [open, index]);
 
   if (!open || !profile) return null;
 
@@ -138,14 +151,17 @@ export default function GuidedTour() {
   const isLast = index === steps.length - 1;
 
   const goNext = () => {
-    const next = steps[index + 1];
+    const nextIdx = Math.min(steps.length - 1, index + 1);
+    const next = steps[nextIdx];
+    sessionStorage.setItem(STORAGE_KEY, String(nextIdx));
+    setIndex(nextIdx);
     if (next?.navigateTo) navigate({ to: next.navigateTo as never }).catch(() => {});
-    setIndex((i) => Math.min(steps.length - 1, i + 1));
   };
   const goPrev = () => setIndex((i) => Math.max(0, i - 1));
 
   const finish = async () => {
     setSaving(true);
+    sessionStorage.removeItem(STORAGE_KEY);
     try {
       await supabase
         .from("profiles")
