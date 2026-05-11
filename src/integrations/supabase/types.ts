@@ -161,6 +161,7 @@ export type Database = {
           file_name: string
           id: string
           row_count: number
+          source_type: string
           uploaded_at: string
         }
         Insert: {
@@ -168,6 +169,7 @@ export type Database = {
           file_name: string
           id?: string
           row_count?: number
+          source_type?: string
           uploaded_at?: string
         }
         Update: {
@@ -175,6 +177,7 @@ export type Database = {
           file_name?: string
           id?: string
           row_count?: number
+          source_type?: string
           uploaded_at?: string
         }
         Relationships: []
@@ -211,6 +214,7 @@ export type Database = {
           product_family: string | null
           product_form: string | null
           product_name: string
+          profiles: string[]
           qualifications_standards: string | null
           reinforcement: string | null
           resin_chemistry: string | null
@@ -255,6 +259,7 @@ export type Database = {
           product_family?: string | null
           product_form?: string | null
           product_name: string
+          profiles?: string[]
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
@@ -299,6 +304,7 @@ export type Database = {
           product_family?: string | null
           product_form?: string | null
           product_name?: string
+          profiles?: string[]
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null

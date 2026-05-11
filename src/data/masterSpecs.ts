@@ -51,6 +51,7 @@ export interface MasterSpec {
   uploadedFrom: string | null;
   frequentReorder: boolean;
   engineerDefaultName: string | null;
+  profiles: string[];
 }
 
 export interface MasterSpecUpload {
@@ -100,6 +101,7 @@ interface SpecRow {
   uploaded_from: string | null;
   frequent_reorder: boolean | null;
   engineer_default_name: string | null;
+  profiles: string[] | null;
 }
 
 const num = (v: number | string | null): number | null =>
@@ -147,6 +149,7 @@ function rowToSpec(r: SpecRow): MasterSpec {
     uploadedFrom: r.uploaded_from,
     frequentReorder: !!r.frequent_reorder,
     engineerDefaultName: r.engineer_default_name,
+    profiles: Array.isArray(r.profiles) ? r.profiles : [],
   };
 }
 
@@ -210,7 +213,11 @@ export function useMasterSpecStore(): SpecStore {
 }
 
 /** Upsert a batch of specs (keyed on vendor + product_name) and log the upload. */
-export async function addMasterSpecs(specs: Partial<MasterSpec>[], fileName: string) {
+export async function addMasterSpecs(
+  specs: Partial<MasterSpec>[],
+  fileName: string,
+  sourceType: "spreadsheet" | "pdf" = "spreadsheet",
+) {
   await hydrate();
   const rows = specs
     .filter((s) => s.vendor && s.productName)
@@ -252,6 +259,7 @@ export async function addMasterSpecs(specs: Partial<MasterSpec>[], fileName: str
       minimum_order_quantity: s.minimumOrderQuantity ?? null,
       source_document: s.sourceDocument ?? null,
       uploaded_from: fileName,
+      profiles: Array.isArray(s.profiles) ? s.profiles : [],
     }));
 
   if (rows.length === 0) return;
@@ -264,6 +272,7 @@ export async function addMasterSpecs(specs: Partial<MasterSpec>[], fileName: str
   await supabase.from("master_spec_uploads" as never).insert({
     file_name: fileName,
     row_count: rows.length,
+    source_type: sourceType,
   } as never);
 
   // Refresh from DB to get authoritative IDs
