@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import DashboardLayout from "@/components/DashboardLayout";
 import LandingEditor from "@/components/LandingEditor";
+import LeadMagnetEditor from "@/components/LeadMagnetEditor";
 import { useAuth } from "@/hooks/useAuth";
-import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save, Globe, ArrowLeft } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Shield, Thermometer, Users, Building2, Save, Globe, Download, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 /*
