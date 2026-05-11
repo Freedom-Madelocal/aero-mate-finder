@@ -252,6 +252,41 @@ export default function Engineer() {
     });
   }, [specs, materials, filters]);
 
+  const sorted = useMemo(() => {
+    const e595Pass = (s: MasterSpec) =>
+      s.tmlPct !== null && s.tmlPct <= 1.0 && s.cvcmPct !== null && s.cvcmPct <= 0.1;
+    const invRank = (s: MasterSpec) => {
+      const st = getInventoryMatch(s, materials).status;
+      return st === "in-stock" ? 0 : st === "tracked" ? 1 : 2;
+    };
+    const getKey = (s: MasterSpec): string | number | boolean | null => {
+      switch (sort.key) {
+        case "procure": return pendingForMe.has(s.id) ? 1 : 0;
+        case "star": return s.frequentReorder ? 1 : 0;
+        case "product": return (s.productName ?? "").toLowerCase();
+        case "vendor": return (s.vendor ?? "").toLowerCase();
+        case "form": return (s.productForm ?? "").toLowerCase();
+        case "chemistry": return (s.resinChemistry ?? "").toLowerCase();
+        case "cure": return s.cureTemperatureC;
+        case "service": return s.maxServiceTemperatureC;
+        case "e595":
+          return s.tmlPct === null && s.cvcmPct === null ? -1 : e595Pass(s) ? 1 : 0;
+        case "inventory": return invRank(s);
+      }
+    };
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...matched].sort((a, b) => {
+      const av = getKey(a);
+      const bv = getKey(b);
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [matched, sort, pendingForMe, materials]);
+
   const isEmpty = specs.length === 0;
 
   const handleProcure = async (spec: MasterSpec) => {
