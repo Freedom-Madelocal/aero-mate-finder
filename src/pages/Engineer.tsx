@@ -193,12 +193,14 @@ export default function Engineer() {
   const matched = useMemo(() => {
     const q = filters.q.toLowerCase().trim();
     return specs.filter((s) => {
-      if (filters.vendors.length && !filters.vendors.includes(s.vendor)) return false;
-      if (filters.categories.length && !filters.categories.includes(s.materialCategory ?? "")) return false;
-      if (filters.chemistries.length && !filters.chemistries.includes(s.resinChemistry ?? "")) return false;
-      if (filters.reinforcements.length && !filters.reinforcements.includes(s.reinforcement ?? "")) return false;
-      if (filters.forms.length && !filters.forms.includes(s.productForm ?? "")) return false;
-      if (filters.processMethods.length && !filters.processMethods.includes(s.processMethod ?? "")) return false;
+      const matchAny = (sel: string[], val: string | null | undefined) =>
+        sel.length === 0 || sel.some((x) => canon(x) === canon(val));
+      if (!matchAny(filters.vendors, s.vendor)) return false;
+      if (!matchAny(filters.categories, s.materialCategory)) return false;
+      if (!matchAny(filters.chemistries, s.resinChemistry)) return false;
+      if (!matchAny(filters.reinforcements, s.reinforcement)) return false;
+      if (!matchAny(filters.forms, s.productForm)) return false;
+      if (!matchAny(filters.processMethods, s.processMethod)) return false;
       if (filters.profiles.length) {
         const sp = getSpecProfiles(s);
         if (!filters.profiles.some((p) => sp.includes(p as Profile))) return false;
