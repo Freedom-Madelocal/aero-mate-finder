@@ -99,6 +99,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ...onlineMembers.filter((m) => !unreadMap.has(m.user_id)),
   ];
   const { isSuperAdmin, profile, user } = useAuth();
+
+  // Audit page visits (best-effort, deduped per render of a path)
+  useEffect(() => {
+    if (user?.id && location) {
+      logPageView(user.id, location);
+    }
+  }, [user?.id, location]);
+
   const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
     .split(/\s+/)
