@@ -46,6 +46,7 @@ const ExtractedSpecSchema = z
     notes: z.string().nullable().optional(),
     minimumOrderQuantity: z.string().nullable().optional(),
     profiles: z.array(z.string()).optional(),
+    keySpecs: z.array(z.string()).optional(),
   });
 
 export interface ExtractedSpec {
@@ -85,6 +86,7 @@ export interface ExtractedSpec {
   notes: string | null;
   minimumOrderQuantity: string | null;
   profiles: string[];
+  keySpecs: string[];
 }
 
 const MISSING = "none given";
@@ -132,6 +134,7 @@ function normalize(r: z.infer<typeof ExtractedSpecSchema>): ExtractedSpec {
     notes: txt(r.notes),
     minimumOrderQuantity: txt(r.minimumOrderQuantity),
     profiles: Array.isArray(r.profiles) ? r.profiles.filter((p): p is string => typeof p === "string" && p.trim().length > 0) : [],
+    keySpecs: Array.isArray(r.keySpecs) ? r.keySpecs.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
   };
 }
 
@@ -145,6 +148,7 @@ const SYSTEM_PROMPT = `You extract aerospace material product specifications fro
 Rules:
 - Emit ONE row per distinct product/grade/part-number found in the document.
 - Treat section headings, category headings, or table titles (e.g. "MRO", "Interiors", "Structural", "Repair", "Tooling", "Aerospace") as PROFILES. Tag each product with the profiles whose section it appears under. A product that appears in multiple sections must list all those profiles.
+- KEY SPECS: extract every universal/OEM specification number associated with each product into the keySpecs[] array. These identify the part across manufacturers. Examples of patterns to capture (non-exhaustive): Boeing "BMS5-101", "BMS 5-101", "BAC5000"; Airbus "AIMS04-04-001", "ABS5334"; Bell "BPS4427"; Lockheed "STM39-01"; Northrop "NAI-1234"; Sikorsky "SS9710"; military "MIL-A-25463", "MIL-PRF-83282"; SAE "AMS3819", "AMS-C-9084"; ASTM "ASTM D5868"; NASM/MS "MS20995"; EN/DIN/ISO standards. Capture each spec number verbatim (preserve hyphens, slashes, and numbering). Do not invent specs that are not in the source document.
 - For TEXT fields, if the value is missing/unknown, return the literal string "none given" (do NOT guess).
 - For NUMERIC fields, if missing/unknown, return null.
 - For BOOLEAN flags, return false when unknown.
@@ -200,8 +204,9 @@ const TOOL = {
               notes: { type: "string" },
               minimumOrderQuantity: { type: "string" },
               profiles: { type: "array", items: { type: "string" } },
+              keySpecs: { type: "array", items: { type: "string" }, description: "Universal/OEM spec numbers (BMS5-101, MIL-PRF-83282, AMS3819, etc.). Verbatim." },
             },
-            required: ["vendor", "productName", "profiles"],
+            required: ["vendor", "productName", "profiles", "keySpecs"],
             additionalProperties: false,
           },
         },

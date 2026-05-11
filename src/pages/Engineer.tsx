@@ -64,6 +64,7 @@ interface FilterState {
   forms: string[];
   processMethods: string[];
   profiles: string[];
+  keySpecs: string[];
   cureC: NumRange;
   peakTgC: NumRange;
   maxServiceC: NumRange;
@@ -92,6 +93,7 @@ const EMPTY_FILTERS: FilterState = {
   forms: [],
   processMethods: [],
   profiles: [],
+  keySpecs: [],
   cureC: {},
   peakTgC: {},
   maxServiceC: {},
@@ -210,6 +212,7 @@ export default function Engineer() {
   const reinforcements = useMemo(() => uniqueOf(specs.map((s) => s.reinforcement)), [specs]);
   const forms = useMemo(() => uniqueOf(specs.map((s) => s.productForm)), [specs]);
   const processMethods = useMemo(() => uniqueOf(specs.map((s) => s.processMethod)), [specs]);
+  const allKeySpecs = useMemo(() => uniqueOf(specs.flatMap((s) => s.keySpecs ?? [])), [specs]);
 
   // Track which specs are already pending in the pick list (per current engineer)
   const pendingForMe = useMemo(() => {
@@ -236,6 +239,10 @@ export default function Engineer() {
       if (filters.profiles.length) {
         const sp = getSpecProfiles(s);
         if (!filters.profiles.some((p) => sp.includes(p as Profile))) return false;
+      }
+      if (filters.keySpecs.length) {
+        const ks = (s.keySpecs ?? []).map(canon);
+        if (!filters.keySpecs.some((k) => ks.includes(canon(k)))) return false;
       }
       if (!inRange(s.cureTemperatureC, filters.cureC)) return false;
       if (!inRange(s.peakTgC ?? s.dryTgOnsetC, filters.peakTgC)) return false;
@@ -266,6 +273,7 @@ export default function Engineer() {
           s.resinChemistry, s.reinforcement, s.productForm, s.processMethod,
           s.applications, s.qualificationsStandards, s.notes,
           s.crossoverProduct, s.crossoverVendor,
+          ...(s.keySpecs ?? []),
         ].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -354,6 +362,7 @@ export default function Engineer() {
     filters.vendors.length + filters.categories.length + filters.chemistries.length +
     filters.reinforcements.length + filters.forms.length + filters.processMethods.length +
     filters.profiles.length +
+    filters.keySpecs.length +
     Object.values(filters.flags).filter((v) => v !== undefined).length +
     [filters.cureC, filters.peakTgC, filters.maxServiceC, filters.outLifeDays, filters.tmlPct, filters.cvcmPct]
       .filter((r) => r.min !== undefined || r.max !== undefined).length +
@@ -458,6 +467,13 @@ export default function Engineer() {
                     ))}
                   </div>
                 </FilterSection>
+
+                <ChipFilter
+                  title="Key Spec"
+                  options={allKeySpecs}
+                  selected={filters.keySpecs}
+                  onChange={(v) => setFilters({ ...filters, keySpecs: v })}
+                />
 
                 <ChipFilter
                   title="Profile"
@@ -912,6 +928,21 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
         </div>
 
         <div className="p-5 space-y-5">
+          {(spec.keySpecs ?? []).length > 0 && (
+            <DrawerSection title="Key Specifications" tone="primary">
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Universal/OEM spec numbers. Search any of these in the search bar to find every manufacturer's equivalent.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {spec.keySpecs.map((k) => (
+                  <span key={k} className="text-xs font-mono px-2 py-1 rounded border border-border bg-background text-foreground">
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </DrawerSection>
+          )}
+
           {/* Compliance & Qualifications — surfaced first */}
           <DrawerSection title="Compliance & Qualifications" tone="primary">
             <Row label="NASA E595 (TML ≤ 1%, CVCM ≤ 0.1%)"

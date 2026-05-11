@@ -19,7 +19,7 @@ import { toast } from "sonner";
  * - PDF flow: Lovable AI (Gemini 2.5 Pro) extracts canonical rows + profile tags
  *   from section headings; user reviews & accepts/rejects rows. */
 
-const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" }[] = [
+const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "number" | "bool" | "keyspec" }[] = [
   { key: "vendor", type: "text", aliases: ["vendor", "supplier", "manufacturer", "mfg", "brand"] },
   { key: "productName", type: "text", aliases: ["product name", "product", "grade", "material", "material name", "part number", "p/n"] },
   { key: "productFamily", type: "text", aliases: ["product family", "family"] },
@@ -56,6 +56,23 @@ const FIELD_MAP: { key: keyof MasterSpec; aliases: string[]; type: "text" | "num
   { key: "notes", type: "text", aliases: ["notes", "comments", "remarks", "description"] },
   { key: "minimumOrderQuantity", type: "text", aliases: ["minimum order quantity (moq)", "minimum order quantity", "moq"] },
   { key: "sourceDocument", type: "text", aliases: ["source document", "source"] },
+  // Key Spec — universal/OEM spec numbers (BMS, AMS, MIL, AIMS, etc.). Multiple
+  // columns can map to keySpecs (e.g. one per OEM); values are unioned. Cell
+  // values may also be comma/semicolon-separated lists.
+  { key: "keySpecs", type: "keyspec", aliases: [
+    "key spec", "key specs", "key specification", "key specification number", "key spec number", "key spec numbers",
+    "spec number", "specification number", "spec no", "spec #",
+    "boeing spec", "boeing", "bms",
+    "airbus spec", "airbus", "aims", "abs",
+    "bell spec", "bell", "bps",
+    "lockheed spec", "lockheed", "stm",
+    "northrop spec", "northrop", "nai",
+    "sikorsky spec", "sikorsky",
+    "mil spec", "mil-spec", "military spec",
+    "ams", "sae ams", "ams spec",
+    "astm", "iso spec", "en spec", "din spec",
+    "oem spec", "qualified to", "qpl",
+  ] },
 ];
 
 interface ParsedRow { [k: string]: string | number | null }
@@ -210,6 +227,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
             notes: r.notes,
             minimumOrderQuantity: r.minimumOrderQuantity,
             profiles: r.profiles,
+            keySpecs: r.keySpecs,
           },
         };
       });
@@ -256,12 +274,21 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     return Number.isFinite(n) ? n : null;
   };
 
+  const splitKeySpecCell = (v: unknown): string[] => {
+    if (v === null || v === undefined) return [];
+    return String(v)
+      .split(/[,;|\n\r/]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && s.toLowerCase() !== "none given" && s.toLowerCase() !== "n/a" && s !== "—");
+  };
+
   const handleIngestSpreadsheet = async () => {
     setIsProcessing(true);
     try {
       const lookup = new Map(mappings.filter((m) => m.target).map((m) => [m.source, m.target!]));
       const specs: Partial<MasterSpec>[] = rawData.map((row) => {
         const out: Partial<MasterSpec> = {};
+        const keySpecBuf: string[] = [];
         for (const [src, val] of Object.entries(row)) {
           const target = lookup.get(src);
           if (!target) continue;
@@ -269,7 +296,14 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
           if (!fdef) continue;
           if (fdef.type === "bool") (out as Record<string, unknown>)[target] = coerceBool(val);
           else if (fdef.type === "number") (out as Record<string, unknown>)[target] = coerceNumber(val);
+          else if (fdef.type === "keyspec") keySpecBuf.push(...splitKeySpecCell(val));
           else (out as Record<string, unknown>)[target] = val == null ? null : String(val);
+        }
+        if (keySpecBuf.length > 0) {
+          // dedupe (case-insensitive)
+          const seen = new Map<string, string>();
+          for (const k of keySpecBuf) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
+          out.keySpecs = Array.from(seen.values());
         }
         return out;
       });
@@ -493,6 +527,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                       <th className="text-left px-3 py-2 font-medium">Category</th>
                       <th className="text-left px-3 py-2 font-medium">Cure °C</th>
                       <th className="text-left px-3 py-2 font-medium">Tg °C</th>
+                      <th className="text-left px-3 py-2 font-medium">Key Specs</th>
                       <th className="text-left px-3 py-2 font-medium">Profiles</th>
                     </tr>
                   </thead>
@@ -516,6 +551,19 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                           <Cell value={r.spec.materialCategory} />
                           <Cell value={r.spec.cureTemperatureC} />
                           <Cell value={r.spec.dryTgOnsetC ?? r.spec.peakTgC} />
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1 max-w-[180px]">
+                              {(r.spec.keySpecs ?? []).length === 0 ? (
+                                <span className="text-xs text-muted-foreground italic">none</span>
+                              ) : (
+                                r.spec.keySpecs!.map((k) => (
+                                  <span key={k} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-foreground/10 text-foreground border border-border">
+                                    {k}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </td>
                           <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
                               {(r.spec.profiles ?? []).length === 0 ? (

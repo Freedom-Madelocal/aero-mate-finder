@@ -71,6 +71,7 @@ export default function MasterSpecs() {
         s.resinChemistry, s.reinforcement, s.productForm, s.applications,
         s.qualificationsStandards, s.notes, s.crossoverProduct,
         ...(s.profiles ?? []),
+        ...(s.keySpecs ?? []),
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
@@ -378,6 +379,18 @@ function SpecDrawer({
             <Row label="Resin Chemistry" value={spec.resinChemistry} />
             <Row label="Process Method" value={spec.processMethod} />
           </Section>
+
+          {(spec.keySpecs ?? []).length > 0 && (
+            <Section title="Key Specifications">
+              <div className="flex flex-wrap gap-1.5">
+                {spec.keySpecs.map((k) => (
+                  <span key={k} className="text-xs font-mono px-2 py-1 rounded border border-border bg-secondary/40 text-foreground">
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
 
           <Section title="Thermal & Cure">
             <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °C")} />
