@@ -33,6 +33,7 @@ import { Route as MaterialIdRouteImport } from './routes/material.$id'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
+import { Route as AdminCrmRouteImport } from './routes/admin.crm'
 
 const SuppliersRoute = SuppliersRouteImport.update({
   id: '/suppliers',
@@ -154,6 +155,11 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
   path: '/admin/organizations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCrmRoute = AdminCrmRouteImport.update({
+  id: '/admin/crm',
+  path: '/admin/crm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
+  '/admin/crm': typeof AdminCrmRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
+  '/admin/crm': typeof AdminCrmRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
+  '/admin/crm': typeof AdminCrmRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/suppliers'
+    | '/admin/crm'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/suppliers'
+    | '/admin/crm'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/suppliers'
+    | '/admin/crm'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
+  AdminCrmRoute: typeof AdminCrmRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   MaterialIdRoute: typeof MaterialIdRoute
@@ -511,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrganizationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/crm': {
+      id: '/admin/crm'
+      path: '/admin/crm'
+      fullPath: '/admin/crm'
+      preLoaderRoute: typeof AdminCrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -545,6 +565,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
+  AdminCrmRoute: AdminCrmRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
   MaterialIdRoute: MaterialIdRoute,
