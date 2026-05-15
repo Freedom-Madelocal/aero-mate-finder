@@ -241,6 +241,10 @@ export function useMasterSpecStore(): SpecStore {
   return snap;
 }
 
+export function preloadMasterSpecStore(): Promise<void> {
+  return hydrate();
+}
+
 /**
  * Upsert a batch of specs (keyed on vendor + product_name) and log the upload.
  *
