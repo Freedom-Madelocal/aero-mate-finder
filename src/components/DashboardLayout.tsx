@@ -22,6 +22,9 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import GlobalSearch from "@/components/GlobalSearch";
 import GuidedTour from "@/components/GuidedTour";
+import { preloadMasterSpecStore } from "@/data/masterSpecs";
+import { preloadMaterialStore } from "@/data/materials";
+import { preloadProcurementStore } from "@/data/procurement";
 
 const baseNavItems = [
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
@@ -36,6 +39,8 @@ const superAdminNavItems = [
 ];
 
 type NavItem = { path: string; label: string; icon: typeof Package };
+
+let hasPreloadedWorkspace = false;
 
 function NavList({
   items,
@@ -53,7 +58,7 @@ function NavList({
       {items.map((item) => {
         const isActive = location === item.path;
         return (
-          <Link key={item.path} to={item.path} onClick={onNavigate}>
+          <Link key={item.path} to={item.path} onClick={onNavigate} preload="render">
             <div
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                 isActive
@@ -79,6 +84,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [msgRecipient, setMsgRecipient] = useState<OnlineMember | null>(null);
   const onlineMembers = useOrgPresence();
   const unreadSenders = useUnreadMessages();
+
+  useEffect(() => {
+    if (hasPreloadedWorkspace) return;
+    hasPreloadedWorkspace = true;
+    void Promise.allSettled([
+      preloadMasterSpecStore(),
+      preloadMaterialStore(),
+      preloadProcurementStore(),
+      import("@/pages/Engineer"),
+      import("@/pages/Inventory"),
+      import("@/pages/Procurement"),
+      import("@/pages/MasterSpecs"),
+    ]);
+  }, []);
 
   // Merge: online members + offline members who have unread messages.
   // Map sender_id -> unread count for badges.
@@ -139,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <NavList items={navItems} location={location} expanded={sidebarExpanded} />
 
         <div className="border-t border-border p-2">
-          <Link to="/settings">
+          <Link to="/settings" preload="render">
             <div
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full transition-colors ${
                 location === "/settings"
@@ -191,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onNavigate={() => setMobileOpen(false)}
                 />
                 <div className="border-t border-border p-2">
-                  <Link to="/settings" onClick={() => setMobileOpen(false)}>
+                  <Link to="/settings" onClick={() => setMobileOpen(false)} preload="render">
                     <div
                       className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full ${
                         location === "/settings"
