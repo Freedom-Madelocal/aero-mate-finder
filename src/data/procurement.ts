@@ -114,6 +114,10 @@ async function refresh() {
   await hydrate();
 }
 
+export function preloadProcurementStore() {
+  return hydrate();
+}
+
 export function useProcurementStore(): Store {
   const [snap, setSnap] = useState<Store>(() => _store);
   useEffect(() => {
