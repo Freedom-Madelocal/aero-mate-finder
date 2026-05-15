@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import traceumIcon from "@/assets/traceium-icon.png";
-import traceumWordmark from "@/assets/traceium-wordmark.png";
+import traceumIcon from "@/assets/traceium-icon.webp";
+import traceumWordmark from "@/assets/traceium-wordmark.webp";
 
 export default function Landing() {
   const [submitting, setSubmitting] = useState(false);

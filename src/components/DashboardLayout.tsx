@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { logPageView } from "@/lib/userActivity";
-import traceumIcon from "@/assets/traceium-icon.png";
-import traceumWordmark from "@/assets/traceium-wordmark.png";
+import traceumIcon from "@/assets/traceium-icon.webp";
+import traceumWordmark from "@/assets/traceium-wordmark.webp";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import ProfileDrawer from "@/components/ProfileDrawer";
