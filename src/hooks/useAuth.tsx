@@ -45,11 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const loadedUserIdRef = useRef<string | null>(null);
   const loadingUserIdRef = useRef<string | null>(null);
+  const loadingPromiseRef = useRef<Promise<void> | null>(null);
 
   const loadUserData = useCallback(async (uid: string, force = false) => {
     if (!force && (loadedUserIdRef.current === uid || loadingUserIdRef.current === uid)) return;
+    if (!force && loadingUserIdRef.current === uid && loadingPromiseRef.current) {
+      return loadingPromiseRef.current;
+    }
     loadingUserIdRef.current = uid;
-    try {
+    loadingPromiseRef.current = (async () => {
       const [{ data: prof }, { data: rolesData }, { data: demoData }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
@@ -59,8 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRoles((rolesData ?? []).map((r: { role: AppRole }) => r.role));
       setDemo((demoData as DemoSettings) ?? null);
       loadedUserIdRef.current = uid;
+    })();
+    try {
+      await loadingPromiseRef.current;
     } finally {
       loadingUserIdRef.current = null;
+      loadingPromiseRef.current = null;
     }
   }, []);
 
