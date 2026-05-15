@@ -326,6 +326,18 @@ export default function Engineer() {
     });
   }, [matched, sort, pendingForMe, materials]);
 
+  const inStockCount = useMemo(
+    () => matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length,
+    [matched, materials],
+  );
+
+  // Reset pagination whenever the filtered result set changes.
+  useEffect(() => {
+    setVisibleLimit(PAGE_SIZE);
+  }, [matched.length, sort.key, sort.dir]);
+
+  const visibleSorted = useMemo(() => sorted.slice(0, visibleLimit), [sorted, visibleLimit]);
+
   const isEmpty = specs.length === 0;
 
   const handleProcure = async (spec: MasterSpec) => {
