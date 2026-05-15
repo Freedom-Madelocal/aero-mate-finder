@@ -183,6 +183,8 @@ export default function Engineer() {
     key: "product",
     dir: "asc",
   });
+  const PAGE_SIZE = 100;
+  const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
 
@@ -323,6 +325,18 @@ export default function Engineer() {
       return 0;
     });
   }, [matched, sort, pendingForMe, materials]);
+
+  const inStockCount = useMemo(
+    () => matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length,
+    [matched, materials],
+  );
+
+  // Reset pagination whenever the filtered result set changes.
+  useEffect(() => {
+    setVisibleLimit(PAGE_SIZE);
+  }, [matched.length, sort.key, sort.dir]);
+
+  const visibleSorted = useMemo(() => sorted.slice(0, visibleLimit), [sorted, visibleLimit]);
 
   const isEmpty = specs.length === 0;
 
@@ -593,7 +607,7 @@ export default function Engineer() {
                   {matched.length} match{matched.length === 1 ? "" : "es"} of {specs.length}
                 </h2>
                 <span className="text-xs text-muted-foreground">
-                  {matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length} in stock
+                  {inStockCount} in stock
                 </span>
               </div>
 
@@ -626,7 +640,7 @@ export default function Engineer() {
                           </td>
                         </tr>
                       ) : (
-                        sorted.map((spec) => {
+                        visibleSorted.map((spec) => {
                           const inv = getInventoryMatch(spec, materials);
                           const e595Pass =
                             spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
@@ -714,6 +728,27 @@ export default function Engineer() {
                     </tbody>
                   </table>
                 </div>
+                {sorted.length > visibleLimit && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
+                    <span>
+                      Showing {visibleLimit} of {sorted.length}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setVisibleLimit((n) => n + PAGE_SIZE)}
+                        className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
+                      >
+                        Show {Math.min(PAGE_SIZE, sorted.length - visibleLimit)} more
+                      </button>
+                      <button
+                        onClick={() => setVisibleLimit(sorted.length)}
+                        className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
+                      >
+                        Show all
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </section>
