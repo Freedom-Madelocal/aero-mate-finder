@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadingPromiseRef = useRef<Promise<void> | null>(null);
 
   const loadUserData = useCallback(async (uid: string, force = false) => {
-    if (!force && (loadedUserIdRef.current === uid || loadingUserIdRef.current === uid)) return;
+    if (!force && loadedUserIdRef.current === uid) return;
     if (!force && loadingUserIdRef.current === uid && loadingPromiseRef.current) {
       return loadingPromiseRef.current;
     }
