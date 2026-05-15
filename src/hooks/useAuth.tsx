@@ -49,16 +49,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUserData = useCallback(async (uid: string, force = false) => {
     if (!force && (loadedUserIdRef.current === uid || loadingUserIdRef.current === uid)) return;
     loadingUserIdRef.current = uid;
-    const [{ data: prof }, { data: rolesData }, { data: demoData }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.from("user_demo_settings").select("*").eq("user_id", uid).maybeSingle(),
-    ]);
-    setProfile((prof as Profile) ?? null);
-    setRoles((rolesData ?? []).map((r: { role: AppRole }) => r.role));
-    setDemo((demoData as DemoSettings) ?? null);
-    loadedUserIdRef.current = uid;
-    loadingUserIdRef.current = null;
+    try {
+      const [{ data: prof }, { data: rolesData }, { data: demoData }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase.from("user_demo_settings").select("*").eq("user_id", uid).maybeSingle(),
+      ]);
+      setProfile((prof as Profile) ?? null);
+      setRoles((rolesData ?? []).map((r: { role: AppRole }) => r.role));
+      setDemo((demoData as DemoSettings) ?? null);
+      loadedUserIdRef.current = uid;
+    } finally {
+      loadingUserIdRef.current = null;
+    }
   }, []);
 
   const refresh = useCallback(async () => {
