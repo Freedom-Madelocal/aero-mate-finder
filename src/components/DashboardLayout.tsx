@@ -58,7 +58,7 @@ function NavList({
       {items.map((item) => {
         const isActive = location === item.path;
         return (
-          <Link key={item.path} to={item.path} onClick={onNavigate}>
+          <Link key={item.path} to={item.path} onClick={onNavigate} preload="render">
             <div
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                 isActive
@@ -158,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <NavList items={navItems} location={location} expanded={sidebarExpanded} />
 
         <div className="border-t border-border p-2">
-          <Link to="/settings">
+          <Link to="/settings" preload="render">
             <div
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full transition-colors ${
                 location === "/settings"
@@ -210,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onNavigate={() => setMobileOpen(false)}
                 />
                 <div className="border-t border-border p-2">
-                  <Link to="/settings" onClick={() => setMobileOpen(false)}>
+                  <Link to="/settings" onClick={() => setMobileOpen(false)} preload="render">
                     <div
                       className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full ${
                         location === "/settings"
