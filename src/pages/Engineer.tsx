@@ -640,7 +640,7 @@ export default function Engineer() {
                           </td>
                         </tr>
                       ) : (
-                        sorted.map((spec) => {
+                        visibleSorted.map((spec) => {
                           const inv = getInventoryMatch(spec, materials);
                           const e595Pass =
                             spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
