@@ -40,6 +40,8 @@ const superAdminNavItems = [
 
 type NavItem = { path: string; label: string; icon: typeof Package };
 
+let hasPreloadedWorkspace = false;
+
 function NavList({
   items,
   location,
@@ -84,6 +86,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const unreadSenders = useUnreadMessages();
 
   useEffect(() => {
+    if (hasPreloadedWorkspace) return;
+    hasPreloadedWorkspace = true;
     void Promise.allSettled([
       preloadMasterSpecStore(),
       preloadMaterialStore(),
