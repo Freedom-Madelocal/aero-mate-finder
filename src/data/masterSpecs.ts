@@ -382,12 +382,23 @@ export type InventoryMatch =
   | { status: "tracked"; material: Material }
   | { status: "none" };
 
+const inventoryMatchCache = new WeakMap<Material[], WeakMap<MasterSpec, InventoryMatch>>();
+
 export function getInventoryMatch(spec: MasterSpec, materials: Material[]): InventoryMatch {
+  const cachedForMaterials = inventoryMatchCache.get(materials);
+  const cached = cachedForMaterials?.get(spec);
+  if (cached) return cached;
+
   const sameVendor = materials.filter(
-    (m) => m.supplier && m.supplier.toLowerCase() === spec.vendor.toLowerCase(),
+    (m) => m.supplier && m.supplier.toLowerCase() === (spec.vendor ?? "").toLowerCase(),
   );
   const pool = sameVendor.length > 0 ? sameVendor : materials;
   const match = pool.find((m) => fuzzyMatch(m.product, spec.productName));
-  if (!match) return { status: "none" };
-  return { status: match.availableQty > 0 ? "in-stock" : "tracked", material: match };
+  const result: InventoryMatch = !match
+    ? { status: "none" }
+    : { status: match.availableQty > 0 ? "in-stock" : "tracked", material: match };
+  const nextCache = cachedForMaterials ?? new WeakMap<MasterSpec, InventoryMatch>();
+  nextCache.set(spec, result);
+  if (!cachedForMaterials) inventoryMatchCache.set(materials, nextCache);
+  return result;
 }
