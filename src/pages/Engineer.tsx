@@ -183,6 +183,8 @@ export default function Engineer() {
     key: "product",
     dir: "asc",
   });
+  const PAGE_SIZE = 100;
+  const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
 
