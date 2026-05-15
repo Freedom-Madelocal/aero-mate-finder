@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -43,8 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [demo, setDemo] = useState<DemoSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadedUserIdRef = useRef<string | null>(null);
+  const loadingUserIdRef = useRef<string | null>(null);
 
-  const loadUserData = useCallback(async (uid: string) => {
+  const loadUserData = useCallback(async (uid: string, force = false) => {
+    if (!force && (loadedUserIdRef.current === uid || loadingUserIdRef.current === uid)) return;
+    loadingUserIdRef.current = uid;
     const [{ data: prof }, { data: rolesData }, { data: demoData }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
@@ -53,10 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile((prof as Profile) ?? null);
     setRoles((rolesData ?? []).map((r: { role: AppRole }) => r.role));
     setDemo((demoData as DemoSettings) ?? null);
+    loadedUserIdRef.current = uid;
+    loadingUserIdRef.current = null;
   }, []);
 
   const refresh = useCallback(async () => {
-    if (session?.user) await loadUserData(session.user.id);
+    if (session?.user) await loadUserData(session.user.id, true);
   }, [session, loadUserData]);
 
   useEffect(() => {
@@ -68,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           import("@/lib/userActivity").then((m) => m.logLogin(s.user.id));
         }
       } else {
+        loadedUserIdRef.current = null;
+        loadingUserIdRef.current = null;
         setProfile(null);
         setRoles([]);
         setDemo(null);
