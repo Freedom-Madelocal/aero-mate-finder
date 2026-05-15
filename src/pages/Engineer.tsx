@@ -607,7 +607,7 @@ export default function Engineer() {
                   {matched.length} match{matched.length === 1 ? "" : "es"} of {specs.length}
                 </h2>
                 <span className="text-xs text-muted-foreground">
-                  {matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length} in stock
+                  {inStockCount} in stock
                 </span>
               </div>
 
