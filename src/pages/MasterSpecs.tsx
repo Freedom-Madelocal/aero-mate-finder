@@ -7,6 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
+const PAGE_SIZE = 100;
+
 export default function MasterSpecs() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading } = useAuth();
@@ -27,6 +29,7 @@ export default function MasterSpecs() {
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
+  const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
 
   const vendors = useMemo(
     () => ["All", ...Array.from(new Set(specs.map((s) => s.vendor))).sort()],
@@ -82,6 +85,12 @@ export default function MasterSpecs() {
     () => specs.filter((s) => getInventoryMatch(s, materials).status !== "none").length,
     [specs, materials],
   );
+
+  useEffect(() => {
+    setVisibleLimit(PAGE_SIZE);
+  }, [filtered.length, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, activeProfiles]);
+
+  const visibleFiltered = useMemo(() => filtered.slice(0, visibleLimit), [filtered, visibleLimit]);
 
   const fmt = (n: number | null, suffix = "") =>
     n === null || n === undefined ? "—" : `${n}${suffix}`;
@@ -191,7 +200,7 @@ export default function MasterSpecs() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((s) => {
+                  visibleFiltered.map((s) => {
                     const inv = getInventoryMatch(s, materials);
                     return (
                       <tr
@@ -226,6 +235,27 @@ export default function MasterSpecs() {
               </tbody>
             </table>
           </div>
+          {filtered.length > visibleFiltered.length && (
+            <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+              <span>Showing {visibleFiltered.length} of {filtered.length}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleLimit((v) => Math.min(v + PAGE_SIZE, filtered.length))}
+                  className="rounded border border-border px-2 py-1 text-foreground hover:bg-secondary"
+                >
+                  Show {Math.min(PAGE_SIZE, filtered.length - visibleFiltered.length)} more
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibleLimit(filtered.length)}
+                  className="rounded border border-border px-2 py-1 text-foreground hover:bg-secondary"
+                >
+                  Show all
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
