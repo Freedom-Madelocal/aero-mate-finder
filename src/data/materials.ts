@@ -244,6 +244,10 @@ async function hydrate(): Promise<void> {
   return _hydrating;
 }
 
+export function preloadMaterialStore(): Promise<void> {
+  return hydrate();
+}
+
 // ─── Public mutations ───────────────────────────────────────────────
 
 export function setMaterials(materials: Material[]) {
