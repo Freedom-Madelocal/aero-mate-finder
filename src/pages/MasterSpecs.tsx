@@ -1,13 +1,13 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import SpecSheetUpload from "@/components/SpecSheetUpload";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
 import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 const PAGE_SIZE = 100;
+const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
 
 export default function MasterSpecs() {
   const navigate = useNavigate();
@@ -268,7 +268,11 @@ export default function MasterSpecs() {
         />
       )}
 
-      <SpecSheetUpload isOpen={showUpload} onClose={() => setShowUpload(false)} />
+      {showUpload && (
+        <Suspense fallback={null}>
+          <SpecSheetUpload isOpen={showUpload} onClose={() => setShowUpload(false)} />
+        </Suspense>
+      )}
     </DashboardLayout>
   );
 }
