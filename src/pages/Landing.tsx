@@ -58,8 +58,8 @@ export default function Landing() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <img src={traceumIcon} alt="" className="h-7 w-auto" />
-            <img src={traceumWordmark} alt="Traceium" className="h-4 w-auto" />
+            <img src={traceumIcon} alt="" width={28} height={22} decoding="async" fetchPriority="high" className="h-7 w-auto" />
+            <img src={traceumWordmark} alt="Traceium" width={138} height={16} decoding="async" fetchPriority="high" className="h-4 w-auto" />
           </Link>
           <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
             <a href="#problem" className="hover:text-foreground">The problem</a>
