@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const unreadSenders = useUnreadMessages();
 
   useEffect(() => {
-    void Promise.all([
+    void Promise.allSettled([
       preloadMasterSpecStore(),
       preloadMaterialStore(),
       preloadProcurementStore(),
