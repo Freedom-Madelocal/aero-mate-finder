@@ -728,6 +728,27 @@ export default function Engineer() {
                     </tbody>
                   </table>
                 </div>
+                {sorted.length > visibleLimit && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
+                    <span>
+                      Showing {visibleLimit} of {sorted.length}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setVisibleLimit((n) => n + PAGE_SIZE)}
+                        className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
+                      >
+                        Show {Math.min(PAGE_SIZE, sorted.length - visibleLimit)} more
+                      </button>
+                      <button
+                        onClick={() => setVisibleLimit(sorted.length)}
+                        className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
+                      >
+                        Show all
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </section>
