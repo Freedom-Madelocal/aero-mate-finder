@@ -1,8 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import StockReportUpload from "@/components/StockReportUpload";
 import StatusTooltip from "@/components/StatusTooltip";
 import { Search, Filter, Plus, ChevronDown, Package, TruckIcon, Upload, FileSpreadsheet, X, Info, Trash2 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { lazy, Suspense, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMaterialStore, addMaterials, clearAllData, getStore, STATUS_TOOLTIPS, METRIC_TOOLTIPS } from "@/data/materials";
 import type { Material, StockReportRecord } from "@/data/materials";
@@ -15,6 +14,8 @@ import { toast } from "sonner";
  * Upload Stock Report: Ingest Excel/CSV, auto-map columns, add custom columns.
  * All data comes from the shared reactive store — no hardcoded mock data.
  */
+
+const StockReportUpload = lazy(() => import("@/components/StockReportUpload"));
 
 export default function Inventory() {
   const navigate = useNavigate();
@@ -640,11 +641,15 @@ export default function Inventory() {
       </div>
 
       {/* Upload modal */}
-      <StockReportUpload
-        isOpen={showUpload}
-        onClose={() => setShowUpload(false)}
-        onIngest={handleIngest}
-      />
+      {showUpload && (
+        <Suspense fallback={null}>
+          <StockReportUpload
+            isOpen={showUpload}
+            onClose={() => setShowUpload(false)}
+            onIngest={handleIngest}
+          />
+        </Suspense>
+      )}
     </DashboardLayout>
   );
 }
