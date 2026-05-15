@@ -22,6 +22,9 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import GlobalSearch from "@/components/GlobalSearch";
 import GuidedTour from "@/components/GuidedTour";
+import { preloadMasterSpecStore } from "@/data/masterSpecs";
+import { preloadMaterialStore } from "@/data/materials";
+import { preloadProcurementStore } from "@/data/procurement";
 
 const baseNavItems = [
   { path: "/engineer", label: "Engineer", icon: Lightbulb },
@@ -79,6 +82,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [msgRecipient, setMsgRecipient] = useState<OnlineMember | null>(null);
   const onlineMembers = useOrgPresence();
   const unreadSenders = useUnreadMessages();
+
+  useEffect(() => {
+    void Promise.all([
+      preloadMasterSpecStore(),
+      preloadMaterialStore(),
+      preloadProcurementStore(),
+      import("@/pages/Engineer"),
+      import("@/pages/Inventory"),
+      import("@/pages/Procurement"),
+      import("@/pages/MasterSpecs"),
+    ]);
+  }, []);
 
   // Merge: online members + offline members who have unread messages.
   // Map sender_id -> unread count for badges.
