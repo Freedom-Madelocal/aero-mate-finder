@@ -394,21 +394,21 @@ export default function Engineer() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-              Engineer Workspace
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Search the master spec catalog by any property. Mark what you need
-              for procurement and star items you reorder often.
-            </p>
-          </div>
+      <div className="px-5 py-5 space-y-4">
+        {/* Top full-width search bar */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={filters.q}
+            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+            placeholder="Search by name, chemistry, application, keyword…"
+            className="w-full pl-10 pr-3 py-2.5 bg-card rounded-[10px] text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1"
+            style={{ border: "0.5px solid var(--accent-blue-border)" }}
+          />
         </div>
 
         {isEmpty ? (
-          <div className="bg-card border border-border rounded-lg p-16 text-center">
+          <div className="bg-card border border-border rounded-[10px] p-16 text-center">
             <Search className="w-7 h-7 text-muted-foreground/50 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
               The master spec catalog is empty. Upload a spec sheet from the
