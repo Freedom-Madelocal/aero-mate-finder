@@ -57,6 +57,14 @@ interface NumRange {
 
 interface FilterState {
   q: string;
+  // Tier-1 primary chip filters
+  productTypes: string[];
+  suppliers: string[];
+  chemistryGroups: string[];
+  processGroups: string[];
+  applicationGroups: string[];
+  segmentGroups: string[];
+  // Tier-2 advanced filters
   vendors: string[];
   categories: string[];
   chemistries: string[];
@@ -87,6 +95,12 @@ interface FilterState {
 
 const EMPTY_FILTERS: FilterState = {
   q: "",
+  productTypes: [],
+  suppliers: [],
+  chemistryGroups: [],
+  processGroups: [],
+  applicationGroups: [],
+  segmentGroups: [],
   vendors: [],
   categories: [],
   chemistries: [],
@@ -105,6 +119,63 @@ const EMPTY_FILTERS: FilterState = {
   flags: {},
   inventory: "any",
   e595: "any",
+};
+
+// Tier-1 primary chip vocabularies (hard-coded, not derived from data)
+const PRODUCT_TYPES = ["Prepreg", "Film adhesive", "Paste adhesive", "Fabric", "RTM"] as const;
+const SUPPLIERS = ["Hexcel", "Toray", "Syensqo", "3M", "Henkel"] as const;
+const CHEMISTRY_GROUPS = ["Epoxy", "BMI", "Cyanate ester", "PEEK", "PEKK", "LMPAEK", "Phenolic"] as const;
+const PROCESS_GROUPS = ["OoA / VBO", "Autoclave", "AFP / ATL", "RTM / Infusion"] as const;
+const APPLICATION_GROUPS = [
+  "Primary structure",
+  "Secondary structure",
+  "Interior / FST",
+  "Engine / hot zone",
+  "Radome / antenna",
+] as const;
+const SEGMENT_GROUPS = [
+  "Commercial aircraft",
+  "Military",
+  "Space & satellite",
+  "Launch vehicle",
+  "UAM / eVTOL",
+] as const;
+
+const PRODUCT_TYPE_RX: Record<string, RegExp> = {
+  "Prepreg": /prepreg/i,
+  "Film adhesive": /film\s*adhesive|adhesive\s*film/i,
+  "Paste adhesive": /paste\s*adhesive|adhesive\s*paste/i,
+  "Fabric": /fabric|woven|cloth/i,
+  "RTM": /\brtm\b|resin\s*transfer/i,
+};
+const CHEMISTRY_RX: Record<string, RegExp> = {
+  "Epoxy": /epoxy/i,
+  "BMI": /\bbmi\b|bismaleimide/i,
+  "Cyanate ester": /cyanate\s*ester|\bce\b/i,
+  "PEEK": /\bpeek\b/i,
+  "PEKK": /\bpekk\b/i,
+  "LMPAEK": /lmpaek|low\s*melt\s*paek/i,
+  "Phenolic": /phenolic/i,
+};
+const PROCESS_RX: Record<string, RegExp> = {
+  "OoA / VBO": /ooa|out[-\s]?of[-\s]?autoclave|\bvbo\b|vacuum\s*bag\s*only/i,
+  "Autoclave": /autoclave/i,
+  "AFP / ATL": /\bafp\b|\batl\b|automated\s*(fiber|tape)/i,
+  "RTM / Infusion": /\brtm\b|resin\s*transfer|infusion/i,
+};
+const APPLICATION_RX: Record<string, RegExp> = {
+  "Primary structure": /primary\s*structure|airframe|fuselage|wing|spar/i,
+  "Secondary structure": /secondary\s*structure|fairing|control\s*surface/i,
+  "Interior / FST": /interior|cabin|sidewall|trim|galley|seating|\bfst\b|flame.*smoke/i,
+  "Engine / hot zone": /engine|nacelle|hot\s*zone|exhaust|nozzle/i,
+  "Radome / antenna": /radome|antenna/i,
+};
+const SEGMENT_RX: Record<string, RegExp> = {
+  "Commercial aircraft": /commercial|airliner|boeing|airbus|narrowbody|widebody/i,
+  "Military": /military|defense|defence|fighter|\bdod\b|mil[-\s]?spec/i,
+  "Space & satellite": /space|satellite|spacecraft|low\s*outgassing|vacuum/i,
+  "Launch vehicle": /launch\s*vehicle|rocket|booster|upper\s*stage/i,
+  "UAM / eVTOL": /\buam\b|\bevtol\b|urban\s*air|advanced\s*air\s*mobility/i,
 };
 
 const FLAG_LABELS: Record<keyof FilterState["flags"], string> = {
