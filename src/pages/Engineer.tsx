@@ -466,6 +466,8 @@ export default function Engineer() {
   const clearFilters = () => setFilters(EMPTY_FILTERS);
   const activeFilterCount =
     (filters.q ? 1 : 0) +
+    filters.productTypes.length + filters.suppliers.length + filters.chemistryGroups.length +
+    filters.processGroups.length + filters.applicationGroups.length + filters.segmentGroups.length +
     filters.vendors.length + filters.categories.length + filters.chemistries.length +
     filters.reinforcements.length + filters.forms.length + filters.processMethods.length +
     filters.profiles.length +
