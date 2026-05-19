@@ -57,6 +57,14 @@ interface NumRange {
 
 interface FilterState {
   q: string;
+  // Tier-1 primary chip filters
+  productTypes: string[];
+  suppliers: string[];
+  chemistryGroups: string[];
+  processGroups: string[];
+  applicationGroups: string[];
+  segmentGroups: string[];
+  // Tier-2 advanced filters
   vendors: string[];
   categories: string[];
   chemistries: string[];
@@ -87,6 +95,12 @@ interface FilterState {
 
 const EMPTY_FILTERS: FilterState = {
   q: "",
+  productTypes: [],
+  suppliers: [],
+  chemistryGroups: [],
+  processGroups: [],
+  applicationGroups: [],
+  segmentGroups: [],
   vendors: [],
   categories: [],
   chemistries: [],
@@ -105,6 +119,63 @@ const EMPTY_FILTERS: FilterState = {
   flags: {},
   inventory: "any",
   e595: "any",
+};
+
+// Tier-1 primary chip vocabularies (hard-coded, not derived from data)
+const PRODUCT_TYPES = ["Prepreg", "Film adhesive", "Paste adhesive", "Fabric", "RTM"] as const;
+const SUPPLIERS = ["Hexcel", "Toray", "Syensqo", "3M", "Henkel"] as const;
+const CHEMISTRY_GROUPS = ["Epoxy", "BMI", "Cyanate ester", "PEEK", "PEKK", "LMPAEK", "Phenolic"] as const;
+const PROCESS_GROUPS = ["OoA / VBO", "Autoclave", "AFP / ATL", "RTM / Infusion"] as const;
+const APPLICATION_GROUPS = [
+  "Primary structure",
+  "Secondary structure",
+  "Interior / FST",
+  "Engine / hot zone",
+  "Radome / antenna",
+] as const;
+const SEGMENT_GROUPS = [
+  "Commercial aircraft",
+  "Military",
+  "Space & satellite",
+  "Launch vehicle",
+  "UAM / eVTOL",
+] as const;
+
+const PRODUCT_TYPE_RX: Record<string, RegExp> = {
+  "Prepreg": /prepreg/i,
+  "Film adhesive": /film\s*adhesive|adhesive\s*film/i,
+  "Paste adhesive": /paste\s*adhesive|adhesive\s*paste/i,
+  "Fabric": /fabric|woven|cloth/i,
+  "RTM": /\brtm\b|resin\s*transfer/i,
+};
+const CHEMISTRY_RX: Record<string, RegExp> = {
+  "Epoxy": /epoxy/i,
+  "BMI": /\bbmi\b|bismaleimide/i,
+  "Cyanate ester": /cyanate\s*ester|\bce\b/i,
+  "PEEK": /\bpeek\b/i,
+  "PEKK": /\bpekk\b/i,
+  "LMPAEK": /lmpaek|low\s*melt\s*paek/i,
+  "Phenolic": /phenolic/i,
+};
+const PROCESS_RX: Record<string, RegExp> = {
+  "OoA / VBO": /ooa|out[-\s]?of[-\s]?autoclave|\bvbo\b|vacuum\s*bag\s*only/i,
+  "Autoclave": /autoclave/i,
+  "AFP / ATL": /\bafp\b|\batl\b|automated\s*(fiber|tape)/i,
+  "RTM / Infusion": /\brtm\b|resin\s*transfer|infusion/i,
+};
+const APPLICATION_RX: Record<string, RegExp> = {
+  "Primary structure": /primary\s*structure|airframe|fuselage|wing|spar/i,
+  "Secondary structure": /secondary\s*structure|fairing|control\s*surface/i,
+  "Interior / FST": /interior|cabin|sidewall|trim|galley|seating|\bfst\b|flame.*smoke/i,
+  "Engine / hot zone": /engine|nacelle|hot\s*zone|exhaust|nozzle/i,
+  "Radome / antenna": /radome|antenna/i,
+};
+const SEGMENT_RX: Record<string, RegExp> = {
+  "Commercial aircraft": /commercial|airliner|boeing|airbus|narrowbody|widebody/i,
+  "Military": /military|defense|defence|fighter|\bdod\b|mil[-\s]?spec/i,
+  "Space & satellite": /space|satellite|spacecraft|low\s*outgassing|vacuum/i,
+  "Launch vehicle": /launch\s*vehicle|rocket|booster|upper\s*stage/i,
+  "UAM / eVTOL": /\buam\b|\bevtol\b|urban\s*air|advanced\s*air\s*mobility/i,
 };
 
 const FLAG_LABELS: Record<keyof FilterState["flags"], string> = {
@@ -235,6 +306,20 @@ export default function Engineer() {
     return specs.filter((s) => {
       const matchAny = (sel: string[], val: string | null | undefined) =>
         sel.length === 0 || sel.some((x) => canon(x) === canon(val));
+      // Tier-1 chip groups (regex against relevant joined fields)
+      const productHay = [s.materialCategory, s.productForm, s.productName, s.productFamily].filter(Boolean).join(" ");
+      const chemistryHay = [s.resinChemistry, s.productName, s.productFamily, s.notes].filter(Boolean).join(" ");
+      const processHay = [s.processMethod, s.notes, s.applications].filter(Boolean).join(" ") + (s.ooaVboCapable ? " ooa vbo" : "");
+      const appHay = [s.applications, s.notes, s.qualificationsStandards].filter(Boolean).join(" ");
+      const segHay = [s.applications, s.notes, s.qualificationsStandards, ...(s.customers ?? [])].filter(Boolean).join(" ");
+      const groupMatch = (sel: string[], rx: Record<string, RegExp>, hay: string) =>
+        sel.length === 0 || sel.some((k) => rx[k]?.test(hay));
+      if (!groupMatch(filters.productTypes, PRODUCT_TYPE_RX, productHay)) return false;
+      if (filters.suppliers.length && !filters.suppliers.some((v) => canon(v) === canon(s.vendor))) return false;
+      if (!groupMatch(filters.chemistryGroups, CHEMISTRY_RX, chemistryHay)) return false;
+      if (!groupMatch(filters.processGroups, PROCESS_RX, processHay)) return false;
+      if (!groupMatch(filters.applicationGroups, APPLICATION_RX, appHay)) return false;
+      if (!groupMatch(filters.segmentGroups, SEGMENT_RX, segHay)) return false;
       if (!matchAny(filters.vendors, s.vendor)) return false;
       if (!matchAny(filters.categories, s.materialCategory)) return false;
       if (!matchAny(filters.chemistries, s.resinChemistry)) return false;
@@ -381,6 +466,8 @@ export default function Engineer() {
   const clearFilters = () => setFilters(EMPTY_FILTERS);
   const activeFilterCount =
     (filters.q ? 1 : 0) +
+    filters.productTypes.length + filters.suppliers.length + filters.chemistryGroups.length +
+    filters.processGroups.length + filters.applicationGroups.length + filters.segmentGroups.length +
     filters.vendors.length + filters.categories.length + filters.chemistries.length +
     filters.reinforcements.length + filters.forms.length + filters.processMethods.length +
     filters.profiles.length +
@@ -455,147 +542,179 @@ export default function Engineer() {
                   />
                 </div>
 
-                <FilterSection title="Inventory">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {(["any", "in-stock", "tracked", "not-stocked"] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setFilters({ ...filters, inventory: v })}
-                        className={`text-xs px-2 py-1.5 rounded border ${
-                          filters.inventory === v
-                            ? "border-foreground bg-foreground text-background"
-                            : "border-border text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {v === "any" ? "Any" : v === "in-stock" ? "In Stock" : v === "tracked" ? "Tracked" : "Not Stocked"}
-                      </button>
-                    ))}
+                {/* Tier-1 primary chip filters */}
+                <FixedChipGroup
+                  title="Product type"
+                  options={[...PRODUCT_TYPES]}
+                  selected={filters.productTypes}
+                  onChange={(v) => setFilters({ ...filters, productTypes: v })}
+                />
+                <FixedChipGroup
+                  title="Supplier"
+                  options={[...SUPPLIERS]}
+                  selected={filters.suppliers}
+                  onChange={(v) => setFilters({ ...filters, suppliers: v })}
+                />
+                <FixedChipGroup
+                  title="Chemistry"
+                  options={[...CHEMISTRY_GROUPS]}
+                  selected={filters.chemistryGroups}
+                  onChange={(v) => setFilters({ ...filters, chemistryGroups: v })}
+                />
+                <FixedChipGroup
+                  title="Process"
+                  options={[...PROCESS_GROUPS]}
+                  selected={filters.processGroups}
+                  onChange={(v) => setFilters({ ...filters, processGroups: v })}
+                />
+                <FixedChipGroup
+                  title="Application"
+                  options={[...APPLICATION_GROUPS]}
+                  selected={filters.applicationGroups}
+                  onChange={(v) => setFilters({ ...filters, applicationGroups: v })}
+                />
+                <FixedChipGroup
+                  title="Segment"
+                  options={[...SEGMENT_GROUPS]}
+                  selected={filters.segmentGroups}
+                  onChange={(v) => setFilters({ ...filters, segmentGroups: v })}
+                />
+
+                {/* Tier-2 advanced filtering — collapsed by default */}
+                <details className="group/adv border-t border-border pt-3">
+                  <summary className="flex items-center justify-between cursor-pointer list-none py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                    <span>Advanced filtering</span>
+                    <ChevronDown className="w-3.5 h-3.5 transition-transform group-open/adv:rotate-0 -rotate-90" />
+                  </summary>
+                  <div className="pt-3 space-y-4">
+                    <FilterSection title="Inventory" defaultOpen>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(["any", "in-stock", "tracked", "not-stocked"] as const).map((v) => (
+                          <button
+                            key={v}
+                            onClick={() => setFilters({ ...filters, inventory: v })}
+                            className={`text-xs px-2 py-1.5 rounded border ${
+                              filters.inventory === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {v === "any" ? "Any" : v === "in-stock" ? "In Stock" : v === "tracked" ? "Tracked" : "Not Stocked"}
+                          </button>
+                        ))}
+                      </div>
+                    </FilterSection>
+
+                    <FilterSection title="NASA E595" defaultOpen>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {(["any", "pass", "fail"] as const).map((v) => (
+                          <button
+                            key={v}
+                            onClick={() => setFilters({ ...filters, e595: v })}
+                            className={`text-xs px-2 py-1.5 rounded border ${
+                              filters.e595 === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {v === "any" ? "Any" : v === "pass" ? "Pass" : "Fail"}
+                          </button>
+                        ))}
+                      </div>
+                    </FilterSection>
+
+                    <ChipFilter
+                      title="Key Spec"
+                      options={allKeySpecs}
+                      selected={filters.keySpecs}
+                      onChange={(v) => setFilters({ ...filters, keySpecs: v })}
+                      emptyHint="No key spec numbers tagged yet. Re-upload a spec sheet or PDF on the Master Specs page to populate (e.g. BMS5-101, AMS3819, MIL-PRF-83282)."
+                    />
+
+                    <ChipFilter
+                      title="Customer"
+                      options={allCustomers}
+                      selected={filters.customers}
+                      onChange={(v) => setFilters({ ...filters, customers: v })}
+                      emptyHint="No customers tagged yet. Re-upload a spec sheet or PDF on the Master Specs page to populate (Boeing, Lockheed, Bell, Airbus, etc.)."
+                    />
+
+                    <ChipFilter
+                      title="Profile"
+                      options={[...PROFILE_OPTIONS]}
+                      selected={filters.profiles}
+                      onChange={(v) => setFilters({ ...filters, profiles: v })}
+                    />
+
+                    <ChipFilter
+                      title="Reinforcement" options={reinforcements}
+                      selected={filters.reinforcements}
+                      onChange={(v) => setFilters({ ...filters, reinforcements: v })}
+                    />
+                    <ChipFilter
+                      title="Form" options={forms}
+                      selected={filters.forms}
+                      onChange={(v) => setFilters({ ...filters, forms: v })}
+                    />
+                    <ChipFilter
+                      title="Process Method" options={processMethods}
+                      selected={filters.processMethods}
+                      onChange={(v) => setFilters({ ...filters, processMethods: v })}
+                    />
+
+                    <RangeFilter
+                      title="Cure Temp (°C)" range={filters.cureC}
+                      onChange={(r) => setFilters({ ...filters, cureC: r })}
+                    />
+                    <RangeFilter
+                      title="Peak Tg (°C)" range={filters.peakTgC}
+                      onChange={(r) => setFilters({ ...filters, peakTgC: r })}
+                    />
+                    <RangeFilter
+                      title="Max Service Temp (°C)" range={filters.maxServiceC}
+                      onChange={(r) => setFilters({ ...filters, maxServiceC: r })}
+                    />
+                    <RangeFilter
+                      title="Out Life (days)" range={filters.outLifeDays}
+                      onChange={(r) => setFilters({ ...filters, outLifeDays: r })}
+                    />
+                    <RangeFilter
+                      title="TML (%)" range={filters.tmlPct}
+                      onChange={(r) => setFilters({ ...filters, tmlPct: r })}
+                    />
+                    <RangeFilter
+                      title="CVCM (%)" range={filters.cvcmPct}
+                      onChange={(r) => setFilters({ ...filters, cvcmPct: r })}
+                    />
+
+                    <FilterSection title="Process Flags">
+                      <div className="space-y-1">
+                        {(Object.keys(FLAG_LABELS) as (keyof FilterState["flags"])[]).map((k) => (
+                          <button
+                            key={k}
+                            onClick={() => {
+                              const cur = filters.flags[k];
+                              const next = cur === undefined ? true : cur === true ? false : undefined;
+                              setFilters({ ...filters, flags: { ...filters.flags, [k]: next } });
+                            }}
+                            className="flex items-center justify-between w-full text-xs py-1.5 px-2 rounded hover:bg-secondary/50"
+                          >
+                            <span className="text-foreground">{FLAG_LABELS[k]}</span>
+                            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
+                              filters.flags[k] === true
+                                ? "bg-[var(--status-compliant)]/15 text-[var(--status-compliant)]"
+                                : filters.flags[k] === false
+                                ? "bg-[var(--status-warning)]/15 text-[var(--status-warning)]"
+                                : "bg-secondary text-muted-foreground"
+                            }`}>
+                              {filters.flags[k] === true ? "REQUIRED" : filters.flags[k] === false ? "EXCLUDE" : "ANY"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </FilterSection>
                   </div>
-                </FilterSection>
-
-                <FilterSection title="NASA E595">
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(["any", "pass", "fail"] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setFilters({ ...filters, e595: v })}
-                        className={`text-xs px-2 py-1.5 rounded border ${
-                          filters.e595 === v
-                            ? "border-foreground bg-foreground text-background"
-                            : "border-border text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {v === "any" ? "Any" : v === "pass" ? "Pass" : "Fail"}
-                      </button>
-                    ))}
-                  </div>
-                </FilterSection>
-
-                <ChipFilter
-                  title="Key Spec"
-                  options={allKeySpecs}
-                  selected={filters.keySpecs}
-                  onChange={(v) => setFilters({ ...filters, keySpecs: v })}
-                  emptyHint="No key spec numbers tagged yet. Re-upload a spec sheet or PDF on the Master Specs page to populate (e.g. BMS5-101, AMS3819, MIL-PRF-83282)."
-                />
-
-                <ChipFilter
-                  title="Customer"
-                  options={allCustomers}
-                  selected={filters.customers}
-                  onChange={(v) => setFilters({ ...filters, customers: v })}
-                  emptyHint="No customers tagged yet. Re-upload a spec sheet or PDF on the Master Specs page to populate (Boeing, Lockheed, Bell, Airbus, etc.)."
-                />
-
-                <ChipFilter
-                  title="Profile"
-                  options={[...PROFILE_OPTIONS]}
-                  selected={filters.profiles}
-                  onChange={(v) => setFilters({ ...filters, profiles: v })}
-                />
-
-                <ChipFilter
-                  title="Vendor" options={vendors}
-                  selected={filters.vendors}
-                  onChange={(v) => setFilters({ ...filters, vendors: v })}
-                />
-                <ChipFilter
-                  title="Category" options={categories}
-                  selected={filters.categories}
-                  onChange={(v) => setFilters({ ...filters, categories: v })}
-                />
-                <ChipFilter
-                  title="Chemistry" options={chemistries}
-                  selected={filters.chemistries}
-                  onChange={(v) => setFilters({ ...filters, chemistries: v })}
-                />
-                <ChipFilter
-                  title="Reinforcement" options={reinforcements}
-                  selected={filters.reinforcements}
-                  onChange={(v) => setFilters({ ...filters, reinforcements: v })}
-                />
-                <ChipFilter
-                  title="Form" options={forms}
-                  selected={filters.forms}
-                  onChange={(v) => setFilters({ ...filters, forms: v })}
-                />
-                <ChipFilter
-                  title="Process Method" options={processMethods}
-                  selected={filters.processMethods}
-                  onChange={(v) => setFilters({ ...filters, processMethods: v })}
-                />
-
-                <RangeFilter
-                  title="Cure Temp (°C)" range={filters.cureC}
-                  onChange={(r) => setFilters({ ...filters, cureC: r })}
-                />
-                <RangeFilter
-                  title="Peak Tg (°C)" range={filters.peakTgC}
-                  onChange={(r) => setFilters({ ...filters, peakTgC: r })}
-                />
-                <RangeFilter
-                  title="Max Service Temp (°C)" range={filters.maxServiceC}
-                  onChange={(r) => setFilters({ ...filters, maxServiceC: r })}
-                />
-                <RangeFilter
-                  title="Out Life (days)" range={filters.outLifeDays}
-                  onChange={(r) => setFilters({ ...filters, outLifeDays: r })}
-                />
-                <RangeFilter
-                  title="TML (%)" range={filters.tmlPct}
-                  onChange={(r) => setFilters({ ...filters, tmlPct: r })}
-                />
-                <RangeFilter
-                  title="CVCM (%)" range={filters.cvcmPct}
-                  onChange={(r) => setFilters({ ...filters, cvcmPct: r })}
-                />
-
-                <FilterSection title="Process Flags">
-                  <div className="space-y-1">
-                    {(Object.keys(FLAG_LABELS) as (keyof FilterState["flags"])[]).map((k) => (
-                      <button
-                        key={k}
-                        onClick={() => {
-                          const cur = filters.flags[k];
-                          const next = cur === undefined ? true : cur === true ? false : undefined;
-                          setFilters({ ...filters, flags: { ...filters.flags, [k]: next } });
-                        }}
-                        className="flex items-center justify-between w-full text-xs py-1.5 px-2 rounded hover:bg-secondary/50"
-                      >
-                        <span className="text-foreground">{FLAG_LABELS[k]}</span>
-                        <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                          filters.flags[k] === true
-                            ? "bg-[var(--status-compliant)]/15 text-[var(--status-compliant)]"
-                            : filters.flags[k] === false
-                            ? "bg-[var(--status-warning)]/15 text-[var(--status-warning)]"
-                            : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {filters.flags[k] === true ? "REQUIRED" : filters.flags[k] === false ? "EXCLUDE" : "ANY"}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </FilterSection>
+                </details>
                 </div>
               </details>
             </aside>
@@ -928,6 +1047,49 @@ function ChipFilter({
         </div>
       )}
     </FilterSection>
+  );
+}
+
+function FixedChipGroup({
+  title, options, selected, onChange,
+}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
+  const isOn = (opt: string) => selected.some((v) => canon(v) === canon(opt));
+  const toggle = (opt: string) =>
+    onChange(isOn(opt) ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt]);
+  const activeCount = options.filter(isOn).length;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {title}
+        </span>
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+              isOn(opt)
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
