@@ -90,6 +90,26 @@
 
   /* Metallic silver — for star fill */
   --metal-silver: oklch(0.82 0.01 250);
+
+  /* Mockup accents (Traceium card UI) */
+  --accent-blue: #3B8AFF;
+  --accent-blue-soft: rgba(59, 138, 255, 0.10);
+  --accent-blue-border: rgba(59, 138, 255, 0.30);
+  --ok-green: #2ECC9A;
+  --ok-green-soft: rgba(46, 204, 154, 0.12);
+  --ok-green-border: rgba(46, 204, 154, 0.40);
+  --warn-amber: #F0A830;
+  --warn-amber-soft: rgba(240, 168, 48, 0.12);
+  --warn-amber-border: rgba(240, 168, 48, 0.40);
+  --chemistry-purple: #A78BFA;
+  --chemistry-red: #FF6B6B;
+
+  /* Supplier badges */
+  --supplier-hexcel: #3B8AFF;
+  --supplier-toray: #A78BFA;
+  --supplier-syensqo: #2ECC9A;
+  --supplier-3m: #F0A830;
+  --supplier-henkel: #FF6B6B;
 }
 
 input[type="checkbox"] {
