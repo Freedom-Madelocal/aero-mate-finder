@@ -1,70 +1,50 @@
 ## Goal
 
-Apply all 5 prompts from the uploaded PDF to transform the Traceium platform UI to match the mockup, while preserving all existing data and functionality. Keep the platform's Geist font and `oklch(13% 0 0)` background; adopt the mockup's blue accent (`#3B8AFF`), badge colors, chip filters, and card-based layouts.
+Hide the admin tooling (Users, Organizations, CRM, Master Specs) from the regular platform UI and put it behind a dedicated admin console that only super admins can reach. Access is via the existing gear icon in the header, which becomes a dropdown menu.
 
-## Scope (5 prompts)
+## Changes
 
-### 1. Header navigation (replaces sidebar)
-- Remove left sidebar in `DashboardLayout.tsx`.
-- Add sticky top header (52px, `oklch(16% 0 0)`, 0.5px bottom border):
-  - Left: Traceium logo + wordmark
-  - Center: tabs — Find materials, Crossover, Compare, Learn, Inventory, Procurement
-  - Active tab: 2px `#3B8AFF` underline, weight 600; inactive: 45% opacity, weight 400; 13px
-  - Right: product count badge, ⌘K trigger, Settings gear, user avatar
-- Main content spans full width.
+### 1. `src/components/DashboardLayout.tsx` — remove admin tabs + gear dropdown
+- Delete the `superAdminNavItems` array entirely (Master Specs, Users, Orgs, CRM no longer appear as top-nav tabs for anyone, including super admins).
+- Replace the gear `<Link to="/settings">` with a `DropdownMenu`:
+  - Trigger: same gear icon.
+  - For non-super-admins: dropdown shows a single item → **Settings** (`/settings`). (Or we can keep it a direct link; using a dropdown uniformly is simpler.)
+  - For super admins: dropdown shows **Settings** (`/settings`) and **Admin Console** (`/admin`).
+- Mirror this in the mobile sheet nav: remove admin items from the mobile list; add an "Admin Console" link below "Settings" when `isSuperAdmin`.
 
-### 2. Find Materials page (redesign of `/engineer`)
-- Rename route surface to "Find materials"; remove "Engineer Workspace" title.
-- Full-width search bar at top with mockup styling.
-- Left filter panel with **chip-based toggle filters** (replacing dropdowns) in this order:
-  1. Product type, 2. Supplier, 3. Chemistry, 4. Process, 5. Application, 6. Segment
-- Collapsible "Advanced filtering" section retains the existing dropdown filters (Inventory, NASA E595, Key Spec, Customer, Profile, Reinforcement, Form, Process method).
-- Chips: inactive = subtle border + muted text; active = blue border + 10% blue bg + blue text.
-- Results area renders products as **cards** (not table rows):
-  - Product name + supplier badge + chemistry badge + OoA badge
-  - Type · Cure temp · Out-life · Tg line
-  - Description line
-  - ★ star + Procure checkbox bottom-left
-  - Details (solid blue), + Compare (ghost), Crossover (ghost) on right
-- Supplier/chemistry/OoA badge colors per spec.
-- Product detail modal opens on Details click — shows all existing data fields.
+### 2. New admin console shell — `src/pages/admin/AdminConsole.tsx` + `src/routes/admin.tsx`
+- New route `/admin` rendered with its own minimal layout (no `DashboardLayout`, no customer-facing chrome — visually distinct so it's clear you're in the console).
+- Layout: dark header strip with "Traceium Admin Console" + a small sub-nav of tabs: **Users**, **Organizations**, **CRM**, **Master Specs**, plus a "Back to platform" link.
+- `<Outlet />` renders the selected page.
+- Client-side guard: `useAuth()` → if `!loading && !isSuperAdmin`, `navigate({ to: "/" })`. Same pattern already used in `Users.tsx`/`Organizations.tsx`.
 
-### 3. Crossover page (new `/crossover`)
-- Two-column layout with `→` arrow between.
-- Left: search input + autocomplete dropdown (any product from any manufacturer) → selected product card.
-- Right: list of Traceium equivalent products, best match highlighted with green border.
-- Below: "What changes if you switch" 3-column difference cards (OK/warning/neutral) for OoA, cure temp, Tg, out-life, qualification gaps.
-- Uses existing crossover/equivalents data from `master_specs` (vendor + crossoverProduct fields).
+### 3. Re-home the four pages under `/admin/*`
+Create new route files that mount the existing page components under the admin layout:
+- `src/routes/admin.index.tsx` → redirects to `/admin/users` (or shows a small landing).
+- `src/routes/admin.users.tsx` → already exists, repoint to render inside the admin layout.
+- `src/routes/admin.organizations.tsx` → same.
+- `src/routes/admin.crm.tsx` → same.
+- `src/routes/admin.master-specs.tsx` → new, renders existing `MasterSpecs` page component.
+- Remove the top-level `src/routes/master-specs.tsx` route (or keep it as a redirect to `/admin/master-specs` for super admins / 404 for everyone else — recommend hard remove so customers cannot guess the URL).
 
-### 4. Compare page (new `/compare`)
-- Side-by-side comparison table, up to 4 products.
-- Rows: Dry Tg, Cure temp, Cure time, Out-life, Freezer life, OoA/VBO, Autoclave, AFP/ATL, Available forms, Qualifications, Chemistry (badge).
-- First column highlighted blue tint.
-- Footer buttons: Export PDF, Request samples, Talk to specialist.
-- Compare state via React context; persists across nav; nav tab shows `Compare (N)`.
-- "+ Compare" buttons on Find Materials cards populate this state.
+The page components themselves (`pages/admin/Users.tsx`, `pages/admin/Organizations.tsx`, `pages/admin/Crm.tsx`, `pages/MasterSpecs.tsx`) keep their logic; only the surrounding chrome changes. Their existing "Back to dashboard" links get repointed to "Back to console" / `/admin`.
 
-### 5. Learn page (new `/learn`)
-- 2-col grid of 6 guide cards (emoji + title + subtitle).
-- Click → toast "Guide coming soon — content is being authored."
-- Blue-bordered "About the data" card below grid.
+### 4. Route guards
+All `/admin/*` routes:
+- Add `meta: [{ name: "robots", content: "noindex,nofollow" }]` (already present on existing admin routes).
+- Component-level guard via the admin layout's `useAuth()` check redirecting non-super-admins to `/`. Server data is already protected by RLS / server-fn role checks (e.g. `adminUsers.functions.ts` enforces `super_admin`), so no security regression.
 
-## Technical Details
-
-- **New files**: `src/routes/crossover.tsx`, `src/pages/Crossover.tsx`, `src/routes/compare.tsx`, `src/pages/Compare.tsx`, `src/routes/learn.tsx`, `src/pages/Learn.tsx`, `src/contexts/CompareContext.tsx`.
-- **Edited files**: `src/components/DashboardLayout.tsx` (rip sidebar, add header), `src/pages/Engineer.tsx` (chip filters + card results + modal), `src/styles.css` (add `#3B8AFF` accent, badge tokens, chip tokens — as semantic tokens, not raw hex in components).
-- **Design tokens added to `styles.css`**: `--accent-blue`, supplier badge colors (hexcel/toray/syensqo/3m/henkel), chemistry badge colors (epoxy/bmi/cyanate/peek/phenolic), OoA green, warning amber.
-- **Compare context** wraps app in `__root.tsx`; max 4 products, FIFO eviction.
-- **No backend changes** — pure UI transformation reading existing `master_specs` data.
-- Keep all current behavior: star reorder, procure checkbox, auth gating, super-admin routing.
+### 5. Cleanup
+- Remove `import` of admin nav items from `DashboardLayout`.
+- Remove `MasterSpecs` preload from the workspace preloader (move it inside the admin layout, or drop it — customers don't need it).
+- Leave `useMasterSpecStore` usage for the "X products · Y suppliers" badge intact (data is still loaded once via existing preloads on first super-admin visit to `/admin`).
 
 ## Out of scope
-
-- Writing actual Learn guide content (cards toast "coming soon" per spec).
-- PDF export implementation for Compare (button stub; toast).
-- New data ingestion / schema changes.
-- Mobile-specific redesign beyond `overflow-x: auto` on the compare table.
+- No backend changes. RLS and the `super_admin` checks inside server functions already exist.
+- No new auth flow — same `useAuth` + role check pattern.
+- No changes to the `/console` terminal login flow.
 
 ## Verification
-
-After implementation: hard-refresh `/engineer`, `/crossover`, `/compare`, `/learn`; confirm header renders, chip toggles filter, cards render with badges, compare counter increments, no console errors.
+1. As a non-super-admin: header shows no Users/Orgs/CRM/Master Specs tabs; gear icon → dropdown with only "Settings"; visiting `/admin` directly redirects to `/`.
+2. As super admin: header shows only the base tabs (Find materials, Crossover, Compare, Learn, Inventory, Procurement); gear icon → dropdown with "Settings" and "Admin Console"; `/admin` loads the console with its own header and the four sub-tabs all functional.
+3. Mobile sheet mirrors the same behavior.
