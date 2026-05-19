@@ -1050,6 +1050,49 @@ function ChipFilter({
   );
 }
 
+function FixedChipGroup({
+  title, options, selected, onChange,
+}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
+  const isOn = (opt: string) => selected.some((v) => canon(v) === canon(opt));
+  const toggle = (opt: string) =>
+    onChange(isOn(opt) ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt]);
+  const activeCount = options.filter(isOn).length;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {title}
+        </span>
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+              isOn(opt)
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RangeFilter({
   title, range, onChange,
 }: { title: string; range: NumRange; onChange: (r: NumRange) => void }) {
