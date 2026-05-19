@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, UserPlus, Activity, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
+import { createUserWithPassword } from "@/lib/adminUsers.functions";
 import { toast } from "sonner";
 
 const INVITABLE: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
@@ -39,6 +41,11 @@ export default function AdminUsers() {
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState<AppRole>("engineer");
   const [newOrg, setNewOrg] = useState<string>("");
+  const [addMode, setAddMode] = useState<"invite" | "direct">("invite");
+  const [newPassword, setNewPassword] = useState("");
+  const [newFullName, setNewFullName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const createDirect = useServerFn(createUserWithPassword);
   const [auditUser, setAuditUser] = useState<Row | null>(null);
   const [auditRows, setAuditRows] = useState<ActivityRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -138,7 +145,35 @@ export default function AdminUsers() {
 
   const addUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newOrg) return toast.error("Select an organization for the invite.");
+    if (!newOrg) return toast.error("Select an organization.");
+
+    if (addMode === "direct") {
+      if (newPassword.length < 6) return toast.error("Password must be at least 6 characters.");
+      setCreating(true);
+      try {
+        await createDirect({
+          data: {
+            email: newEmail.trim().toLowerCase(),
+            password: newPassword,
+            full_name: newFullName.trim() || undefined,
+            organization_id: newOrg,
+            role: newRole,
+          },
+        });
+        toast.success("User created. They can sign in with the password you set.");
+        setNewEmail("");
+        setNewPassword("");
+        setNewFullName("");
+        setShowAdd(false);
+        load();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to create user");
+      } finally {
+        setCreating(false);
+      }
+      return;
+    }
+
     const { data, error } = await supabase.functions.invoke("invite-user", {
       body: {
         email: newEmail.trim().toLowerCase(),
@@ -203,28 +238,56 @@ export default function AdminUsers() {
         </div>
 
         {showAdd && (
-          <form onSubmit={addUser} className="flex flex-wrap gap-2 items-end border border-border rounded-md p-4 bg-secondary/30">
-            <div className="flex-1 min-w-48">
-              <label className="text-xs text-muted-foreground">Email</label>
-              <input type="email" required value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm" />
+          <form onSubmit={addUser} className="space-y-3 border border-border rounded-md p-4 bg-secondary/30">
+            <div className="flex gap-1 text-xs">
+              <button type="button" onClick={() => setAddMode("invite")}
+                className={`px-3 py-1 rounded ${addMode === "invite" ? "bg-white text-black" : "border border-border text-muted-foreground"}`}>
+                Send invite email
+              </button>
+              <button type="button" onClick={() => setAddMode("direct")}
+                className={`px-3 py-1 rounded ${addMode === "direct" ? "bg-white text-black" : "border border-border text-muted-foreground"}`}>
+                Create with password
+              </button>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Organization</label>
-              <select value={newOrg} onChange={(e) => setNewOrg(e.target.value)}
-                className="bg-secondary border border-border rounded-md px-3 py-2 text-sm">
-                <option value="">— select —</option>
-                {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-48">
+                <label className="text-xs text-muted-foreground">Email</label>
+                <input type="email" required value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm" />
+              </div>
+              {addMode === "direct" && (
+                <>
+                  <div className="flex-1 min-w-40">
+                    <label className="text-xs text-muted-foreground">Full name (optional)</label>
+                    <input type="text" value={newFullName} onChange={(e) => setNewFullName(e.target.value)}
+                      className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm" />
+                  </div>
+                  <div className="flex-1 min-w-40">
+                    <label className="text-xs text-muted-foreground">Password (min 6)</label>
+                    <input type="text" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm font-mono" />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="text-xs text-muted-foreground">Organization</label>
+                <select value={newOrg} onChange={(e) => setNewOrg(e.target.value)}
+                  className="bg-secondary border border-border rounded-md px-3 py-2 text-sm">
+                  <option value="">— select —</option>
+                  {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Role</label>
+                <select value={newRole} onChange={(e) => setNewRole(e.target.value as AppRole)}
+                  className="bg-secondary border border-border rounded-md px-3 py-2 text-sm">
+                  {INVITABLE.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <button disabled={creating} className="bg-white text-black px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50">
+                {creating ? "Creating…" : addMode === "direct" ? "Create user" : "Create invite"}
+              </button>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Role</label>
-              <select value={newRole} onChange={(e) => setNewRole(e.target.value as AppRole)}
-                className="bg-secondary border border-border rounded-md px-3 py-2 text-sm">
-                {INVITABLE.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <button className="bg-white text-black px-4 py-2 rounded-md text-sm font-medium">Create invite</button>
           </form>
         )}
 
