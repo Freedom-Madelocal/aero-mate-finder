@@ -220,11 +220,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="flex items-center gap-3">
-          {specs.length > 0 && (
-            <span className="hidden md:inline text-[11px] text-muted-foreground">
-              {specs.length} products · {supplierCount} suppliers
-            </span>
-          )}
 
           <div className="hidden md:block">
             <GlobalSearch />
