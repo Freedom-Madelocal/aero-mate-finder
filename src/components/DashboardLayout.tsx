@@ -242,13 +242,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SearchIcon className="w-4 h-4" />
           </button>
 
-          <Link
-            to="/settings"
-            className="p-2 text-muted-foreground hover:text-foreground"
-            aria-label="Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-2 text-muted-foreground hover:text-foreground"
+                aria-label="Settings menu"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                  <Cog className="w-3.5 h-3.5" /> Settings
+                </Link>
+              </DropdownMenuItem>
+              {isSuperAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 cursor-pointer text-[color:var(--accent-blue)]">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Admin Console
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {headerMembers.length > 0 && (
             <div className="hidden sm:flex items-center -space-x-2">
