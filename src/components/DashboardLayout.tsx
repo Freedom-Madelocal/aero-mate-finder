@@ -28,7 +28,7 @@ import { useCompare } from "@/contexts/CompareContext";
 type NavItem = { path: string; label: string };
 
 const baseNavItems: NavItem[] = [
-  { path: "/engineer", label: "Find materials" },
+  { path: "/engineer", label: "Find Materials" },
   { path: "/crossover", label: "Crossover" },
   { path: "/compare", label: "Compare" },
   { path: "/learn", label: "Learn" },
@@ -220,11 +220,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="flex items-center gap-3">
-          {specs.length > 0 && (
-            <span className="hidden md:inline text-[11px] text-muted-foreground">
-              {specs.length} products · {supplierCount} suppliers
-            </span>
-          )}
 
           <div className="hidden md:block">
             <GlobalSearch />
