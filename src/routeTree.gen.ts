@@ -17,6 +17,7 @@ import { Route as PiRouteImport } from './routes/pi'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LearnRouteImport } from './routes/learn'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as FreeGuideRouteImport } from './routes/free-guide'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -24,8 +25,10 @@ import { Route as EngineerRouteImport } from './routes/engineer'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DemoExpiredRouteImport } from './routes/demo-expired'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CrossoverRouteImport } from './routes/crossover'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgTeamRouteImport } from './routes/org.team'
@@ -75,6 +78,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearnRoute = LearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
@@ -110,6 +118,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrossoverRoute = CrossoverRouteImport.update({
+  id: '/crossover',
+  path: '/crossover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleRoute = ConsoleRouteImport.update({
   id: '/console',
   path: '/console',
@@ -118,6 +131,11 @@ const ConsoleRoute = ConsoleRouteImport.update({
 const ComplianceRoute = ComplianceRouteImport.update({
   id: '/compliance',
   path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInviteRoute = AcceptInviteRouteImport.update({
@@ -164,8 +182,10 @@ const AdminCrmRoute = AdminCrmRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/compare': typeof CompareRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
+  '/crossover': typeof CrossoverRoute
   '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
@@ -173,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-guide': typeof FreeGuideRoute
   '/inventory': typeof InventoryRoute
+  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
@@ -191,8 +212,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/compare': typeof CompareRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
+  '/crossover': typeof CrossoverRoute
   '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
@@ -200,6 +223,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-guide': typeof FreeGuideRoute
   '/inventory': typeof InventoryRoute
+  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
@@ -219,8 +243,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/compare': typeof CompareRoute
   '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
+  '/crossover': typeof CrossoverRoute
   '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
   '/documents': typeof DocumentsRoute
@@ -228,6 +254,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-guide': typeof FreeGuideRoute
   '/inventory': typeof InventoryRoute
+  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
   '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
@@ -248,8 +275,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accept-invite'
+    | '/compare'
     | '/compliance'
     | '/console'
+    | '/crossover'
     | '/dashboard'
     | '/demo-expired'
     | '/documents'
@@ -257,6 +286,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/free-guide'
     | '/inventory'
+    | '/learn'
     | '/login'
     | '/master-specs'
     | '/orders'
@@ -275,8 +305,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accept-invite'
+    | '/compare'
     | '/compliance'
     | '/console'
+    | '/crossover'
     | '/dashboard'
     | '/demo-expired'
     | '/documents'
@@ -284,6 +316,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/free-guide'
     | '/inventory'
+    | '/learn'
     | '/login'
     | '/master-specs'
     | '/orders'
@@ -302,8 +335,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accept-invite'
+    | '/compare'
     | '/compliance'
     | '/console'
+    | '/crossover'
     | '/dashboard'
     | '/demo-expired'
     | '/documents'
@@ -311,6 +346,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/free-guide'
     | '/inventory'
+    | '/learn'
     | '/login'
     | '/master-specs'
     | '/orders'
@@ -330,8 +366,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
+  CompareRoute: typeof CompareRoute
   ComplianceRoute: typeof ComplianceRoute
   ConsoleRoute: typeof ConsoleRouteWithChildren
+  CrossoverRoute: typeof CrossoverRoute
   DashboardRoute: typeof DashboardRoute
   DemoExpiredRoute: typeof DemoExpiredRoute
   DocumentsRoute: typeof DocumentsRoute
@@ -339,6 +377,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FreeGuideRoute: typeof FreeGuideRoute
   InventoryRoute: typeof InventoryRoute
+  LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
   MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
@@ -412,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/learn': {
+      id: '/learn'
+      path: '/learn'
+      fullPath: '/learn'
+      preLoaderRoute: typeof LearnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory': {
       id: '/inventory'
       path: '/inventory'
@@ -461,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crossover': {
+      id: '/crossover'
+      path: '/crossover'
+      fullPath: '/crossover'
+      preLoaderRoute: typeof CrossoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/console': {
       id: '/console'
       path: '/console'
@@ -473,6 +526,13 @@ declare module '@tanstack/react-router' {
       path: '/compliance'
       fullPath: '/compliance'
       preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accept-invite': {
@@ -548,8 +608,10 @@ const ConsoleRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcceptInviteRoute: AcceptInviteRoute,
+  CompareRoute: CompareRoute,
   ComplianceRoute: ComplianceRoute,
   ConsoleRoute: ConsoleRouteWithChildren,
+  CrossoverRoute: CrossoverRoute,
   DashboardRoute: DashboardRoute,
   DemoExpiredRoute: DemoExpiredRoute,
   DocumentsRoute: DocumentsRoute,
@@ -557,6 +619,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   FreeGuideRoute: FreeGuideRoute,
   InventoryRoute: InventoryRoute,
+  LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
   MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
