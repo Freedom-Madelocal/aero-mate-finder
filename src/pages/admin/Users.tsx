@@ -392,6 +392,13 @@ export default function AdminUsers() {
                         >
                           <Activity className="w-3 h-3" /> Audit
                         </button>
+                        <button
+                          onClick={() => setConfirmDelete(r)}
+                          className="inline-flex items-center gap-1.5 border border-red-500/40 text-red-400 rounded-md px-2.5 py-1 text-xs hover:bg-red-500/10"
+                          title="Delete user permanently"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
