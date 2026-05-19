@@ -188,6 +188,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   Settings
                 </Link>
+                {isSuperAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    preload="render"
+                    className="block px-4 py-2 text-sm text-[color:var(--accent-blue)]"
+                  >
+                    Admin Console
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
