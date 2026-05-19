@@ -320,6 +320,7 @@ export default function Engineer() {
       if (!groupMatch(filters.processGroups, PROCESS_RX, processHay)) return false;
       if (!groupMatch(filters.applicationGroups, APPLICATION_RX, appHay)) return false;
       if (!groupMatch(filters.segmentGroups, SEGMENT_RX, segHay)) return false;
+      if (!matchAny(filters.vendors, s.vendor)) return false;
       if (!matchAny(filters.categories, s.materialCategory)) return false;
       if (!matchAny(filters.chemistries, s.resinChemistry)) return false;
       if (!matchAny(filters.reinforcements, s.reinforcement)) return false;
