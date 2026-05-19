@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, UserPlus, Activity, X, RotateCcw, Trash2 } from "lucide-react";
+import { UserPlus, Activity, X, RotateCcw, Trash2 } from "lucide-react";
+import AdminShell from "@/components/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { createUserWithPassword, deleteUser } from "@/lib/adminUsers.functions";
