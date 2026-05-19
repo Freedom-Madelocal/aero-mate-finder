@@ -64,3 +64,32 @@ export const createUserWithPassword = createServerFn({ method: "POST" })
 
     return { user_id: uid };
   });
+
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ user_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.user_id === context.userId) {
+      throw new Error("You cannot delete your own account.");
+    }
+    const { data: callerRoles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (roleErr) throw new Error(roleErr.message);
+    if (!(callerRoles ?? []).some((r) => r.role === "super_admin")) {
+      throw new Response("Forbidden", { status: 403 });
+    }
+
+    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (delErr) throw new Error(delErr.message);
+
+    // Clean up related rows (in case FKs don't cascade)
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("user_demo_settings").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("profiles").delete().eq("id", data.user_id);
+
+    return { ok: true };
+  });

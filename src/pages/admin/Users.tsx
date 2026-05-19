@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, UserPlus, Activity, X, RotateCcw } from "lucide-react";
+import { ArrowLeft, UserPlus, Activity, X, RotateCcw, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
-import { createUserWithPassword } from "@/lib/adminUsers.functions";
+import { createUserWithPassword, deleteUser } from "@/lib/adminUsers.functions";
 import { toast } from "sonner";
 
 const INVITABLE: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
@@ -46,6 +46,9 @@ export default function AdminUsers() {
   const [newFullName, setNewFullName] = useState("");
   const [creating, setCreating] = useState(false);
   const createDirect = useServerFn(createUserWithPassword);
+  const deleteUserFn = useServerFn(deleteUser);
+  const [confirmDelete, setConfirmDelete] = useState<Row | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [auditUser, setAuditUser] = useState<Row | null>(null);
   const [auditRows, setAuditRows] = useState<ActivityRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -389,6 +392,13 @@ export default function AdminUsers() {
                         >
                           <Activity className="w-3 h-3" /> Audit
                         </button>
+                        <button
+                          onClick={() => setConfirmDelete(r)}
+                          className="inline-flex items-center gap-1.5 border border-red-500/40 text-red-400 rounded-md px-2.5 py-1 text-xs hover:bg-red-500/10"
+                          title="Delete user permanently"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -460,6 +470,45 @@ export default function AdminUsers() {
                   </tbody>
                 </table>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !deleting && setConfirmDelete(null)} />
+          <div className="relative w-full max-w-md bg-card border border-border rounded-lg shadow-xl p-6">
+            <h2 className="text-base font-semibold">Delete user?</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will permanently delete <span className="text-foreground font-medium">{confirmDelete.full_name || confirmDelete.email}</span> ({confirmDelete.email}), including their profile, roles, and demo settings. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+                className="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-secondary disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await deleteUserFn({ data: { user_id: confirmDelete.id } });
+                    toast.success("User deleted.");
+                    setConfirmDelete(null);
+                    load();
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to delete user");
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="px-3 py-1.5 text-sm rounded-md bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete user"}
+              </button>
             </div>
           </div>
         </div>
