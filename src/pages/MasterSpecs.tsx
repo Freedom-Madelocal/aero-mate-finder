@@ -96,8 +96,8 @@ export default function MasterSpecs() {
     n === null || n === undefined ? "—" : `${n}${suffix}`;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <AdminShell>
+      <div className="space-y-6 p-6 sm:p-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
