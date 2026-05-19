@@ -91,9 +91,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       import("@/pages/Engineer"),
       import("@/pages/Inventory"),
       import("@/pages/Procurement"),
-      import("@/pages/MasterSpecs"),
     ]);
   }, []);
+  // Note: MasterSpecs admin page is preloaded only when entering the admin console.
 
   const unreadMap = new Map(unreadSenders.map((s) => [s.user_id, s.count]));
   const onlineIds = new Set(onlineMembers.map((m) => m.user_id));
