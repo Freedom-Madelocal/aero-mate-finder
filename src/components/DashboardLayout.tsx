@@ -1,11 +1,18 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Settings, Menu, Search as SearchIcon } from "lucide-react";
+import { Settings, Menu, Search as SearchIcon, ShieldCheck, Cog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { logPageView } from "@/lib/userActivity";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import MessageDialog from "@/components/MessageDialog";
 import { useOrgPresence, type OnlineMember } from "@/hooks/useOrgPresence";
@@ -27,13 +34,6 @@ const baseNavItems: NavItem[] = [
   { path: "/learn", label: "Learn" },
   { path: "/inventory", label: "Inventory" },
   { path: "/procurement", label: "Procurement" },
-];
-
-const superAdminNavItems: NavItem[] = [
-  { path: "/master-specs", label: "Master Specs" },
-  { path: "/admin/users", label: "Users" },
-  { path: "/admin/organizations", label: "Orgs" },
-  { path: "/admin/crm", label: "CRM" },
 ];
 
 let hasPreloadedWorkspace = false;
