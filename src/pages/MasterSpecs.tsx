@@ -1,4 +1,4 @@
-import DashboardLayout from "@/components/DashboardLayout";
+import AdminShell from "@/components/AdminShell";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
 import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
@@ -96,8 +96,8 @@ export default function MasterSpecs() {
     n === null || n === undefined ? "—" : `${n}${suffix}`;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <AdminShell>
+      <div className="space-y-6 p-6 sm:p-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -273,7 +273,7 @@ export default function MasterSpecs() {
           <SpecSheetUpload isOpen={showUpload} onClose={() => setShowUpload(false)} />
         </Suspense>
       )}
-    </DashboardLayout>
+    </AdminShell>
   );
 }
 

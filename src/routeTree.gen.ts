@@ -15,7 +15,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProcurementRouteImport } from './routes/procurement'
 import { Route as PiRouteImport } from './routes/pi'
 import { Route as OrdersRouteImport } from './routes/orders'
-import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as InventoryRouteImport } from './routes/inventory'
@@ -31,11 +30,13 @@ import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrgTeamRouteImport } from './routes/org.team'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
+import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
 
 const SuppliersRoute = SuppliersRouteImport.update({
@@ -66,11 +67,6 @@ const PiRoute = PiRouteImport.update({
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MasterSpecsRoute = MasterSpecsRouteImport.update({
-  id: '/master-specs',
-  path: '/master-specs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -148,6 +144,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrgTeamRoute = OrgTeamRouteImport.update({
   id: '/org/team',
   path: '/org/team',
@@ -173,6 +174,11 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
   path: '/admin/organizations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMasterSpecsRoute = AdminMasterSpecsRouteImport.update({
+  id: '/admin/master-specs',
+  path: '/admin/master-specs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCrmRoute = AdminCrmRouteImport.update({
   id: '/admin/crm',
   path: '/admin/crm',
@@ -195,7 +201,6 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
@@ -203,11 +208,13 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -225,7 +232,6 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
@@ -233,11 +239,13 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -256,7 +264,6 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
@@ -264,11 +271,13 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -288,7 +297,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/learn'
     | '/login'
-    | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
@@ -296,11 +304,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
     | '/material/$id'
     | '/org/team'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -318,7 +328,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/learn'
     | '/login'
-    | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
@@ -326,11 +335,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
     | '/material/$id'
     | '/org/team'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -348,7 +359,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/learn'
     | '/login'
-    | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
@@ -356,11 +366,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
     | '/material/$id'
     | '/org/team'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -379,7 +391,6 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
-  MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
   PiRoute: typeof PiRoute
   ProcurementRoute: typeof ProcurementRoute
@@ -387,10 +398,12 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
   AdminCrmRoute: typeof AdminCrmRoute
+  AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   MaterialIdRoute: typeof MaterialIdRoute
   OrgTeamRoute: typeof OrgTeamRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -435,13 +448,6 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/master-specs': {
-      id: '/master-specs'
-      path: '/master-specs'
-      fullPath: '/master-specs'
-      preLoaderRoute: typeof MasterSpecsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -549,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/org/team': {
       id: '/org/team'
       path: '/org/team'
@@ -582,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/organizations'
       fullPath: '/admin/organizations'
       preLoaderRoute: typeof AdminOrganizationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/master-specs': {
+      id: '/admin/master-specs'
+      path: '/admin/master-specs'
+      fullPath: '/admin/master-specs'
+      preLoaderRoute: typeof AdminMasterSpecsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/crm': {
@@ -621,7 +641,6 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
-  MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
   PiRoute: PiRoute,
   ProcurementRoute: ProcurementRoute,
@@ -629,10 +648,12 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
   AdminCrmRoute: AdminCrmRoute,
+  AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
   MaterialIdRoute: MaterialIdRoute,
   OrgTeamRoute: OrgTeamRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, UserPlus, X, Trash2, Sparkles } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { UserPlus, X, Trash2, Sparkles } from "lucide-react";
+import AdminShell from "@/components/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -87,11 +88,8 @@ export default function AdminCrm() {
   if (loading || !isSuperAdmin) return <div className="min-h-screen bg-background" />;
 
   return (
-    <div className="min-h-screen bg-background p-6 sm:p-10">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
-        </Link>
+    <AdminShell>
+      <div className="p-6 sm:p-10 max-w-7xl mx-auto space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">CRM</h1>
@@ -206,7 +204,7 @@ export default function AdminCrm() {
           onOrgsRefresh={load}
         />
       )}
-    </div>
+    </AdminShell>
   );
 }
 

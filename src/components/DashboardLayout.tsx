@@ -1,11 +1,18 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Settings, Menu, Search as SearchIcon } from "lucide-react";
+import { Settings, Menu, Search as SearchIcon, ShieldCheck, Cog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { logPageView } from "@/lib/userActivity";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import MessageDialog from "@/components/MessageDialog";
 import { useOrgPresence, type OnlineMember } from "@/hooks/useOrgPresence";
@@ -27,13 +34,6 @@ const baseNavItems: NavItem[] = [
   { path: "/learn", label: "Learn" },
   { path: "/inventory", label: "Inventory" },
   { path: "/procurement", label: "Procurement" },
-];
-
-const superAdminNavItems: NavItem[] = [
-  { path: "/master-specs", label: "Master Specs" },
-  { path: "/admin/users", label: "Users" },
-  { path: "/admin/organizations", label: "Orgs" },
-  { path: "/admin/crm", label: "CRM" },
 ];
 
 let hasPreloadedWorkspace = false;
@@ -91,9 +91,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       import("@/pages/Engineer"),
       import("@/pages/Inventory"),
       import("@/pages/Procurement"),
-      import("@/pages/MasterSpecs"),
     ]);
   }, []);
+  // Note: MasterSpecs admin page is preloaded only when entering the admin console.
 
   const unreadMap = new Map(unreadSenders.map((s) => [s.user_id, s.count]));
   const onlineIds = new Set(onlineMembers.map((m) => m.user_id));
@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user?.id, location]);
 
-  const navItems: NavItem[] = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
+  const navItems: NavItem[] = baseNavItems;
 
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
     .split(/\s+/)
@@ -188,6 +188,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   Settings
                 </Link>
+                {isSuperAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    preload="render"
+                    className="block px-4 py-2 text-sm text-[color:var(--accent-blue)]"
+                  >
+                    Admin Console
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -232,13 +242,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SearchIcon className="w-4 h-4" />
           </button>
 
-          <Link
-            to="/settings"
-            className="p-2 text-muted-foreground hover:text-foreground"
-            aria-label="Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-2 text-muted-foreground hover:text-foreground"
+                aria-label="Settings menu"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                  <Cog className="w-3.5 h-3.5" /> Settings
+                </Link>
+              </DropdownMenuItem>
+              {isSuperAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 cursor-pointer text-[color:var(--accent-blue)]">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Admin Console
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {headerMembers.length > 0 && (
             <div className="hidden sm:flex items-center -space-x-2">

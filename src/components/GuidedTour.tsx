@@ -76,7 +76,7 @@ const STEPS: TourStep[] = [
       "Drop in a spec workbook — columns are auto-mapped.",
       "Edits here propagate everywhere.",
     ],
-    navigateTo: "/master-specs",
+    navigateTo: "/admin/master-specs",
     superAdminOnly: true,
   },
   {
