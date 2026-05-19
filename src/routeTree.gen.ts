@@ -15,7 +15,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProcurementRouteImport } from './routes/procurement'
 import { Route as PiRouteImport } from './routes/pi'
 import { Route as OrdersRouteImport } from './routes/orders'
-import { Route as MasterSpecsRouteImport } from './routes/master-specs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as InventoryRouteImport } from './routes/inventory'
@@ -68,11 +67,6 @@ const PiRoute = PiRouteImport.update({
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MasterSpecsRoute = MasterSpecsRouteImport.update({
-  id: '/master-specs',
-  path: '/master-specs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -207,7 +201,6 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
@@ -239,7 +232,6 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
@@ -272,7 +264,6 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/master-specs': typeof MasterSpecsRoute
   '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
   '/procurement': typeof ProcurementRoute
@@ -306,7 +297,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/learn'
     | '/login'
-    | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
@@ -338,7 +328,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/learn'
     | '/login'
-    | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
@@ -370,7 +359,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/learn'
     | '/login'
-    | '/master-specs'
     | '/orders'
     | '/pi'
     | '/procurement'
@@ -403,7 +391,6 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
-  MasterSpecsRoute: typeof MasterSpecsRoute
   OrdersRoute: typeof OrdersRoute
   PiRoute: typeof PiRoute
   ProcurementRoute: typeof ProcurementRoute
@@ -461,13 +448,6 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/master-specs': {
-      id: '/master-specs'
-      path: '/master-specs'
-      fullPath: '/master-specs'
-      preLoaderRoute: typeof MasterSpecsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -661,7 +641,6 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
-  MasterSpecsRoute: MasterSpecsRoute,
   OrdersRoute: OrdersRoute,
   PiRoute: PiRoute,
   ProcurementRoute: ProcurementRoute,
@@ -679,3 +658,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

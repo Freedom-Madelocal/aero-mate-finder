@@ -1,4 +1,4 @@
-import DashboardLayout from "@/components/DashboardLayout";
+import AdminShell from "@/components/AdminShell";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
 import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
