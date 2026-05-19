@@ -28,7 +28,7 @@ import { useCompare } from "@/contexts/CompareContext";
 type NavItem = { path: string; label: string };
 
 const baseNavItems: NavItem[] = [
-  { path: "/engineer", label: "Find materials" },
+  { path: "/engineer", label: "Find Materials" },
   { path: "/crossover", label: "Crossover" },
   { path: "/compare", label: "Compare" },
   { path: "/learn", label: "Learn" },
