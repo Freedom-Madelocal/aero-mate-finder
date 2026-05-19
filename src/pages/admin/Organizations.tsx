@@ -74,6 +74,6 @@ export default function AdminOrganizations() {
           {orgs.length === 0 && <div className="p-6 text-center text-sm text-muted-foreground">No organizations yet.</div>}
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }
