@@ -31,6 +31,7 @@ import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrgTeamRouteImport } from './routes/org.team'
 import { Route as MaterialIdRouteImport } from './routes/material.$id'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
@@ -148,6 +149,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrgTeamRoute = OrgTeamRouteImport.update({
   id: '/org/team',
   path: '/org/team',
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/console/login': typeof ConsoleLoginRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/console/login': typeof ConsoleLoginRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/console/login': typeof ConsoleLoginRoute
   '/material/$id': typeof MaterialIdRoute
   '/org/team': typeof OrgTeamRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/console/login'
     | '/material/$id'
     | '/org/team'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/console/login'
     | '/material/$id'
     | '/org/team'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/console/login'
     | '/material/$id'
     | '/org/team'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -391,6 +403,7 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   MaterialIdRoute: typeof MaterialIdRoute
   OrgTeamRoute: typeof OrgTeamRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -549,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/org/team': {
       id: '/org/team'
       path: '/org/team'
@@ -633,7 +653,18 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   MaterialIdRoute: MaterialIdRoute,
   OrgTeamRoute: OrgTeamRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
