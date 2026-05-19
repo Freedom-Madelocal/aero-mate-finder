@@ -306,7 +306,20 @@ export default function Engineer() {
     return specs.filter((s) => {
       const matchAny = (sel: string[], val: string | null | undefined) =>
         sel.length === 0 || sel.some((x) => canon(x) === canon(val));
-      if (!matchAny(filters.vendors, s.vendor)) return false;
+      // Tier-1 chip groups (regex against relevant joined fields)
+      const productHay = [s.materialCategory, s.productForm, s.productName, s.productFamily].filter(Boolean).join(" ");
+      const chemistryHay = [s.resinChemistry, s.productName, s.productFamily, s.notes].filter(Boolean).join(" ");
+      const processHay = [s.processMethod, s.notes, s.applications].filter(Boolean).join(" ") + (s.ooaVboCapable ? " ooa vbo" : "");
+      const appHay = [s.applications, s.notes, s.qualificationsStandards].filter(Boolean).join(" ");
+      const segHay = [s.applications, s.notes, s.qualificationsStandards, ...(s.customers ?? [])].filter(Boolean).join(" ");
+      const groupMatch = (sel: string[], rx: Record<string, RegExp>, hay: string) =>
+        sel.length === 0 || sel.some((k) => rx[k]?.test(hay));
+      if (!groupMatch(filters.productTypes, PRODUCT_TYPE_RX, productHay)) return false;
+      if (filters.suppliers.length && !filters.suppliers.some((v) => canon(v) === canon(s.vendor))) return false;
+      if (!groupMatch(filters.chemistryGroups, CHEMISTRY_RX, chemistryHay)) return false;
+      if (!groupMatch(filters.processGroups, PROCESS_RX, processHay)) return false;
+      if (!groupMatch(filters.applicationGroups, APPLICATION_RX, appHay)) return false;
+      if (!groupMatch(filters.segmentGroups, SEGMENT_RX, segHay)) return false;
       if (!matchAny(filters.categories, s.materialCategory)) return false;
       if (!matchAny(filters.chemistries, s.resinChemistry)) return false;
       if (!matchAny(filters.reinforcements, s.reinforcement)) return false;
