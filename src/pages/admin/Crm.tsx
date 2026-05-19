@@ -204,7 +204,7 @@ export default function AdminCrm() {
           onOrgsRefresh={load}
         />
       )}
-    </div>
+    </AdminShell>
   );
 }
 
