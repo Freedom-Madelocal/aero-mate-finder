@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user?.id, location]);
 
-  const navItems: NavItem[] = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
+  const navItems: NavItem[] = baseNavItems;
 
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
     .split(/\s+/)
