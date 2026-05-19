@@ -508,9 +508,10 @@ export default function AdminUsers() {
                 {deleting ? "Deleting…" : "Delete user"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
       </div>
     </AdminShell>
-      )}
-    </div>
   );
 }
