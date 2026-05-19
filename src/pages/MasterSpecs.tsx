@@ -273,7 +273,7 @@ export default function MasterSpecs() {
           <SpecSheetUpload isOpen={showUpload} onClose={() => setShowUpload(false)} />
         </Suspense>
       )}
-    </DashboardLayout>
+    </AdminShell>
   );
 }
 
