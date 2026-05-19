@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, UserPlus, X, Trash2, Sparkles } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { UserPlus, X, Trash2, Sparkles } from "lucide-react";
+import AdminShell from "@/components/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
