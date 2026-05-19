@@ -15,6 +15,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CompareProvider } from "@/contexts/CompareContext";
 
 function NotFoundComponent() {
   return (
@@ -125,10 +126,12 @@ function RootComponent() {
       <ErrorBoundary>
         <ThemeProvider defaultTheme="dark">
           <AuthProvider>
-            <TooltipProvider delayDuration={200}>
-              <Toaster position="top-right" />
-              <Outlet />
-            </TooltipProvider>
+            <CompareProvider>
+              <TooltipProvider delayDuration={200}>
+                <Toaster position="top-right" />
+                <Outlet />
+              </TooltipProvider>
+            </CompareProvider>
           </AuthProvider>
         </ThemeProvider>
       </ErrorBoundary>
