@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, UserPlus, Activity, X, RotateCcw } from "lucide-react";
+import { ArrowLeft, UserPlus, Activity, X, RotateCcw, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
-import { createUserWithPassword } from "@/lib/adminUsers.functions";
+import { createUserWithPassword, deleteUser } from "@/lib/adminUsers.functions";
 import { toast } from "sonner";
 
 const INVITABLE: AppRole[] = ["super_admin", "org_admin", "engineer", "procurement", "dev", "integrator"];
