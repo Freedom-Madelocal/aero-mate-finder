@@ -46,6 +46,9 @@ export default function AdminUsers() {
   const [newFullName, setNewFullName] = useState("");
   const [creating, setCreating] = useState(false);
   const createDirect = useServerFn(createUserWithPassword);
+  const deleteUserFn = useServerFn(deleteUser);
+  const [confirmDelete, setConfirmDelete] = useState<Row | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [auditUser, setAuditUser] = useState<Row | null>(null);
   const [auditRows, setAuditRows] = useState<ActivityRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
