@@ -37,6 +37,7 @@ import { Route as MaterialIdRouteImport } from './routes/material.$id'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
+import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
 
 const SuppliersRoute = SuppliersRouteImport.update({
@@ -179,6 +180,11 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
   path: '/admin/organizations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMasterSpecsRoute = AdminMasterSpecsRouteImport.update({
+  id: '/admin/master-specs',
+  path: '/admin/master-specs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCrmRoute = AdminCrmRouteImport.update({
   id: '/admin/crm',
   path: '/admin/crm',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/suppliers': typeof SuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
@@ -399,6 +411,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
   AdminCrmRoute: typeof AdminCrmRoute
+  AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   MaterialIdRoute: typeof MaterialIdRoute
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrganizationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/master-specs': {
+      id: '/admin/master-specs'
+      path: '/admin/master-specs'
+      fullPath: '/admin/master-specs'
+      preLoaderRoute: typeof AdminMasterSpecsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/crm': {
       id: '/admin/crm'
       path: '/admin/crm'
@@ -649,6 +669,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
   AdminCrmRoute: AdminCrmRoute,
+  AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
   MaterialIdRoute: MaterialIdRoute,
