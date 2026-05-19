@@ -474,6 +474,45 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !deleting && setConfirmDelete(null)} />
+          <div className="relative w-full max-w-md bg-card border border-border rounded-lg shadow-xl p-6">
+            <h2 className="text-base font-semibold">Delete user?</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will permanently delete <span className="text-foreground font-medium">{confirmDelete.full_name || confirmDelete.email}</span> ({confirmDelete.email}), including their profile, roles, and demo settings. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+                className="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-secondary disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await deleteUserFn({ data: { user_id: confirmDelete.id } });
+                    toast.success("User deleted.");
+                    setConfirmDelete(null);
+                    load();
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to delete user");
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="px-3 py-1.5 text-sm rounded-md bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete user"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
