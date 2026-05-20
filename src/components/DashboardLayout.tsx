@@ -335,13 +335,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="flex-1 overflow-auto">{children}</main>
 
-      <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
-      <MessageDialog
-        open={!!msgRecipient}
-        onOpenChange={(v) => !v && setMsgRecipient(null)}
-        recipient={msgRecipient}
-      />
-      <GuidedTour />
+      {profileOpen && (
+        <Suspense fallback={null}>
+          <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
+        </Suspense>
+      )}
+      {msgRecipient && (
+        <Suspense fallback={null}>
+          <MessageDialog
+            open={!!msgRecipient}
+            onOpenChange={(v) => !v && setMsgRecipient(null)}
+            recipient={msgRecipient}
+          />
+        </Suspense>
+      )}
+      <Suspense fallback={null}>
+        <GuidedTour />
+      </Suspense>
     </div>
   );
 }
