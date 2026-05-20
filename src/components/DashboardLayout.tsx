@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Settings, Menu, Search as SearchIcon, ShieldCheck, Cog } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { logPageView } from "@/lib/userActivity";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
@@ -13,17 +13,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import ProfileDrawer from "@/components/ProfileDrawer";
-import MessageDialog from "@/components/MessageDialog";
 import { useOrgPresence, type OnlineMember } from "@/hooks/useOrgPresence";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import GlobalSearch from "@/components/GlobalSearch";
-import GuidedTour from "@/components/GuidedTour";
 import { preloadMasterSpecStore, useMasterSpecStore } from "@/data/masterSpecs";
 import { preloadMaterialStore } from "@/data/materials";
 import { preloadProcurementStore } from "@/data/procurement";
 import { useCompare } from "@/contexts/CompareContext";
+
+// Non-critical UI: only needed after the shell paints, on user interaction,
+// or once auth state settles. Lazy-loading keeps them out of the initial bundle.
+const ProfileDrawer = lazy(() => import("@/components/ProfileDrawer"));
+const MessageDialog = lazy(() => import("@/components/MessageDialog"));
+const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
+const GuidedTour = lazy(() => import("@/components/GuidedTour"));
 
 type NavItem = { path: string; label: string };
 
@@ -222,8 +225,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center gap-3">
 
           <div className="hidden md:block">
-            <GlobalSearch />
+            <Suspense fallback={<div style={{ width: 220, height: 32 }} />}>
+              <GlobalSearch />
+            </Suspense>
           </div>
+
 
           {/* Mobile search trigger fallback */}
           <button
@@ -329,13 +335,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="flex-1 overflow-auto">{children}</main>
 
-      <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
-      <MessageDialog
-        open={!!msgRecipient}
-        onOpenChange={(v) => !v && setMsgRecipient(null)}
-        recipient={msgRecipient}
-      />
-      <GuidedTour />
+      {profileOpen && (
+        <Suspense fallback={null}>
+          <ProfileDrawer open={profileOpen} onOpenChange={setProfileOpen} />
+        </Suspense>
+      )}
+      {msgRecipient && (
+        <Suspense fallback={null}>
+          <MessageDialog
+            open={!!msgRecipient}
+            onOpenChange={(v) => !v && setMsgRecipient(null)}
+            recipient={msgRecipient}
+          />
+        </Suspense>
+      )}
+      <Suspense fallback={null}>
+        <GuidedTour />
+      </Suspense>
     </div>
   );
 }

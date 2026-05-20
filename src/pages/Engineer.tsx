@@ -236,6 +236,31 @@ function inRange(v: number | null, r: NumRange): boolean {
   return true;
 }
 
+// LRU cache for filtered/sorted spec results. Cache keys combine the identity
+// of the source data arrays with a JSON snapshot of the filters/sort state, so
+// toggling back to a previously-seen query returns instantly without
+// re-scanning 400+ specs.
+const MATCHED_CACHE_MAX = 24;
+const matchedCache = new Map<string, MasterSpec[]>();
+const sortedCache = new Map<string, MasterSpec[]>();
+let cacheSpecsRef: MasterSpec[] | null = null;
+let cacheMaterialsRef: unknown = null;
+function cacheGet<T>(map: Map<string, T>, key: string): T | undefined {
+  const v = map.get(key);
+  if (v !== undefined) {
+    map.delete(key);
+    map.set(key, v);
+  }
+  return v;
+}
+function cacheSet<T>(map: Map<string, T>, key: string, value: T) {
+  map.set(key, value);
+  if (map.size > MATCHED_CACHE_MAX) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+}
+
 export default function Engineer() {
   const { specs } = useMasterSpecStore();
   const { materials } = useMaterialStore();
@@ -305,9 +330,19 @@ export default function Engineer() {
   // but `matched` recomputes against the deferred snapshot.
   const deferredFilters = useDeferredValue(filters);
   const matched = useMemo(() => {
+    // Invalidate caches if upstream data identity changes.
+    if (cacheSpecsRef !== specs || cacheMaterialsRef !== materials) {
+      matchedCache.clear();
+      sortedCache.clear();
+      cacheSpecsRef = specs;
+      cacheMaterialsRef = materials;
+    }
+    const cacheKey = JSON.stringify(deferredFilters);
+    const cached = cacheGet(matchedCache, cacheKey);
+    if (cached) return cached;
     const q = deferredFilters.q.toLowerCase().trim();
     const filters = deferredFilters;
-    return specs.filter((s) => {
+    const result = specs.filter((s) => {
       const matchAny = (sel: string[], val: string | null | undefined) =>
         sel.length === 0 || sel.some((x) => canon(x) === canon(val));
       // Tier-1 chip groups (regex against relevant joined fields)
@@ -378,9 +413,16 @@ export default function Engineer() {
       }
       return true;
     });
+    cacheSet(matchedCache, cacheKey, result);
+    return result;
   }, [specs, materials, deferredFilters]);
 
   const sorted = useMemo(() => {
+    const filtersKey = JSON.stringify(deferredFilters);
+    const pendingKey = Array.from(pendingForMe).sort().join("|");
+    const sortKey = `${filtersKey}::${sort.key}:${sort.dir}::${pendingKey}`;
+    const cached = cacheGet(sortedCache, sortKey);
+    if (cached) return cached;
     const e595Pass = (s: MasterSpec) =>
       s.tmlPct !== null && s.tmlPct <= 1.0 && s.cvcmPct !== null && s.cvcmPct <= 0.1;
     const invRank = (s: MasterSpec) => {
@@ -403,7 +445,7 @@ export default function Engineer() {
       }
     };
     const dir = sort.dir === "asc" ? 1 : -1;
-    return [...matched].sort((a, b) => {
+    const result = [...matched].sort((a, b) => {
       const av = getKey(a);
       const bv = getKey(b);
       if (av === null && bv === null) return 0;
@@ -413,7 +455,9 @@ export default function Engineer() {
       if (av > bv) return 1 * dir;
       return 0;
     });
-  }, [matched, sort, pendingForMe, materials]);
+    cacheSet(sortedCache, sortKey, result);
+    return result;
+  }, [matched, sort, pendingForMe, materials, deferredFilters]);
 
   const inStockCount = useMemo(
     () => matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length,
