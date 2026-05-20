@@ -241,7 +241,7 @@ export default function Engineer() {
   const { materials } = useMaterialStore();
   const { requests } = useProcurementStore();
   const { profile, user } = useAuth();
-  const search = useSearch({ from: "/engineer" }) as { spec?: string; q?: string };
+  const search = useSearch({ from: "/_app/engineer" }) as { spec?: string; q?: string };
   const navigate = useNavigate();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
