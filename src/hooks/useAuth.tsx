@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -108,22 +108,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     Date.now() - new Date(demo.first_login_at).getTime() > 48 * 60 * 60 * 1000 &&
     !isSuperAdmin;
 
-  const value: AuthCtx = {
-    session,
-    user: session?.user ?? null,
-    profile,
-    roles,
-    demo,
-    loading,
-    isAuthenticated: !!session,
-    hasRole: (r) => roles.includes(r),
-    isSuperAdmin,
-    isDemoExpired,
-    signOut: async () => {
-      await supabase.auth.signOut();
-    },
-    refresh,
-  };
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
+
+  const value = useMemo<AuthCtx>(
+    () => ({
+      session,
+      user: session?.user ?? null,
+      profile,
+      roles,
+      demo,
+      loading,
+      isAuthenticated: !!session,
+      hasRole: (r) => roles.includes(r),
+      isSuperAdmin,
+      isDemoExpired,
+      signOut,
+      refresh,
+    }),
+    [session, profile, roles, demo, loading, isSuperAdmin, isDemoExpired, signOut, refresh],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
