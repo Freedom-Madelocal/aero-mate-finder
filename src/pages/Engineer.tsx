@@ -301,8 +301,13 @@ export default function Engineer() {
     return set;
   }, [requests, engineerName]);
 
+  // Defer the filter object so heavy filtering doesn't block keystrokes
+  // in the search input. The input itself stays bound to `filters`,
+  // but `matched` recomputes against the deferred snapshot.
+  const deferredFilters = useDeferredValue(filters);
   const matched = useMemo(() => {
-    const q = filters.q.toLowerCase().trim();
+    const q = deferredFilters.q.toLowerCase().trim();
+    const filters = deferredFilters;
     return specs.filter((s) => {
       const matchAny = (sel: string[], val: string | null | undefined) =>
         sel.length === 0 || sel.some((x) => canon(x) === canon(val));
