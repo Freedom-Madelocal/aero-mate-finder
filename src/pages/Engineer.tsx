@@ -25,6 +25,7 @@ import {
 import { Link, useSearch, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompare } from "@/contexts/CompareContext";
 
 /*
  * Engineer Workspace
@@ -268,6 +269,7 @@ export default function Engineer() {
   const { profile, user } = useAuth();
   const search = useSearch({ from: "/_app/engineer" }) as { spec?: string; q?: string };
   const navigate = useNavigate();
+  const compare = useCompare();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
@@ -778,98 +780,91 @@ export default function Engineer() {
                 </span>
               </div>
 
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-secondary/40 text-xs uppercase text-muted-foreground">
-                      <tr>
-                        <SortHeader sortKey="procure" sort={sort} onClick={toggleSort} align="center" className="px-2 w-12" title="Procure">
-                          <span className="inline-flex items-center gap-1">
-                            <CheckSquare className="w-3.5 h-3.5" /> Procure
-                          </span>
-                        </SortHeader>
-                        <SortHeader sortKey="star" sort={sort} onClick={toggleSort} align="center" className="px-2 w-10" title="Frequent reorder">★</SortHeader>
-                        <SortHeader sortKey="product" sort={sort} onClick={toggleSort} align="left">Product</SortHeader>
-                        <SortHeader sortKey="vendor" sort={sort} onClick={toggleSort} align="left">Vendor</SortHeader>
-                        <SortHeader sortKey="form" sort={sort} onClick={toggleSort} align="left">Form</SortHeader>
-                        <SortHeader sortKey="chemistry" sort={sort} onClick={toggleSort} align="left">Chemistry</SortHeader>
-                        <SortHeader sortKey="cure" sort={sort} onClick={toggleSort} align="center">Cure °C</SortHeader>
-                        <SortHeader sortKey="service" sort={sort} onClick={toggleSort} align="center">Service °C</SortHeader>
-                        <SortHeader sortKey="e595" sort={sort} onClick={toggleSort} align="center">E595</SortHeader>
-                        <SortHeader sortKey="inventory" sort={sort} onClick={toggleSort} align="right">Inventory</SortHeader>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sorted.length === 0 ? (
-                        <tr>
-                          <td colSpan={10} className="text-center py-12 text-muted-foreground text-sm">
-                            No specs match these filters.
-                          </td>
-                        </tr>
-                      ) : (
-                        visibleSorted.map((spec) => {
-                          const inv = getInventoryMatch(spec, materials);
-                          const e595Pass =
-                            spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
-                            spec.cvcmPct !== null && spec.cvcmPct <= 0.1;
-                          const isPending = pendingForMe.has(spec.id);
-                          return (
-                            <tr
-                              key={spec.id}
-                              className="border-t border-border hover:bg-accent/20 transition-colors"
-                            >
-                              <td className="px-2 py-2 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isPending}
-                                  disabled={picking === spec.id}
-                                  onChange={() => handleProcure(spec)}
-                                  className="w-4 h-4 accent-foreground cursor-pointer"
-                                  aria-label="Add to procurement pick list"
-                                />
-                              </td>
-                              <td className="px-2 py-2 text-center">
-                                <button
-                                  onClick={() => handleStar(spec)}
-                                  className={`p-1 rounded hover:bg-secondary transition-colors ${
-                                    spec.frequentReorder ? "text-[var(--metal-silver)] drop-shadow-[0_0_2px_rgba(255,255,255,0.25)]" : "text-muted-foreground/40"
-                                  }`}
-                                  aria-label={spec.frequentReorder ? "Unstar" : "Mark frequent reorder"}
-                                  title={spec.frequentReorder ? "Frequent reorder — starred" : "Mark as frequent reorder"}
-                                >
-                                  {spec.frequentReorder ? (
-                                    <StarFilled className="w-4 h-4" />
-                                  ) : (
-                                    <StarOutline className="w-4 h-4" />
-                                  )}
-                                </button>
-                              </td>
-                              <td className="px-3 py-2">
-                                <button
-                                  onClick={() => setSelected(spec)}
-                                  className="text-left font-medium text-foreground hover:underline"
-                                >
-                                  {spec.productName}
-                                </button>
-                                {spec.productFamily && (
-                                  <div className="text-xs text-muted-foreground">{spec.productFamily}</div>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-muted-foreground">{spec.vendor}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{spec.productForm ?? "—"}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{spec.resinChemistry ?? "—"}</td>
-                              <td className="px-3 py-2 text-center font-mono">{spec.cureTemperatureC ?? "—"}</td>
-                              <td className="px-3 py-2 text-center font-mono">{spec.maxServiceTemperatureC ?? "—"}</td>
-                              <td className="px-3 py-2 text-center font-mono text-xs">
+              <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+                <label htmlFor="eng-sort">Sort by</label>
+                <select
+                  id="eng-sort"
+                  value={`${sort.key}:${sort.dir}`}
+                  onChange={(e) => {
+                    const [key, dir] = e.target.value.split(":") as [SortKey, "asc" | "desc"];
+                    setSort({ key, dir });
+                  }}
+                  className="bg-card border border-border rounded px-2 py-1 text-foreground"
+                >
+                  <option value="product:asc">Product (A–Z)</option>
+                  <option value="product:desc">Product (Z–A)</option>
+                  <option value="vendor:asc">Vendor (A–Z)</option>
+                  <option value="cure:asc">Cure °C ↑</option>
+                  <option value="cure:desc">Cure °C ↓</option>
+                  <option value="service:desc">Service °C ↓</option>
+                  <option value="e595:desc">E595 pass first</option>
+                  <option value="inventory:asc">Inventory (stocked first)</option>
+                  <option value="star:desc">Starred first</option>
+                  <option value="procure:desc">On pick list first</option>
+                </select>
+              </div>
+
+              {sorted.length === 0 ? (
+                <div className="bg-card border border-border rounded-lg py-12 text-center text-muted-foreground text-sm">
+                  No specs match these filters.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {visibleSorted.map((spec) => {
+                    const inv = getInventoryMatch(spec, materials);
+                    const e595Pass =
+                      spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
+                      spec.cvcmPct !== null && spec.cvcmPct <= 0.1;
+                    const isPending = pendingForMe.has(spec.id);
+                    const inCompare = compare.has(spec.id);
+                    const metaBits = [
+                      spec.productForm ?? spec.materialCategory,
+                      spec.cureTemperatureC !== null ? `Cure ${spec.cureTemperatureC}°C` : null,
+                      spec.outLifeDays !== null ? `Out-life ${spec.outLifeDays}d` : null,
+                      (spec.peakTgC ?? spec.dryTgOnsetC) !== null
+                        ? `Tg ${spec.peakTgC ?? spec.dryTgOnsetC}°C`
+                        : null,
+                    ].filter(Boolean) as string[];
+                    const description =
+                      spec.notes ||
+                      spec.applications ||
+                      spec.qualificationsStandards ||
+                      spec.productFamily ||
+                      "";
+                    return (
+                      <article
+                        key={spec.id}
+                        className="bg-card border border-border rounded-lg px-4 py-3 hover:border-[color:var(--accent-blue)]/40 transition-colors"
+                      >
+                        <div className="flex gap-4">
+                          <div className="flex-1 min-w-0">
+                            {/* Top row: name + supplier + chemistry */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                onClick={() => setSelected(spec)}
+                                className="text-left text-foreground hover:underline truncate"
+                                style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}
+                              >
+                                {spec.productName}
+                              </button>
+                              <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary text-foreground">
+                                {spec.vendor}
+                              </span>
+                              {spec.resinChemistry && (
+                                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground">
+                                  {spec.resinChemistry}
+                                </span>
+                              )}
+                              <span className="text-[10px] font-mono uppercase">
                                 {spec.tmlPct === null && spec.cvcmPct === null ? (
-                                  <span className="text-muted-foreground/40">—</span>
+                                  <span className="text-muted-foreground/40">E595 —</span>
                                 ) : (
                                   <span className={e595Pass ? "text-[var(--status-compliant)]" : "text-[var(--status-warning)]"}>
-                                    {spec.tmlPct ?? "?"}/{spec.cvcmPct ?? "?"}
+                                    E595 {e595Pass ? "PASS" : "FAIL"}
                                   </span>
                                 )}
-                              </td>
-                              <td className="px-3 py-2 text-right">
+                              </span>
+                              <span className="ml-auto">
                                 {inv.status === "none" ? (
                                   <span className="text-[10px] font-mono uppercase text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
                                     Not Stocked
@@ -887,36 +882,127 @@ export default function Engineer() {
                                     {inv.status === "in-stock" ? `In Stock (${inv.material.availableQty})` : "Tracked"}
                                   </Link>
                                 )}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {sorted.length > visibleLimit && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
-                    <span>
-                      Showing {visibleLimit} of {sorted.length}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setVisibleLimit((n) => n + PAGE_SIZE)}
-                        className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
-                      >
-                        Show {Math.min(PAGE_SIZE, sorted.length - visibleLimit)} more
-                      </button>
-                      <button
-                        onClick={() => setVisibleLimit(sorted.length)}
-                        className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
-                      >
-                        Show all
-                      </button>
+                              </span>
+                            </div>
+
+                            {/* Second row: meta */}
+                            {metaBits.length > 0 && (
+                              <div
+                                className="mt-1.5 text-muted-foreground"
+                                style={{ fontSize: 11, lineHeight: 1.5 }}
+                              >
+                                {metaBits.join(" · ")}
+                              </div>
+                            )}
+
+                            {/* Third row: description */}
+                            {description && (
+                              <p
+                                className="mt-2 line-clamp-2"
+                                style={{
+                                  fontSize: 12.5,
+                                  lineHeight: 1.55,
+                                  color: "color-mix(in srgb, var(--foreground) 70%, transparent)",
+                                }}
+                              >
+                                {description}
+                              </p>
+                            )}
+
+                            {/* Bottom-left: star + procure */}
+                            <div className="mt-3 flex items-center gap-2">
+                              <button
+                                onClick={() => handleStar(spec)}
+                                className={`p-1 rounded hover:bg-secondary transition-colors ${
+                                  spec.frequentReorder
+                                    ? "text-[var(--metal-silver)] drop-shadow-[0_0_2px_rgba(255,255,255,0.25)]"
+                                    : "text-muted-foreground/40"
+                                }`}
+                                aria-label={spec.frequentReorder ? "Unstar" : "Mark frequent reorder"}
+                                title={spec.frequentReorder ? "Frequent reorder — starred" : "Mark as frequent reorder"}
+                              >
+                                {spec.frequentReorder ? (
+                                  <StarFilled className="w-4 h-4" />
+                                ) : (
+                                  <StarOutline className="w-4 h-4" />
+                                )}
+                              </button>
+                              <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={isPending}
+                                  disabled={picking === spec.id}
+                                  onChange={() => handleProcure(spec)}
+                                  className="w-3.5 h-3.5 accent-foreground cursor-pointer"
+                                  aria-label="Add to procurement pick list"
+                                />
+                                <span className="inline-flex items-center gap-1">
+                                  <CheckSquare className="w-3 h-3" />
+                                  {isPending ? "On pick list" : "Procure"}
+                                </span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Right side: stacked action buttons */}
+                          <div className="flex flex-col gap-1.5 shrink-0 self-start min-w-[112px]">
+                            <button
+                              onClick={() => setSelected(spec)}
+                              className="text-[12px] font-medium text-white rounded-md px-3 py-1.5 transition-opacity hover:opacity-90"
+                              style={{ background: "#3B8AFF" }}
+                            >
+                              Details
+                            </button>
+                            <button
+                              onClick={() => compare.toggle(spec.id)}
+                              className="text-[12px] rounded-md px-3 py-1.5 bg-transparent text-foreground hover:bg-secondary/50 transition-colors"
+                              style={{ border: "0.5px solid oklch(24% 0 0)" }}
+                            >
+                              {inCompare ? "✓ Compare" : "+ Compare"}
+                            </button>
+                            <button
+                              onClick={() =>
+                                navigate({
+                                  to: "/crossover",
+                                  search: { q: spec.productName } as never,
+                                })
+                              }
+                              className="text-[12px] rounded-md px-3 py-1.5 bg-transparent text-foreground hover:bg-secondary/50 transition-colors"
+                              style={{ border: "0.5px solid oklch(24% 0 0)" }}
+                            >
+                              Crossover
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+
+                  {sorted.length > visibleLimit && (
+                    <div className="flex items-center justify-between px-2 py-3 text-xs text-muted-foreground">
+                      <span>
+                        Showing {visibleLimit} of {sorted.length}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setVisibleLimit((n) => n + PAGE_SIZE)}
+                          className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
+                        >
+                          Show {Math.min(PAGE_SIZE, sorted.length - visibleLimit)} more
+                        </button>
+                        <button
+                          onClick={() => setVisibleLimit(sorted.length)}
+                          className="px-3 py-1.5 rounded border border-border hover:bg-accent text-foreground"
+                        >
+                          Show all
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+
+
 
             </section>
           </div>
