@@ -53,7 +53,7 @@ export default function Compare() {
                   {items.map((s, i) => (
                     <th
                       key={s.id}
-                      className="text-center px-3 py-3 align-top"
+                      className="text-center px-3 py-3 align-top relative"
                       style={
                         i === 0
                           ? {
@@ -64,14 +64,16 @@ export default function Compare() {
                           : undefined
                       }
                     >
-                      <div className="text-[13px] font-bold text-foreground">{s.productName}</div>
-                      <div className="text-[11px] text-muted-foreground">{s.vendor}</div>
                       <button
                         onClick={() => remove(s.id)}
-                        className="text-[10px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mt-1"
+                        title="Remove"
+                        aria-label="Remove"
+                        className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
                       >
-                        <X className="w-3 h-3" /> Remove
+                        <X className="w-4 h-4" strokeWidth={2.25} />
                       </button>
+                      <div className="text-[13px] font-bold text-foreground pr-6">{s.productName}</div>
+                      <div className="text-[11px] text-muted-foreground">{s.vendor}</div>
                     </th>
                   ))}
                 </tr>
