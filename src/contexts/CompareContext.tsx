@@ -37,8 +37,8 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
   const add = useCallback((id: string) => {
     setIds((prev) => {
       if (prev.includes(id)) return prev;
-      const next = [...prev, id];
-      return next.length > MAX ? next.slice(next.length - MAX) : next;
+      if (prev.length >= MAX) return prev;
+      return [...prev, id];
     });
   }, []);
 
@@ -49,8 +49,8 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
   const toggle = useCallback((id: string) => {
     setIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      const next = [...prev, id];
-      return next.length > MAX ? next.slice(next.length - MAX) : next;
+      if (prev.length >= MAX) return prev;
+      return [...prev, id];
     });
   }, []);
 
