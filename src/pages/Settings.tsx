@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import DashboardLayout from "@/components/DashboardLayout";
 import LandingEditor from "@/components/LandingEditor";
 import LeadMagnetEditor from "@/components/LeadMagnetEditor";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +31,7 @@ export default function Settings() {
   ];
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
@@ -204,7 +203,7 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }
 

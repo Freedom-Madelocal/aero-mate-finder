@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Learn from "@/pages/Learn";
 
-export const Route = createFileRoute("/learn")({
+export const Route = createFileRoute("/_app/learn")({
   head: () => ({
     meta: [
       { title: "Learn — Traceium" },

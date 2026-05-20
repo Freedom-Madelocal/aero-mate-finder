@@ -9,54 +9,40 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SuppliersRouteImport } from './routes/suppliers'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ProcurementRouteImport } from './routes/procurement'
 import { Route as PiRouteImport } from './routes/pi'
-import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as LearnRouteImport } from './routes/learn'
-import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as FreeGuideRouteImport } from './routes/free-guide'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as EngineerRouteImport } from './routes/engineer'
-import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DemoExpiredRouteImport } from './routes/demo-expired'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CrossoverRouteImport } from './routes/crossover'
 import { Route as ConsoleRouteImport } from './routes/console'
-import { Route as ComplianceRouteImport } from './routes/compliance'
-import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as OrgTeamRouteImport } from './routes/org.team'
-import { Route as MaterialIdRouteImport } from './routes/material.$id'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
+import { Route as AppSuppliersRouteImport } from './routes/_app.suppliers'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppProcurementRouteImport } from './routes/_app.procurement'
+import { Route as AppOrdersRouteImport } from './routes/_app.orders'
+import { Route as AppLearnRouteImport } from './routes/_app.learn'
+import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
+import { Route as AppEngineerRouteImport } from './routes/_app.engineer'
+import { Route as AppDocumentsRouteImport } from './routes/_app.documents'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCrossoverRouteImport } from './routes/_app.crossover'
+import { Route as AppComplianceRouteImport } from './routes/_app.compliance'
+import { Route as AppCompareRouteImport } from './routes/_app.compare'
+import { Route as AppOrgTeamRouteImport } from './routes/_app.org.team'
+import { Route as AppMaterialIdRouteImport } from './routes/_app.material.$id'
 
-const SuppliersRoute = SuppliersRouteImport.update({
-  id: '/suppliers',
-  path: '/suppliers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProcurementRoute = ProcurementRouteImport.update({
-  id: '/procurement',
-  path: '/procurement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PiRoute = PiRouteImport.update({
@@ -64,24 +50,9 @@ const PiRoute = PiRouteImport.update({
   path: '/pi',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrdersRoute = OrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LearnRoute = LearnRouteImport.update({
-  id: '/learn',
-  path: '/learn',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InventoryRoute = InventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FreeGuideRoute = FreeGuideRouteImport.update({
@@ -94,29 +65,9 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EngineerRoute = EngineerRouteImport.update({
-  id: '/engineer',
-  path: '/engineer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocumentsRoute = DocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DemoExpiredRoute = DemoExpiredRouteImport.update({
   id: '/demo-expired',
   path: '/demo-expired',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrossoverRoute = CrossoverRouteImport.update({
-  id: '/crossover',
-  path: '/crossover',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleRoute = ConsoleRouteImport.update({
@@ -124,19 +75,13 @@ const ConsoleRoute = ConsoleRouteImport.update({
   path: '/console',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ComplianceRoute = ComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompareRoute = CompareRouteImport.update({
-  id: '/compare',
-  path: '/compare',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AcceptInviteRoute = AcceptInviteRouteImport.update({
   id: '/accept-invite',
   path: '/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -147,16 +92,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrgTeamRoute = OrgTeamRouteImport.update({
-  id: '/org/team',
-  path: '/org/team',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MaterialIdRoute = MaterialIdRouteImport.update({
-  id: '/material/$id',
-  path: '/material/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
@@ -184,123 +119,194 @@ const AdminCrmRoute = AdminCrmRouteImport.update({
   path: '/admin/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSuppliersRoute = AppSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProcurementRoute = AppProcurementRouteImport.update({
+  id: '/procurement',
+  path: '/procurement',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrdersRoute = AppOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLearnRoute = AppLearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInventoryRoute = AppInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEngineerRoute = AppEngineerRouteImport.update({
+  id: '/engineer',
+  path: '/engineer',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrossoverRoute = AppCrossoverRouteImport.update({
+  id: '/crossover',
+  path: '/crossover',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppComplianceRoute = AppComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCompareRoute = AppCompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrgTeamRoute = AppOrgTeamRouteImport.update({
+  id: '/org/team',
+  path: '/org/team',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaterialIdRoute = AppMaterialIdRouteImport.update({
+  id: '/material/$id',
+  path: '/material/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
-  '/compare': typeof CompareRoute
-  '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
-  '/crossover': typeof CrossoverRoute
-  '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
-  '/documents': typeof DocumentsRoute
-  '/engineer': typeof EngineerRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-guide': typeof FreeGuideRoute
-  '/inventory': typeof InventoryRoute
-  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
-  '/procurement': typeof ProcurementRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRoute
-  '/suppliers': typeof SuppliersRoute
+  '/compare': typeof AppCompareRoute
+  '/compliance': typeof AppComplianceRoute
+  '/crossover': typeof AppCrossoverRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/documents': typeof AppDocumentsRoute
+  '/engineer': typeof AppEngineerRoute
+  '/inventory': typeof AppInventoryRoute
+  '/learn': typeof AppLearnRoute
+  '/orders': typeof AppOrdersRoute
+  '/procurement': typeof AppProcurementRoute
+  '/settings': typeof AppSettingsRoute
+  '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/material/$id': typeof MaterialIdRoute
-  '/org/team': typeof OrgTeamRoute
   '/admin/': typeof AdminIndexRoute
+  '/material/$id': typeof AppMaterialIdRoute
+  '/org/team': typeof AppOrgTeamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
-  '/compare': typeof CompareRoute
-  '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
-  '/crossover': typeof CrossoverRoute
-  '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
-  '/documents': typeof DocumentsRoute
-  '/engineer': typeof EngineerRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-guide': typeof FreeGuideRoute
-  '/inventory': typeof InventoryRoute
-  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
-  '/procurement': typeof ProcurementRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRoute
-  '/suppliers': typeof SuppliersRoute
+  '/compare': typeof AppCompareRoute
+  '/compliance': typeof AppComplianceRoute
+  '/crossover': typeof AppCrossoverRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/documents': typeof AppDocumentsRoute
+  '/engineer': typeof AppEngineerRoute
+  '/inventory': typeof AppInventoryRoute
+  '/learn': typeof AppLearnRoute
+  '/orders': typeof AppOrdersRoute
+  '/procurement': typeof AppProcurementRoute
+  '/settings': typeof AppSettingsRoute
+  '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/material/$id': typeof MaterialIdRoute
-  '/org/team': typeof OrgTeamRoute
   '/admin': typeof AdminIndexRoute
+  '/material/$id': typeof AppMaterialIdRoute
+  '/org/team': typeof AppOrgTeamRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/accept-invite': typeof AcceptInviteRoute
-  '/compare': typeof CompareRoute
-  '/compliance': typeof ComplianceRoute
   '/console': typeof ConsoleRouteWithChildren
-  '/crossover': typeof CrossoverRoute
-  '/dashboard': typeof DashboardRoute
   '/demo-expired': typeof DemoExpiredRoute
-  '/documents': typeof DocumentsRoute
-  '/engineer': typeof EngineerRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-guide': typeof FreeGuideRoute
-  '/inventory': typeof InventoryRoute
-  '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
-  '/orders': typeof OrdersRoute
   '/pi': typeof PiRoute
-  '/procurement': typeof ProcurementRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRoute
-  '/suppliers': typeof SuppliersRoute
+  '/_app/compare': typeof AppCompareRoute
+  '/_app/compliance': typeof AppComplianceRoute
+  '/_app/crossover': typeof AppCrossoverRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/documents': typeof AppDocumentsRoute
+  '/_app/engineer': typeof AppEngineerRoute
+  '/_app/inventory': typeof AppInventoryRoute
+  '/_app/learn': typeof AppLearnRoute
+  '/_app/orders': typeof AppOrdersRoute
+  '/_app/procurement': typeof AppProcurementRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
-  '/material/$id': typeof MaterialIdRoute
-  '/org/team': typeof OrgTeamRoute
   '/admin/': typeof AdminIndexRoute
+  '/_app/material/$id': typeof AppMaterialIdRoute
+  '/_app/org/team': typeof AppOrgTeamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/accept-invite'
-    | '/compare'
-    | '/compliance'
     | '/console'
-    | '/crossover'
-    | '/dashboard'
     | '/demo-expired'
-    | '/documents'
-    | '/engineer'
     | '/forgot-password'
     | '/free-guide'
+    | '/login'
+    | '/pi'
+    | '/reset-password'
+    | '/compare'
+    | '/compliance'
+    | '/crossover'
+    | '/dashboard'
+    | '/documents'
+    | '/engineer'
     | '/inventory'
     | '/learn'
-    | '/login'
     | '/orders'
-    | '/pi'
     | '/procurement'
-    | '/reset-password'
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
@@ -308,30 +314,30 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
+    | '/admin/'
     | '/material/$id'
     | '/org/team'
-    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/accept-invite'
-    | '/compare'
-    | '/compliance'
     | '/console'
-    | '/crossover'
-    | '/dashboard'
     | '/demo-expired'
-    | '/documents'
-    | '/engineer'
     | '/forgot-password'
     | '/free-guide'
+    | '/login'
+    | '/pi'
+    | '/reset-password'
+    | '/compare'
+    | '/compliance'
+    | '/crossover'
+    | '/dashboard'
+    | '/documents'
+    | '/engineer'
     | '/inventory'
     | '/learn'
-    | '/login'
     | '/orders'
-    | '/pi'
     | '/procurement'
-    | '/reset-password'
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
@@ -339,101 +345,68 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
+    | '/admin'
     | '/material/$id'
     | '/org/team'
-    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/_app'
     | '/accept-invite'
-    | '/compare'
-    | '/compliance'
     | '/console'
-    | '/crossover'
-    | '/dashboard'
     | '/demo-expired'
-    | '/documents'
-    | '/engineer'
     | '/forgot-password'
     | '/free-guide'
-    | '/inventory'
-    | '/learn'
     | '/login'
-    | '/orders'
     | '/pi'
-    | '/procurement'
     | '/reset-password'
-    | '/settings'
-    | '/suppliers'
+    | '/_app/compare'
+    | '/_app/compliance'
+    | '/_app/crossover'
+    | '/_app/dashboard'
+    | '/_app/documents'
+    | '/_app/engineer'
+    | '/_app/inventory'
+    | '/_app/learn'
+    | '/_app/orders'
+    | '/_app/procurement'
+    | '/_app/settings'
+    | '/_app/suppliers'
     | '/admin/crm'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
     | '/console/login'
-    | '/material/$id'
-    | '/org/team'
     | '/admin/'
+    | '/_app/material/$id'
+    | '/_app/org/team'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   AcceptInviteRoute: typeof AcceptInviteRoute
-  CompareRoute: typeof CompareRoute
-  ComplianceRoute: typeof ComplianceRoute
   ConsoleRoute: typeof ConsoleRouteWithChildren
-  CrossoverRoute: typeof CrossoverRoute
-  DashboardRoute: typeof DashboardRoute
   DemoExpiredRoute: typeof DemoExpiredRoute
-  DocumentsRoute: typeof DocumentsRoute
-  EngineerRoute: typeof EngineerRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FreeGuideRoute: typeof FreeGuideRoute
-  InventoryRoute: typeof InventoryRoute
-  LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
-  OrdersRoute: typeof OrdersRoute
   PiRoute: typeof PiRoute
-  ProcurementRoute: typeof ProcurementRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  SettingsRoute: typeof SettingsRoute
-  SuppliersRoute: typeof SuppliersRoute
   AdminCrmRoute: typeof AdminCrmRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  MaterialIdRoute: typeof MaterialIdRoute
-  OrgTeamRoute: typeof OrgTeamRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/suppliers': {
-      id: '/suppliers'
-      path: '/suppliers'
-      fullPath: '/suppliers'
-      preLoaderRoute: typeof SuppliersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/procurement': {
-      id: '/procurement'
-      path: '/procurement'
-      fullPath: '/procurement'
-      preLoaderRoute: typeof ProcurementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pi': {
@@ -443,32 +416,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orders': {
-      id: '/orders'
-      path: '/orders'
-      fullPath: '/orders'
-      preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/learn': {
-      id: '/learn'
-      path: '/learn'
-      fullPath: '/learn'
-      preLoaderRoute: typeof LearnRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inventory': {
-      id: '/inventory'
-      path: '/inventory'
-      fullPath: '/inventory'
-      preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/free-guide': {
@@ -485,39 +437,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/engineer': {
-      id: '/engineer'
-      path: '/engineer'
-      fullPath: '/engineer'
-      preLoaderRoute: typeof EngineerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/documents': {
-      id: '/documents'
-      path: '/documents'
-      fullPath: '/documents'
-      preLoaderRoute: typeof DocumentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/demo-expired': {
       id: '/demo-expired'
       path: '/demo-expired'
       fullPath: '/demo-expired'
       preLoaderRoute: typeof DemoExpiredRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crossover': {
-      id: '/crossover'
-      path: '/crossover'
-      fullPath: '/crossover'
-      preLoaderRoute: typeof CrossoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console': {
@@ -527,25 +451,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/compliance': {
-      id: '/compliance'
-      path: '/compliance'
-      fullPath: '/compliance'
-      preLoaderRoute: typeof ComplianceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compare': {
-      id: '/compare'
-      path: '/compare'
-      fullPath: '/compare'
-      preLoaderRoute: typeof CompareRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/accept-invite': {
       id: '/accept-invite'
       path: '/accept-invite'
       fullPath: '/accept-invite'
       preLoaderRoute: typeof AcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -560,20 +477,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/org/team': {
-      id: '/org/team'
-      path: '/org/team'
-      fullPath: '/org/team'
-      preLoaderRoute: typeof OrgTeamRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/material/$id': {
-      id: '/material/$id'
-      path: '/material/$id'
-      fullPath: '/material/$id'
-      preLoaderRoute: typeof MaterialIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console/login': {
@@ -611,8 +514,142 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCrmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/suppliers': {
+      id: '/_app/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof AppSuppliersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/procurement': {
+      id: '/_app/procurement'
+      path: '/procurement'
+      fullPath: '/procurement'
+      preLoaderRoute: typeof AppProcurementRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orders': {
+      id: '/_app/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/learn': {
+      id: '/_app/learn'
+      path: '/learn'
+      fullPath: '/learn'
+      preLoaderRoute: typeof AppLearnRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inventory': {
+      id: '/_app/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AppInventoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/engineer': {
+      id: '/_app/engineer'
+      path: '/engineer'
+      fullPath: '/engineer'
+      preLoaderRoute: typeof AppEngineerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/documents': {
+      id: '/_app/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crossover': {
+      id: '/_app/crossover'
+      path: '/crossover'
+      fullPath: '/crossover'
+      preLoaderRoute: typeof AppCrossoverRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/compliance': {
+      id: '/_app/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof AppComplianceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/compare': {
+      id: '/_app/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof AppCompareRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/org/team': {
+      id: '/_app/org/team'
+      path: '/org/team'
+      fullPath: '/org/team'
+      preLoaderRoute: typeof AppOrgTeamRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/material/$id': {
+      id: '/_app/material/$id'
+      path: '/material/$id'
+      fullPath: '/material/$id'
+      preLoaderRoute: typeof AppMaterialIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
+
+interface AppRouteChildren {
+  AppCompareRoute: typeof AppCompareRoute
+  AppComplianceRoute: typeof AppComplianceRoute
+  AppCrossoverRoute: typeof AppCrossoverRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppDocumentsRoute: typeof AppDocumentsRoute
+  AppEngineerRoute: typeof AppEngineerRoute
+  AppInventoryRoute: typeof AppInventoryRoute
+  AppLearnRoute: typeof AppLearnRoute
+  AppOrdersRoute: typeof AppOrdersRoute
+  AppProcurementRoute: typeof AppProcurementRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppSuppliersRoute: typeof AppSuppliersRoute
+  AppMaterialIdRoute: typeof AppMaterialIdRoute
+  AppOrgTeamRoute: typeof AppOrgTeamRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppCompareRoute: AppCompareRoute,
+  AppComplianceRoute: AppComplianceRoute,
+  AppCrossoverRoute: AppCrossoverRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppDocumentsRoute: AppDocumentsRoute,
+  AppEngineerRoute: AppEngineerRoute,
+  AppInventoryRoute: AppInventoryRoute,
+  AppLearnRoute: AppLearnRoute,
+  AppOrdersRoute: AppOrdersRoute,
+  AppProcurementRoute: AppProcurementRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppSuppliersRoute: AppSuppliersRoute,
+  AppMaterialIdRoute: AppMaterialIdRoute,
+  AppOrgTeamRoute: AppOrgTeamRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface ConsoleRouteChildren {
   ConsoleLoginRoute: typeof ConsoleLoginRoute
@@ -627,34 +664,31 @@ const ConsoleRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   AcceptInviteRoute: AcceptInviteRoute,
-  CompareRoute: CompareRoute,
-  ComplianceRoute: ComplianceRoute,
   ConsoleRoute: ConsoleRouteWithChildren,
-  CrossoverRoute: CrossoverRoute,
-  DashboardRoute: DashboardRoute,
   DemoExpiredRoute: DemoExpiredRoute,
-  DocumentsRoute: DocumentsRoute,
-  EngineerRoute: EngineerRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   FreeGuideRoute: FreeGuideRoute,
-  InventoryRoute: InventoryRoute,
-  LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
-  OrdersRoute: OrdersRoute,
   PiRoute: PiRoute,
-  ProcurementRoute: ProcurementRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  SettingsRoute: SettingsRoute,
-  SuppliersRoute: SuppliersRoute,
   AdminCrmRoute: AdminCrmRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
-  MaterialIdRoute: MaterialIdRoute,
-  OrgTeamRoute: OrgTeamRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

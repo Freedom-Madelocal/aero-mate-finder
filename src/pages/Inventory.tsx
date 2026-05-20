@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import { Search, Filter, Plus, ChevronDown, Package, TruckIcon, Upload, FileSpreadsheet, X, Info, Trash2 } from "lucide-react";
 import { lazy, Suspense, useState, useMemo } from "react";
@@ -175,7 +174,7 @@ export default function Inventory() {
   const isEmpty = materials.length === 0;
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -650,6 +649,6 @@ export default function Inventory() {
           />
         </Suspense>
       )}
-    </DashboardLayout>
+    </>
   );
 }

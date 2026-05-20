@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import {
   Search,
@@ -485,7 +484,7 @@ export default function Engineer() {
     (filters.e595 !== "any" ? 1 : 0);
 
   return (
-    <DashboardLayout>
+    <>
       <div className="px-5 py-5 space-y-4">
         {/* Top full-width search bar */}
         <div className="relative">
@@ -883,7 +882,7 @@ export default function Engineer() {
       {selected && (
         <SpecDrawer spec={selected} onClose={() => setSelected(null)} />
       )}
-    </DashboardLayout>
+    </>
   );
 }
 

@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import VendorContactsDialog from "@/components/VendorContactsDialog";
 import {
   useProcurementStore,
@@ -143,7 +142,7 @@ Procurement — Traceum`;
   };
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6 relative pb-20">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
@@ -356,6 +355,6 @@ Procurement — Traceum`;
         contacts={contacts}
         vendorSuggestions={vendorSuggestions}
       />
-    </DashboardLayout>
+    </>
   );
 }

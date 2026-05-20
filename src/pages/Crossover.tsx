@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import { useMasterSpecStore, type MasterSpec } from "@/data/masterSpecs";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
@@ -58,7 +57,7 @@ export default function Crossover() {
   }, [selected, specs]);
 
   return (
-    <DashboardLayout>
+    <>
       <div className="mx-auto w-full max-w-[1100px] px-5 py-6 space-y-6">
         <header className="space-y-1">
           <h1 className="text-[15px] font-semibold text-foreground">Crossover tool</h1>
@@ -149,7 +148,7 @@ export default function Crossover() {
           <Differences source={selected} target={equivalents[0]} />
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }
 
