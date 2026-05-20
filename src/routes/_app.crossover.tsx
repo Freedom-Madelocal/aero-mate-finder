@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Crossover from "@/pages/Crossover";
 
+interface CrossoverSearch {
+  q?: string;
+}
+
 export const Route = createFileRoute("/_app/crossover")({
+  validateSearch: (search: Record<string, unknown>): CrossoverSearch => ({
+    q: typeof search.q === "string" ? search.q : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Crossover — Traceium" },
