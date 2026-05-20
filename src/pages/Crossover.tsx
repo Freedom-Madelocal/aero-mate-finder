@@ -2,10 +2,12 @@ import { useMasterSpecStore, type MasterSpec } from "@/data/masterSpecs";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { supplierBadge, chemistryBadge, okBadge, warnBadge } from "@/lib/badges";
+import { useSearch } from "@tanstack/react-router";
 
 export default function Crossover() {
   const { specs } = useMasterSpecStore();
-  const [query, setQuery] = useState("");
+  const initialQ = (useSearch({ from: "/_app/crossover" }) as { q?: string }).q ?? "";
+  const [query, setQuery] = useState(initialQ);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
 
   const suggestions = useMemo<MasterSpec[]>(() => {
