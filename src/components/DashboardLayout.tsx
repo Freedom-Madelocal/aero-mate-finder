@@ -225,8 +225,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center gap-3">
 
           <div className="hidden md:block">
-            <GlobalSearch />
+            <Suspense fallback={<div style={{ width: 220, height: 32 }} />}>
+              <GlobalSearch />
+            </Suspense>
           </div>
+
 
           {/* Mobile search trigger fallback */}
           <button
