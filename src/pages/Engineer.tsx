@@ -236,6 +236,31 @@ function inRange(v: number | null, r: NumRange): boolean {
   return true;
 }
 
+// LRU cache for filtered/sorted spec results. Cache keys combine the identity
+// of the source data arrays with a JSON snapshot of the filters/sort state, so
+// toggling back to a previously-seen query returns instantly without
+// re-scanning 400+ specs.
+const MATCHED_CACHE_MAX = 24;
+const matchedCache = new Map<string, MasterSpec[]>();
+const sortedCache = new Map<string, MasterSpec[]>();
+let cacheSpecsRef: MasterSpec[] | null = null;
+let cacheMaterialsRef: unknown = null;
+function cacheGet<T>(map: Map<string, T>, key: string): T | undefined {
+  const v = map.get(key);
+  if (v !== undefined) {
+    map.delete(key);
+    map.set(key, v);
+  }
+  return v;
+}
+function cacheSet<T>(map: Map<string, T>, key: string, value: T) {
+  map.set(key, value);
+  if (map.size > MATCHED_CACHE_MAX) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+}
+
 export default function Engineer() {
   const { specs } = useMasterSpecStore();
   const { materials } = useMaterialStore();
