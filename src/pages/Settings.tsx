@@ -33,8 +33,8 @@ export default function Settings() {
   return (
     <>
       <div className="space-y-6">
-        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
+        <Link to="/engineer" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to workspace
         </Link>
         {/* Page header */}
         <div>

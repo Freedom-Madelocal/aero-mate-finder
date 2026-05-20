@@ -138,10 +138,10 @@ export function useAuth() {
   return ctx;
 }
 
-export function landingForRoles(roles: AppRole[]): "/dashboard" | "/engineer" | "/procurement" {
-  if (roles.includes("super_admin") || roles.includes("org_admin") || roles.includes("dev") || roles.includes("integrator"))
-    return "/dashboard";
-  if (roles.includes("engineer")) return "/engineer";
-  if (roles.includes("procurement")) return "/procurement";
-  return "/dashboard";
+export function landingForRoles(roles: AppRole[]): "/engineer" | "/procurement" {
+  // Procurement-only users land on /procurement; everyone else on /engineer.
+  if (roles.includes("procurement") && !roles.some((r) => r !== "procurement")) {
+    return "/procurement";
+  }
+  return "/engineer";
 }
