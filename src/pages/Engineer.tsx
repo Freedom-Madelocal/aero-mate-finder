@@ -954,7 +954,13 @@ export default function Engineer() {
                               Details
                             </button>
                             <button
-                              onClick={() => compare.toggle(spec.id)}
+                              onClick={() => {
+                                if (!inCompare && compare.count >= 4) {
+                                  toast.error("You can compare up to 4 materials at a time");
+                                  return;
+                                }
+                                compare.toggle(spec.id);
+                              }}
                               className="text-[12px] rounded-md px-3 py-1.5 bg-transparent text-foreground hover:bg-secondary/50 transition-colors"
                               style={{ border: "0.5px solid oklch(24% 0 0)" }}
                             >
