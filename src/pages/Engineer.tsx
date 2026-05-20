@@ -269,6 +269,7 @@ export default function Engineer() {
   const { profile, user } = useAuth();
   const search = useSearch({ from: "/_app/engineer" }) as { spec?: string; q?: string };
   const navigate = useNavigate();
+  const compare = useCompare();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
