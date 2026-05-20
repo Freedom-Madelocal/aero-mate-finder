@@ -379,7 +379,7 @@ export default function Engineer() {
       }
       return true;
     });
-  }, [specs, materials, filters]);
+  }, [specs, materials, deferredFilters]);
 
   const sorted = useMemo(() => {
     const e595Pass = (s: MasterSpec) =>
