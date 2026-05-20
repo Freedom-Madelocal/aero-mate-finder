@@ -330,9 +330,19 @@ export default function Engineer() {
   // but `matched` recomputes against the deferred snapshot.
   const deferredFilters = useDeferredValue(filters);
   const matched = useMemo(() => {
+    // Invalidate caches if upstream data identity changes.
+    if (cacheSpecsRef !== specs || cacheMaterialsRef !== materials) {
+      matchedCache.clear();
+      sortedCache.clear();
+      cacheSpecsRef = specs;
+      cacheMaterialsRef = materials;
+    }
+    const cacheKey = JSON.stringify(deferredFilters);
+    const cached = cacheGet(matchedCache, cacheKey);
+    if (cached) return cached;
     const q = deferredFilters.q.toLowerCase().trim();
     const filters = deferredFilters;
-    return specs.filter((s) => {
+    const result = specs.filter((s) => {
       const matchAny = (sel: string[], val: string | null | undefined) =>
         sel.length === 0 || sel.some((x) => canon(x) === canon(val));
       // Tier-1 chip groups (regex against relevant joined fields)
@@ -403,9 +413,16 @@ export default function Engineer() {
       }
       return true;
     });
+    cacheSet(matchedCache, cacheKey, result);
+    return result;
   }, [specs, materials, deferredFilters]);
 
   const sorted = useMemo(() => {
+    const filtersKey = JSON.stringify(deferredFilters);
+    const pendingKey = Array.from(pendingForMe).sort().join("|");
+    const sortKey = `${filtersKey}::${sort.key}:${sort.dir}::${pendingKey}`;
+    const cached = cacheGet(sortedCache, sortKey);
+    if (cached) return cached;
     const e595Pass = (s: MasterSpec) =>
       s.tmlPct !== null && s.tmlPct <= 1.0 && s.cvcmPct !== null && s.cvcmPct <= 0.1;
     const invRank = (s: MasterSpec) => {
@@ -428,7 +445,7 @@ export default function Engineer() {
       }
     };
     const dir = sort.dir === "asc" ? 1 : -1;
-    return [...matched].sort((a, b) => {
+    const result = [...matched].sort((a, b) => {
       const av = getKey(a);
       const bv = getKey(b);
       if (av === null && bv === null) return 0;
@@ -438,7 +455,9 @@ export default function Engineer() {
       if (av > bv) return 1 * dir;
       return 0;
     });
-  }, [matched, sort, pendingForMe, materials]);
+    cacheSet(sortedCache, sortKey, result);
+    return result;
+  }, [matched, sort, pendingForMe, materials, deferredFilters]);
 
   const inStockCount = useMemo(
     () => matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length,
