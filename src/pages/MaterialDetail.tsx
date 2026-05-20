@@ -25,7 +25,7 @@ import type { Material, MaterialLot, COARecord, COCRecord } from "@/data/materia
  */
 
 export default function MaterialDetail() {
-  const { id } = useParams({ from: "/material/$id" });
+  const { id } = useParams({ from: "/_app/material/$id" });
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"lots" | "coa" | "coc">("lots");
   const store = useMaterialStore();
