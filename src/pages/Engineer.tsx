@@ -1200,7 +1200,7 @@ function FixedChipGroup({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
           {title}
         </span>
         {activeCount > 0 && (
