@@ -35,7 +35,7 @@ export default function ConsoleLogin() {
       }
       log("OK: super_admin verified");
       log("redirecting…");
-      setTimeout(() => navigate({ to: "/dashboard" }), 600);
+      setTimeout(() => navigate({ to: "/engineer" }), 600);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "auth failed";
       log(`ERR: ${msg}`);
