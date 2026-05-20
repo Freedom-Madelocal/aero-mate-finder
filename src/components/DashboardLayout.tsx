@@ -45,13 +45,20 @@ function NavTab({
   item,
   active,
   countSuffix,
+  highlight,
   onClick,
 }: {
   item: NavItem;
   active: boolean;
   countSuffix?: string;
+  highlight?: boolean;
   onClick?: () => void;
 }) {
+  const color = highlight
+    ? "var(--accent-blue)"
+    : active
+      ? "var(--foreground)"
+      : "color-mix(in srgb, var(--foreground) 45%, transparent)";
   return (
     <Link
       to={item.path}
@@ -59,8 +66,8 @@ function NavTab({
       preload="render"
       className="relative inline-flex items-center h-[52px] px-3 text-[13px] transition-colors"
       style={{
-        color: active ? "var(--foreground)" : "color-mix(in srgb, var(--foreground) 45%, transparent)",
-        fontWeight: active ? 600 : 400,
+        color,
+        fontWeight: active || highlight ? 600 : 400,
       }}
     >
       <span>{item.label}{countSuffix}</span>
