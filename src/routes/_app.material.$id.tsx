@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import MaterialDetail from "@/pages/MaterialDetail";
 
-export const Route = createFileRoute("/material/$id")({
+export const Route = createFileRoute("/_app/material/$id")({
   head: () => ({
     meta: [
       { title: "Material — Traceum" },

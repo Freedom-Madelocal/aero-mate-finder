@@ -6,7 +6,7 @@ interface EngineerSearch {
   q?: string;
 }
 
-export const Route = createFileRoute("/engineer")({
+export const Route = createFileRoute("/_app/engineer")({
   validateSearch: (search: Record<string, unknown>): EngineerSearch => ({
     spec: typeof search.spec === "string" ? search.spec : undefined,
     q: typeof search.q === "string" ? search.q : undefined,

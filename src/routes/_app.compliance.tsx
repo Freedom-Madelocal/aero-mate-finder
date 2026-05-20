@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Compliance from "@/pages/Compliance";
 
-export const Route = createFileRoute("/compliance")({
+export const Route = createFileRoute("/_app/compliance")({
   head: () => ({
     meta: [
       { title: "Compliance — Traceum" },

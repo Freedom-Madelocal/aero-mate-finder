@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Suppliers from "@/pages/Suppliers";
 
-export const Route = createFileRoute("/suppliers")({
+export const Route = createFileRoute("/_app/suppliers")({
   head: () => ({
     meta: [
       { title: "Suppliers — Traceum" },
