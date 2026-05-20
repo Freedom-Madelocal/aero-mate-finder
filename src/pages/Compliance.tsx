@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import {
   Thermometer,
@@ -54,7 +53,7 @@ export default function Compliance() {
   const defrostEvents = 2; // mock
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
@@ -287,6 +286,6 @@ export default function Compliance() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

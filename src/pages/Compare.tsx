@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import { useMasterSpecStore, type MasterSpec } from "@/data/masterSpecs";
 import { useCompare } from "@/contexts/CompareContext";
 import { chemistryBadge } from "@/lib/badges";
@@ -13,7 +12,7 @@ export default function Compare() {
     .filter((s): s is MasterSpec => Boolean(s));
 
   return (
-    <DashboardLayout>
+    <>
       <div className="mx-auto w-full max-w-[1100px] px-5 py-6 space-y-5">
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -173,7 +172,7 @@ export default function Compare() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }
 

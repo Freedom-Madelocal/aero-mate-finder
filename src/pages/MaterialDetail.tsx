@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import { useParams, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -38,7 +37,7 @@ export default function MaterialDetail() {
 
   if (!material) {
     return (
-      <DashboardLayout>
+      <>
         <div className="flex flex-col items-center justify-center h-96 gap-3">
           <Package className="w-8 h-8 text-muted-foreground/40" />
           <p className="text-muted-foreground">Material not found</p>
@@ -49,12 +48,12 @@ export default function MaterialDetail() {
             Return to Inventory
           </button>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Back navigation */}
         <button
@@ -290,7 +289,7 @@ export default function MaterialDetail() {
         {activeTab === "coa" && <COATab records={coas} />}
         {activeTab === "coc" && <COCTab records={cocs} />}
       </div>
-    </DashboardLayout>
+    </>
   );
 }
 

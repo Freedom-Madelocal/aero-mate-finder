@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import { Truck, AlertTriangle, CheckCircle2, Clock, Package, Upload, Info } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
@@ -35,7 +34,7 @@ export default function Suppliers() {
   }, [materials]);
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
@@ -222,6 +221,6 @@ export default function Suppliers() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

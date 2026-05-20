@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import { toast } from "sonner";
 
 const GUIDES = [
@@ -12,7 +11,7 @@ const GUIDES = [
 
 export default function Learn() {
   return (
-    <DashboardLayout>
+    <>
       <div className="mx-auto w-full max-w-[1100px] px-5 py-6 space-y-5">
         <header className="space-y-1">
           <h1 className="text-[15px] font-semibold text-foreground">Learn</h1>
@@ -55,6 +54,6 @@ export default function Learn() {
           </p>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

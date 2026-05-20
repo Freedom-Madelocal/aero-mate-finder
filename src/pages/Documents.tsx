@@ -1,4 +1,3 @@
-import DashboardLayout from "@/components/DashboardLayout";
 import StatusTooltip from "@/components/StatusTooltip";
 import { FileText, Plus, Upload, Info, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +18,7 @@ export default function Documents() {
   const isEmpty = materials.length === 0;
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
@@ -203,6 +202,6 @@ export default function Documents() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }
