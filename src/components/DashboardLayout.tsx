@@ -224,6 +224,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 item={item}
                 active={location === item.path || (item.path !== "/" && location.startsWith(item.path))}
                 countSuffix={item.path === "/compare" && compareCount > 0 ? ` (${compareCount})` : undefined}
+                highlight={item.path === "/compare" && compareCount > 0}
               />
             ))}
           </nav>
