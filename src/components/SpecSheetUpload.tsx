@@ -125,6 +125,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractPdf = useServerFn(extractSpecsFromPdf);
+  const autoMap = useServerFn(autoMapSpreadsheet);
 
   const reset = useCallback(() => {
     setStep(1);
@@ -153,22 +154,91 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      let json = XLSX.utils.sheet_to_json<ParsedRow>(sheet, { defval: null });
-      json = json.filter((r) => Object.values(r).some((v) => v !== null && v !== ""));
-      if (json.length === 0) {
-        setError("No data rows found.");
+
+      // For each sheet pull a sample of the first ~12 raw rows (no header
+      // assumption) so AI can detect both the header row and column meaning.
+      const truncateCell = (v: unknown): string | number | null => {
+        if (v === null || v === undefined || v === "") return null;
+        if (typeof v === "number") return v;
+        const s = String(v).replace(/\s+/g, " ").trim();
+        return s.length > 200 ? s.slice(0, 200) : s;
+      };
+      const sheetSamples = wb.SheetNames.map((name) => {
+        const ws = wb.Sheets[name];
+        const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, blankrows: false });
+        const sampleRows = rows.slice(0, 12).map((r) =>
+          (r ?? []).slice(0, 30).map(truncateCell),
+        );
+        return { name, sampleRows };
+      }).filter((s) => s.sampleRows.length > 0);
+
+      if (sheetSamples.length === 0) {
+        setError("No data rows found in any sheet.");
         setIsProcessing(false);
         return;
       }
-      const hdrs = Object.keys(json[0]);
-      setHeaders(hdrs);
-      setRawData(json);
-      setMappings(hdrs.map((h) => ({ source: h, target: autoMap(h) })));
-      setIsProcessing(false);
+
+      // Ask AI to map columns across every sheet at once.
+      const mapping = await autoMap({ data: { sheets: sheetSamples } });
+
+      const fieldType = (k: keyof MasterSpec) => FIELD_MAP.find((f) => f.key === k)?.type;
+
+      const allRows: Partial<MasterSpec>[] = [];
+      for (const sm of mapping.sheets) {
+        if (sm.skip) continue;
+        const ws = wb.Sheets[sm.name];
+        if (!ws) continue;
+        const rawRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, blankrows: false });
+        const dataRows = rawRows.slice(sm.headerRowIndex + 1);
+        for (const row of dataRows) {
+          if (!row || row.every((c) => c === null || c === "")) continue;
+          const out: Partial<MasterSpec> = {};
+          const keySpecBuf: string[] = [];
+          const customerBuf: string[] = [];
+          const profileBuf: string[] = [];
+          for (const col of sm.columns) {
+            if (col.field === "ignore") continue;
+            const val = row[col.index];
+            if (val === null || val === undefined || val === "") continue;
+            const key = col.field as keyof MasterSpec;
+            const t = fieldType(key);
+            if (key === "keySpecs") keySpecBuf.push(...splitKeySpecCell(val));
+            else if (key === "customers") customerBuf.push(...splitKeySpecCell(val));
+            else if (key === "profiles") profileBuf.push(...splitKeySpecCell(val));
+            else if (t === "bool") (out as Record<string, unknown>)[key] = coerceBool(val);
+            else if (t === "number") (out as Record<string, unknown>)[key] = coerceNumber(val);
+            else (out as Record<string, unknown>)[key] = String(val);
+          }
+          if (sm.vendorOverride && !out.vendor) out.vendor = sm.vendorOverride;
+          const dedupe = (arr: string[]) => {
+            const seen = new Map<string, string>();
+            for (const k of arr) if (!seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
+            return Array.from(seen.values());
+          };
+          if (keySpecBuf.length) out.keySpecs = dedupe(keySpecBuf);
+          if (customerBuf.length) out.customers = dedupe(customerBuf);
+          if (profileBuf.length) out.profiles = dedupe(profileBuf);
+          if (out.vendor && out.productName) allRows.push(out);
+        }
+      }
+
+      if (allRows.length === 0) {
+        setError("AI could not find any product rows in this workbook. Make sure it includes Vendor and Product Name columns.");
+        setIsProcessing(false);
+        return;
+      }
+
+      const profilesDetected = Array.from(
+        new Set(allRows.flatMap((r) => r.profiles ?? []).filter(Boolean)),
+      ).sort();
+
+      setPdfRows(allRows.map((spec) => ({ selected: true, spec })));
+      setPdfProfiles(profilesDetected);
+      setMode("pdf"); // reuse the review UI
       setStep(2);
+      setIsProcessing(false);
     } catch (err) {
-      setError(`Failed to parse file: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setError(`Failed to analyze spreadsheet: ${err instanceof Error ? err.message : "Unknown error"}`);
       setIsProcessing(false);
     }
   };
