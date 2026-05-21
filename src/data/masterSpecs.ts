@@ -261,8 +261,48 @@ export async function addMasterSpecs(
   sourceType: "spreadsheet" | "pdf" = "spreadsheet",
 ) {
   await hydrate();
-  const incomingRaw = specs.filter((s) => s.vendor && s.productName);
-  if (incomingRaw.length === 0) return;
+  const baseRaw = specs.filter((s) => s.vendor && s.productName);
+  if (baseRaw.length === 0) return;
+
+  // For every row with a crossover vendor+product, also emit a reciprocal
+  // spec so both sides of a crossover sheet (e.g. Toray TC310 ↔ Hexcel
+  // HexBond 650) appear as standalone entries instead of one side being
+  // hidden inside the other's metadata.
+  const cleanText = (v: unknown): string | null => {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+    const low = s.toLowerCase();
+    if (low === "none given" || low === "n/a" || low === "—" || low === "-") return null;
+    if (low.includes("no direct") || low.includes("no equivalent") || low.includes("not listed")) return null;
+    if (low.includes("multiple") || low.includes("various")) return null;
+    return s;
+  };
+  const stripParens = (s: string) => s.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+
+  const incomingRaw: Partial<MasterSpec>[] = [...baseRaw];
+  for (const s of baseRaw) {
+    const cv = cleanText(s.crossoverVendor);
+    const cp = cleanText(s.crossoverProduct);
+    if (!cv || !cp) continue;
+    const vendor = stripParens(cv.split(/[,/|]/)[0] || cv);
+    const product = cp.split(/\s*\/\s*/)[0].trim();
+    if (!vendor || !product) continue;
+    incomingRaw.push({
+      vendor,
+      productName: product,
+      crossoverVendor: s.vendor,
+      crossoverProduct: s.productName,
+      materialCategory: s.materialCategory ?? null,
+      resinChemistry: s.resinChemistry ?? null,
+      productForm: s.productForm ?? null,
+      reinforcement: s.reinforcement ?? null,
+      notes: s.notes
+        ? `Crossover of ${s.vendor} ${s.productName}. ${s.notes}`
+        : `Crossover of ${s.vendor} ${s.productName}.`,
+    });
+  }
+
 
   const keyOf = (vendor: string, product: string) =>
     `${vendor.trim().toLowerCase()}||${product.trim().toLowerCase()}`;
