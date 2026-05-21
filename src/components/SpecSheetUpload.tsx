@@ -95,7 +95,7 @@ function normalizeHeader(h: string): string {
   return h.toLowerCase().replace(/[\n\r]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function autoMap(header: string): keyof MasterSpec | null {
+function autoMapHeader(header: string): keyof MasterSpec | null {
   const norm = normalizeHeader(header);
   for (const f of FIELD_MAP) {
     if (f.aliases.some((a) => norm === a || norm.includes(a))) return f.key;
