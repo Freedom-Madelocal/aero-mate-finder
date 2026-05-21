@@ -176,58 +176,60 @@ export const autoMapSpreadsheet = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured.");
 
-    const userPayload = {
-      sheets: data.sheets.map((s) => ({
-        name: s.name,
-        sampleRows: s.sampleRows,
-      })),
-    };
+    async function mapOneSheet(sheet: { name: string; sampleRows: unknown[][] }): Promise<SheetMapping> {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: `Map the columns for this single sheet. The sheet is given as its first rows (no header assumption).\n\n${JSON.stringify({ sheets: [sheet] })}`,
+            },
+          ],
+          tools: [TOOL],
+          tool_choice: { type: "function", function: { name: "emit_sheet_mappings" } },
+        }),
+      });
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: `Map the columns for each sheet below. Sheets are given as the first rows of each tab (no header assumption).\n\n${JSON.stringify(userPayload)}`,
-          },
-        ],
-        tools: [TOOL],
-        tool_choice: { type: "function", function: { name: "emit_sheet_mappings" } },
-      }),
-    });
+      if (resp.status === 429) throw new Error("AI rate limit reached. Please wait and try again.");
+      if (resp.status === 402) throw new Error("AI credits exhausted. Add credits in Settings > Workspace > Usage.");
+      if (!resp.ok) {
+        const t = await resp.text().catch(() => "");
+        console.error("[autoMapSpreadsheet] gateway error", resp.status, t);
+        throw new Error(`AI gateway error (${resp.status}).`);
+      }
 
-    if (resp.status === 429) throw new Error("AI rate limit reached. Please wait and try again.");
-    if (resp.status === 402) throw new Error("AI credits exhausted. Add credits in Settings > Workspace > Usage.");
-    if (!resp.ok) {
-      const t = await resp.text().catch(() => "");
-      console.error("[autoMapSpreadsheet] gateway error", resp.status, t);
-      throw new Error(`AI gateway error (${resp.status}).`);
+      const json = (await resp.json()) as {
+        choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
+      };
+      const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+      if (!args) throw new Error(`AI returned no structured output for sheet "${sheet.name}".`);
+
+      let parsed: unknown;
+      try { parsed = JSON.parse(args); } catch { throw new Error(`AI returned malformed JSON for sheet "${sheet.name}".`); }
+      const safe = ResponseSchema.safeParse(parsed);
+      if (!safe.success || !safe.data.sheets[0]) {
+        throw new Error(`AI returned unexpected mapping shape for sheet "${sheet.name}".`);
+      }
+      return { ...safe.data.sheets[0], name: sheet.name };
     }
 
-    const json = (await resp.json()) as {
-      choices?: Array<{
-        message?: { tool_calls?: Array<{ function?: { arguments?: string } }> };
-      }>;
-    };
-
-    const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!args) throw new Error("AI returned no structured output.");
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(args);
-    } catch {
-      throw new Error("AI returned malformed JSON.");
+    // Run sheets in parallel but cap concurrency to avoid overwhelming the gateway.
+    const CONCURRENCY = 4;
+    const results: SheetMapping[] = new Array(data.sheets.length);
+    let cursor = 0;
+    async function worker() {
+      while (true) {
+        const i = cursor++;
+        if (i >= data.sheets.length) return;
+        results[i] = await mapOneSheet(data.sheets[i]);
+      }
     }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, data.sheets.length) }, () => worker()));
 
-    const safe = ResponseSchema.safeParse(parsed);
-    if (!safe.success) throw new Error("AI returned an unexpected mapping shape.");
-    return safe.data;
+    return { sheets: results };
   });
+
