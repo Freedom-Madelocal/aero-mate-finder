@@ -483,11 +483,13 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-10 h-10 text-muted-foreground animate-spin" />
                     <p className="text-sm text-muted-foreground">
-                      {mode === "pdf" ? `Analyzing ${fileName} with AI…` : `Analyzing ${fileName}…`}
+                      Analyzing {fileName} with AI…
                     </p>
-                    {mode === "pdf" && (
-                      <p className="text-xs text-muted-foreground">This can take 20–60 seconds for large PDFs.</p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {mode === "pdf"
+                        ? "This can take 20–60 seconds for large PDFs."
+                        : "Reading every sheet and mapping columns automatically."}
+                    </p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
@@ -496,7 +498,9 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                     </div>
                     <div>
                       <p className="text-sm text-foreground font-medium">Drop a spec sheet or PDF here, or click to browse</p>
-                      <p className="text-xs text-muted-foreground mt-1">.xlsx, .xls, .csv — must include Vendor and Product Name columns</p>
+                      <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> .xlsx, .xls, .csv — AI reads every sheet and maps columns for you
+                      </p>
                       <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
                         <Sparkles className="w-3 h-3" /> .pdf — AI extracts products and tags them by section (MRO, Interiors, …)
                       </p>
