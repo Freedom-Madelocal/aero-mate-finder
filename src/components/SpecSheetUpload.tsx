@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import { useServerFn } from "@tanstack/react-start";
 import { addMasterSpecs, type MasterSpec } from "@/data/masterSpecs";
 import { extractSpecsFromPdf } from "@/lib/specPdfExtract.functions";
+import { autoMapSpreadsheet } from "@/lib/specSheetAutoMap.functions";
 import { toast } from "sonner";
 
 /* Spec sheet uploader — parses CSV/XLSX/PDF and upserts into master_specs.
