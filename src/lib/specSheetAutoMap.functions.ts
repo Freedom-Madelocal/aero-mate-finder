@@ -234,7 +234,7 @@ export const autoMapSpreadsheet = createServerFn({ method: "POST" })
 
     // Run sheets in parallel but cap concurrency. If a single sheet fails or
     // times out, skip it rather than failing the whole upload.
-    const CONCURRENCY = 6;
+    const CONCURRENCY = 3;
     const results: SheetMapping[] = new Array(data.sheets.length);
     let cursor = 0;
     async function worker() {
@@ -244,14 +244,28 @@ export const autoMapSpreadsheet = createServerFn({ method: "POST" })
         try {
           results[i] = await mapOneSheet(data.sheets[i]);
         } catch (e) {
-          console.error(`[autoMapSpreadsheet] skipping "${data.sheets[i].name}":`, (e as Error).message);
+          console.error(`[autoMapSpreadsheet] skipping "${data.sheets[i].name}":`, (e as Error)?.message);
           results[i] = { name: data.sheets[i].name, headerRowIndex: 0, skip: true, columns: [] };
         }
       }
     }
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, data.sheets.length) }, () => worker()));
+    try {
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, data.sheets.length) }, () => worker()));
+    } catch (e) {
+      // Should never happen — workers swallow their own errors — but guard
+      // anyway so we always return a structured payload instead of a thrown
+      // Response (which causes a blank-screen on the client).
+      console.error(`[autoMapSpreadsheet] worker pool failure:`, (e as Error)?.message);
+    }
 
-    console.log(`[autoMapSpreadsheet] done`);
+    // Backfill any holes with skip entries so the array is always dense.
+    for (let i = 0; i < data.sheets.length; i++) {
+      if (!results[i]) {
+        results[i] = { name: data.sheets[i].name, headerRowIndex: 0, skip: true, columns: [] };
+      }
+    }
+
+    console.log(`[autoMapSpreadsheet] done — ${results.length} sheet result(s)`);
     return { sheets: results };
   });
 
