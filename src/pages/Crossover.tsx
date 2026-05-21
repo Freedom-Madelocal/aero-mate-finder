@@ -31,31 +31,40 @@ export default function Crossover() {
 
   const equivalents = useMemo<MasterSpec[]>(() => {
     if (!selected) return [];
-    // Strategy: prefer same materialCategory + chemistry, different vendor,
-    // then fall back to crossoverProduct pointer-based linkage.
-    const sameCat = specs.filter(
-      (s) =>
-        s.id !== selected.id &&
-        s.materialCategory === selected.materialCategory &&
-        s.resinChemistry === selected.resinChemistry &&
-        s.vendor !== selected.vendor,
-    );
-    const byPointer = specs.filter(
-      (s) =>
-        s.id !== selected.id &&
-        ((selected.crossoverProduct &&
-          s.productName?.toLowerCase().includes(selected.crossoverProduct.toLowerCase())) ||
+    const sCat = normalizeCategory(selected.materialCategory);
+    const sChem = normalizeChemistry(selected.resinChemistry);
+    const sForm = normalizeForm(selected.productForm ?? selected.materialCategory);
+    const sSegs = tokens(selected.applications, selected.profiles);
+
+    return specs
+      .filter((s) => s.id !== selected.id && s.vendor !== selected.vendor)
+      .map((s) => {
+        let score = 0;
+        if (sCat && normalizeCategory(s.materialCategory) === sCat) score += 5;
+        if (sChem && normalizeChemistry(s.resinChemistry) === sChem) score += 4;
+        if (
+          selected.cureTemperatureC != null &&
+          s.cureTemperatureC != null &&
+          Math.abs(s.cureTemperatureC - selected.cureTemperatureC) <= 15
+        )
+          score += 2;
+        const tForm = normalizeForm(s.productForm ?? s.materialCategory);
+        if (sForm && tForm && sForm === tForm) score += 2;
+        const tSegs = tokens(s.applications, s.profiles);
+        if (sSegs.size && [...tSegs].some((t) => sSegs.has(t))) score += 1;
+        if (
+          (selected.crossoverProduct &&
+            s.productName?.toLowerCase().includes(selected.crossoverProduct.toLowerCase())) ||
           (s.crossoverProduct &&
-            selected.productName?.toLowerCase().includes(s.crossoverProduct.toLowerCase()))),
-    );
-    const seen = new Set<string>();
-    return [...byPointer, ...sameCat]
-      .filter((s) => {
-        if (seen.has(s.id)) return false;
-        seen.add(s.id);
-        return true;
+            selected.productName?.toLowerCase().includes(s.crossoverProduct.toLowerCase()))
+        )
+          score += 100;
+        return { s, score };
       })
-      .slice(0, 5);
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map((x) => x.s);
   }, [selected, specs]);
 
   return (
