@@ -320,7 +320,61 @@ export async function addMasterSpecs(
     }
   }
 
-...
+  const pickText = (incomingV: unknown, existingV: string | null): string | null => {
+    if (!isMissing(incomingV)) return String(incomingV);
+    return existingV;
+  };
+  const pickNum = (incomingV: number | null | undefined, existingV: number | null) =>
+    incomingV === null || incomingV === undefined ? existingV : incomingV;
+  const pickBool = (incomingV: boolean | undefined, existingV: boolean) =>
+    incomingV === undefined ? existingV : !!incomingV;
+
+  const rows = incoming.map((s) => {
+    const existing = existingMap.get(keyOf(s.vendor!, s.productName!));
+    const e = existing ?? null;
+    return {
+      vendor: s.vendor!,
+      product_name: s.productName!,
+      product_family: pickText(s.productFamily, e?.productFamily ?? null),
+      material_category: pickText(s.materialCategory, e?.materialCategory ?? null),
+      resin_chemistry: pickText(s.resinChemistry, e?.resinChemistry ?? null),
+      reinforcement: pickText(s.reinforcement, e?.reinforcement ?? null),
+      product_form: pickText(s.productForm, e?.productForm ?? null),
+      cure_temperature_c: pickNum(s.cureTemperatureC, e?.cureTemperatureC ?? null),
+      cure_time: pickText(s.cureTime, e?.cureTime ?? null),
+      dry_tg_onset_c: pickNum(s.dryTgOnsetC, e?.dryTgOnsetC ?? null),
+      wet_tg_c: pickNum(s.wetTgC, e?.wetTgC ?? null),
+      peak_tg_c: pickNum(s.peakTgC, e?.peakTgC ?? null),
+      max_service_temperature_c: pickNum(s.maxServiceTemperatureC, e?.maxServiceTemperatureC ?? null),
+      out_life_days: pickNum(s.outLifeDays, e?.outLifeDays ?? null),
+      freezer_life_months: pickNum(s.freezerLifeMonths, e?.freezerLifeMonths ?? null),
+      tml_pct: pickNum(s.tmlPct, e?.tmlPct ?? null),
+      cvcm_pct: pickNum(s.cvcmPct, e?.cvcmPct ?? null),
+      tensile_lap_shear_mpa: pickNum(s.tensileLapShearMpa, e?.tensileLapShearMpa ?? null),
+      t_peel_n_per_25mm: pickNum(s.tPeelN25mm, e?.tPeelN25mm ?? null),
+      flatwise_tension_mpa: pickNum(s.flatwiseTensionMpa, e?.flatwiseTensionMpa ?? null),
+      climbing_drum_peel_in_lb_per_in: pickNum(s.climbingDrumPeelInLbIn, e?.climbingDrumPeelInLbIn ?? null),
+      process_method: pickText(s.processMethod, e?.processMethod ?? null),
+      ooa_vbo_capable: pickBool(s.ooaVboCapable, e?.ooaVboCapable ?? false),
+      toughened: pickBool(s.toughened, e?.toughened ?? false),
+      flame_retardant: pickBool(s.flameRetardant, e?.flameRetardant ?? false),
+      low_dielectric: pickBool(s.lowDielectric, e?.lowDielectric ?? false),
+      low_moisture_absorption: pickBool(s.lowMoistureAbsorption, e?.lowMoistureAbsorption ?? false),
+      impact_resistant: pickBool(s.impactResistant, e?.impactResistant ?? false),
+      high_temperature: pickBool(s.highTemperature, e?.highTemperature ?? false),
+      applications: pickText(s.applications, e?.applications ?? null),
+      qualifications_standards: pickText(s.qualificationsStandards, e?.qualificationsStandards ?? null),
+      crossover_product: pickText(s.crossoverProduct, e?.crossoverProduct ?? null),
+      crossover_vendor: pickText(s.crossoverVendor, e?.crossoverVendor ?? null),
+      notes: pickText(s.notes, e?.notes ?? null),
+      minimum_order_quantity: pickText(s.minimumOrderQuantity, e?.minimumOrderQuantity ?? null),
+      source_document: pickText(s.sourceDocument, e?.sourceDocument ?? null),
+      uploaded_from: fileName,
+      profiles: dedupeStrings([...(e?.profiles ?? []), ...(Array.isArray(s.profiles) ? s.profiles : [])]),
+      key_specs: dedupeStrings([...(e?.keySpecs ?? []), ...(Array.isArray(s.keySpecs) ? s.keySpecs : [])]),
+      customers: dedupeStrings([...(e?.customers ?? []), ...(Array.isArray(s.customers) ? s.customers : [])]),
+    };
+  });
 
   // Chunk the upsert — single huge payloads can hit body-size limits and
   // make failures harder to attribute.
