@@ -261,88 +261,81 @@ export async function addMasterSpecs(
   sourceType: "spreadsheet" | "pdf" = "spreadsheet",
 ) {
   await hydrate();
-  const incoming = specs.filter((s) => s.vendor && s.productName);
-  if (incoming.length === 0) return;
+  const incomingRaw = specs.filter((s) => s.vendor && s.productName);
+  if (incomingRaw.length === 0) return;
 
-  // Look up existing rows keyed by lowercased "vendor||product_name"
   const keyOf = (vendor: string, product: string) =>
     `${vendor.trim().toLowerCase()}||${product.trim().toLowerCase()}`;
-  const wanted = Array.from(new Set(incoming.map((s) => keyOf(s.vendor!, s.productName!))));
+
+  // Dedupe incoming batch — Postgres upsert with ON CONFLICT errors out if the
+  // same conflict target appears twice in one statement. Merge duplicates by
+  // letting later values win for scalars and unioning array fields.
+  const mergedMap = new Map<string, Partial<MasterSpec>>();
+  for (const s of incomingRaw) {
+    const k = keyOf(s.vendor!, s.productName!);
+    const prev = mergedMap.get(k);
+    if (!prev) {
+      mergedMap.set(k, { ...s });
+      continue;
+    }
+    const merged: Partial<MasterSpec> = { ...prev };
+    for (const [field, val] of Object.entries(s) as [keyof MasterSpec, unknown][]) {
+      if (val === undefined || val === null || val === "") continue;
+      if (Array.isArray(val)) {
+        const existingArr = Array.isArray((merged as Record<string, unknown>)[field])
+          ? ((merged as Record<string, unknown>)[field] as string[])
+          : [];
+        (merged as Record<string, unknown>)[field] = Array.from(
+          new Set([...existingArr, ...(val as string[])].map((x) => String(x))),
+        );
+      } else {
+        (merged as Record<string, unknown>)[field] = val;
+      }
+    }
+    mergedMap.set(k, merged);
+  }
+  const incoming = Array.from(mergedMap.values());
+  const wanted = Array.from(mergedMap.keys());
+
   const vendors = Array.from(new Set(incoming.map((s) => s.vendor!.trim())));
   const products = Array.from(new Set(incoming.map((s) => s.productName!.trim())));
-  const existingResp = await supabase
-    .from("master_specs" as never)
-    .select("*")
-    .in("vendor", vendors as never)
-    .in("product_name", products as never);
   const existingMap = new Map<string, MasterSpec>();
-  if (!existingResp.error && Array.isArray(existingResp.data)) {
-    for (const r of existingResp.data as unknown as SpecRow[]) {
-      const k = keyOf(r.vendor, r.product_name);
-      if (wanted.includes(k)) existingMap.set(k, rowToSpec(r));
+  // Chunk the IN() filter to avoid URL-length limits on large uploads.
+  const LOOKUP_CHUNK = 200;
+  for (let i = 0; i < vendors.length; i += LOOKUP_CHUNK) {
+    const vChunk = vendors.slice(i, i + LOOKUP_CHUNK);
+    for (let j = 0; j < products.length; j += LOOKUP_CHUNK) {
+      const pChunk = products.slice(j, j + LOOKUP_CHUNK);
+      const existingResp = await supabase
+        .from("master_specs" as never)
+        .select("*")
+        .in("vendor", vChunk as never)
+        .in("product_name", pChunk as never);
+      if (!existingResp.error && Array.isArray(existingResp.data)) {
+        for (const r of existingResp.data as unknown as SpecRow[]) {
+          const k = keyOf(r.vendor, r.product_name);
+          if (wanted.includes(k)) existingMap.set(k, rowToSpec(r));
+        }
+      }
     }
   }
 
-  const pickText = (incomingV: unknown, existingV: string | null): string | null => {
-    if (!isMissing(incomingV)) return String(incomingV);
-    return existingV;
-  };
-  const pickNum = (incomingV: number | null | undefined, existingV: number | null) =>
-    incomingV === null || incomingV === undefined ? existingV : incomingV;
-  const pickBool = (incomingV: boolean | undefined, existingV: boolean) =>
-    incomingV === undefined ? existingV : !!incomingV;
+...
 
-  const rows = incoming.map((s) => {
-    const existing = existingMap.get(keyOf(s.vendor!, s.productName!));
-    const e = existing ?? null;
-    return {
-      vendor: s.vendor!,
-      product_name: s.productName!,
-      product_family: pickText(s.productFamily, e?.productFamily ?? null),
-      material_category: pickText(s.materialCategory, e?.materialCategory ?? null),
-      resin_chemistry: pickText(s.resinChemistry, e?.resinChemistry ?? null),
-      reinforcement: pickText(s.reinforcement, e?.reinforcement ?? null),
-      product_form: pickText(s.productForm, e?.productForm ?? null),
-      cure_temperature_c: pickNum(s.cureTemperatureC, e?.cureTemperatureC ?? null),
-      cure_time: pickText(s.cureTime, e?.cureTime ?? null),
-      dry_tg_onset_c: pickNum(s.dryTgOnsetC, e?.dryTgOnsetC ?? null),
-      wet_tg_c: pickNum(s.wetTgC, e?.wetTgC ?? null),
-      peak_tg_c: pickNum(s.peakTgC, e?.peakTgC ?? null),
-      max_service_temperature_c: pickNum(s.maxServiceTemperatureC, e?.maxServiceTemperatureC ?? null),
-      out_life_days: pickNum(s.outLifeDays, e?.outLifeDays ?? null),
-      freezer_life_months: pickNum(s.freezerLifeMonths, e?.freezerLifeMonths ?? null),
-      tml_pct: pickNum(s.tmlPct, e?.tmlPct ?? null),
-      cvcm_pct: pickNum(s.cvcmPct, e?.cvcmPct ?? null),
-      tensile_lap_shear_mpa: pickNum(s.tensileLapShearMpa, e?.tensileLapShearMpa ?? null),
-      t_peel_n_per_25mm: pickNum(s.tPeelN25mm, e?.tPeelN25mm ?? null),
-      flatwise_tension_mpa: pickNum(s.flatwiseTensionMpa, e?.flatwiseTensionMpa ?? null),
-      climbing_drum_peel_in_lb_per_in: pickNum(s.climbingDrumPeelInLbIn, e?.climbingDrumPeelInLbIn ?? null),
-      process_method: pickText(s.processMethod, e?.processMethod ?? null),
-      ooa_vbo_capable: pickBool(s.ooaVboCapable, e?.ooaVboCapable ?? false),
-      toughened: pickBool(s.toughened, e?.toughened ?? false),
-      flame_retardant: pickBool(s.flameRetardant, e?.flameRetardant ?? false),
-      low_dielectric: pickBool(s.lowDielectric, e?.lowDielectric ?? false),
-      low_moisture_absorption: pickBool(s.lowMoistureAbsorption, e?.lowMoistureAbsorption ?? false),
-      impact_resistant: pickBool(s.impactResistant, e?.impactResistant ?? false),
-      high_temperature: pickBool(s.highTemperature, e?.highTemperature ?? false),
-      applications: pickText(s.applications, e?.applications ?? null),
-      qualifications_standards: pickText(s.qualificationsStandards, e?.qualificationsStandards ?? null),
-      crossover_product: pickText(s.crossoverProduct, e?.crossoverProduct ?? null),
-      crossover_vendor: pickText(s.crossoverVendor, e?.crossoverVendor ?? null),
-      notes: pickText(s.notes, e?.notes ?? null),
-      minimum_order_quantity: pickText(s.minimumOrderQuantity, e?.minimumOrderQuantity ?? null),
-      source_document: pickText(s.sourceDocument, e?.sourceDocument ?? null),
-      uploaded_from: fileName,
-      profiles: dedupeStrings([...(e?.profiles ?? []), ...(Array.isArray(s.profiles) ? s.profiles : [])]),
-      key_specs: dedupeStrings([...(e?.keySpecs ?? []), ...(Array.isArray(s.keySpecs) ? s.keySpecs : [])]),
-      customers: dedupeStrings([...(e?.customers ?? []), ...(Array.isArray(s.customers) ? s.customers : [])]),
-    };
-  });
-
-  const up = await supabase
-    .from("master_specs" as never)
-    .upsert(rows as never, { onConflict: "vendor,product_name" });
-  if (up.error) throw up.error;
+  // Chunk the upsert — single huge payloads can hit body-size limits and
+  // make failures harder to attribute.
+  const UPSERT_CHUNK = 250;
+  for (let i = 0; i < rows.length; i += UPSERT_CHUNK) {
+    const chunk = rows.slice(i, i + UPSERT_CHUNK);
+    const up = await supabase
+      .from("master_specs" as never)
+      .upsert(chunk as never, { onConflict: "vendor,product_name" });
+    if (up.error) {
+      const e = up.error as { message?: string; details?: string; hint?: string; code?: string };
+      const parts = [e.message, e.details, e.hint, e.code ? `(${e.code})` : null].filter(Boolean);
+      throw new Error(parts.join(" — ") || "Database upsert failed");
+    }
+  }
 
   await supabase.from("master_spec_uploads" as never).insert({
     file_name: fileName,
