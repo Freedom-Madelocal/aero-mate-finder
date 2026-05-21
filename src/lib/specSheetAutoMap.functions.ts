@@ -176,23 +176,37 @@ export const autoMapSpreadsheet = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured.");
 
+    console.log(`[autoMapSpreadsheet] received ${data.sheets.length} sheet(s)`);
+
     async function mapOneSheet(sheet: { name: string; sampleRows: unknown[][] }): Promise<SheetMapping> {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            {
-              role: "user",
-              content: `Map the columns for this single sheet. The sheet is given as its first rows (no header assumption).\n\n${JSON.stringify({ sheets: [sheet] })}`,
-            },
-          ],
-          tools: [TOOL],
-          tool_choice: { type: "function", function: { name: "emit_sheet_mappings" } },
-        }),
-      });
+      console.log(`[autoMapSpreadsheet] -> "${sheet.name}" (${sheet.sampleRows.length} sample rows)`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 40_000);
+      let resp: Response;
+      try {
+        resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          signal: controller.signal,
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              {
+                role: "user",
+                content: `Map the columns for this single sheet. The sheet is given as its first rows (no header assumption).\n\n${JSON.stringify({ sheets: [sheet] })}`,
+              },
+            ],
+            tools: [TOOL],
+            tool_choice: { type: "function", function: { name: "emit_sheet_mappings" } },
+          }),
+        });
+      } catch (e) {
+        clearTimeout(timer);
+        const msg = e instanceof Error && e.name === "AbortError" ? "timed out after 40s" : (e as Error).message;
+        throw new Error(`AI request failed for "${sheet.name}": ${msg}`);
+      }
+      clearTimeout(timer);
 
       if (resp.status === 429) throw new Error("AI rate limit reached. Please wait and try again.");
       if (resp.status === 402) throw new Error("AI credits exhausted. Add credits in Settings > Workspace > Usage.");
@@ -214,22 +228,30 @@ export const autoMapSpreadsheet = createServerFn({ method: "POST" })
       if (!safe.success || !safe.data.sheets[0]) {
         throw new Error(`AI returned unexpected mapping shape for sheet "${sheet.name}".`);
       }
+      console.log(`[autoMapSpreadsheet] <- "${sheet.name}" header=${safe.data.sheets[0].headerRowIndex} cols=${safe.data.sheets[0].columns.length} skip=${safe.data.sheets[0].skip ?? false}`);
       return { ...safe.data.sheets[0], name: sheet.name };
     }
 
-    // Run sheets in parallel but cap concurrency to avoid overwhelming the gateway.
-    const CONCURRENCY = 4;
+    // Run sheets in parallel but cap concurrency. If a single sheet fails or
+    // times out, skip it rather than failing the whole upload.
+    const CONCURRENCY = 6;
     const results: SheetMapping[] = new Array(data.sheets.length);
     let cursor = 0;
     async function worker() {
       while (true) {
         const i = cursor++;
         if (i >= data.sheets.length) return;
-        results[i] = await mapOneSheet(data.sheets[i]);
+        try {
+          results[i] = await mapOneSheet(data.sheets[i]);
+        } catch (e) {
+          console.error(`[autoMapSpreadsheet] skipping "${data.sheets[i].name}":`, (e as Error).message);
+          results[i] = { name: data.sheets[i].name, headerRowIndex: 0, skip: true, columns: [] };
+        }
       }
     }
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, data.sheets.length) }, () => worker()));
 
+    console.log(`[autoMapSpreadsheet] done`);
     return { sheets: results };
   });
 
