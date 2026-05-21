@@ -180,6 +180,9 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
 
       // Ask AI to map columns across every sheet at once.
       const mapping = await autoMap({ data: { sheets: sheetSamples } });
+      if (!mapping || !Array.isArray(mapping.sheets)) {
+        throw new Error("AI returned no sheet mappings. Please try again.");
+      }
 
       const fieldType = (k: keyof MasterSpec) => FIELD_MAP.find((f) => f.key === k)?.type;
 
