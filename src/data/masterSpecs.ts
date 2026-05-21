@@ -261,25 +261,62 @@ export async function addMasterSpecs(
   sourceType: "spreadsheet" | "pdf" = "spreadsheet",
 ) {
   await hydrate();
-  const incoming = specs.filter((s) => s.vendor && s.productName);
-  if (incoming.length === 0) return;
+  const incomingRaw = specs.filter((s) => s.vendor && s.productName);
+  if (incomingRaw.length === 0) return;
 
-  // Look up existing rows keyed by lowercased "vendor||product_name"
   const keyOf = (vendor: string, product: string) =>
     `${vendor.trim().toLowerCase()}||${product.trim().toLowerCase()}`;
-  const wanted = Array.from(new Set(incoming.map((s) => keyOf(s.vendor!, s.productName!))));
+
+  // Dedupe incoming batch — Postgres upsert with ON CONFLICT errors out if the
+  // same conflict target appears twice in one statement. Merge duplicates by
+  // letting later values win for scalars and unioning array fields.
+  const mergedMap = new Map<string, Partial<MasterSpec>>();
+  for (const s of incomingRaw) {
+    const k = keyOf(s.vendor!, s.productName!);
+    const prev = mergedMap.get(k);
+    if (!prev) {
+      mergedMap.set(k, { ...s });
+      continue;
+    }
+    const merged: Partial<MasterSpec> = { ...prev };
+    for (const [field, val] of Object.entries(s) as [keyof MasterSpec, unknown][]) {
+      if (val === undefined || val === null || val === "") continue;
+      if (Array.isArray(val)) {
+        const existingArr = Array.isArray((merged as Record<string, unknown>)[field])
+          ? ((merged as Record<string, unknown>)[field] as string[])
+          : [];
+        (merged as Record<string, unknown>)[field] = Array.from(
+          new Set([...existingArr, ...(val as string[])].map((x) => String(x))),
+        );
+      } else {
+        (merged as Record<string, unknown>)[field] = val;
+      }
+    }
+    mergedMap.set(k, merged);
+  }
+  const incoming = Array.from(mergedMap.values());
+  const wanted = Array.from(mergedMap.keys());
+
   const vendors = Array.from(new Set(incoming.map((s) => s.vendor!.trim())));
   const products = Array.from(new Set(incoming.map((s) => s.productName!.trim())));
-  const existingResp = await supabase
-    .from("master_specs" as never)
-    .select("*")
-    .in("vendor", vendors as never)
-    .in("product_name", products as never);
   const existingMap = new Map<string, MasterSpec>();
-  if (!existingResp.error && Array.isArray(existingResp.data)) {
-    for (const r of existingResp.data as unknown as SpecRow[]) {
-      const k = keyOf(r.vendor, r.product_name);
-      if (wanted.includes(k)) existingMap.set(k, rowToSpec(r));
+  // Chunk the IN() filter to avoid URL-length limits on large uploads.
+  const LOOKUP_CHUNK = 200;
+  for (let i = 0; i < vendors.length; i += LOOKUP_CHUNK) {
+    const vChunk = vendors.slice(i, i + LOOKUP_CHUNK);
+    for (let j = 0; j < products.length; j += LOOKUP_CHUNK) {
+      const pChunk = products.slice(j, j + LOOKUP_CHUNK);
+      const existingResp = await supabase
+        .from("master_specs" as never)
+        .select("*")
+        .in("vendor", vChunk as never)
+        .in("product_name", pChunk as never);
+      if (!existingResp.error && Array.isArray(existingResp.data)) {
+        for (const r of existingResp.data as unknown as SpecRow[]) {
+          const k = keyOf(r.vendor, r.product_name);
+          if (wanted.includes(k)) existingMap.set(k, rowToSpec(r));
+        }
+      }
     }
   }
 
@@ -339,10 +376,20 @@ export async function addMasterSpecs(
     };
   });
 
-  const up = await supabase
-    .from("master_specs" as never)
-    .upsert(rows as never, { onConflict: "vendor,product_name" });
-  if (up.error) throw up.error;
+  // Chunk the upsert — single huge payloads can hit body-size limits and
+  // make failures harder to attribute.
+  const UPSERT_CHUNK = 250;
+  for (let i = 0; i < rows.length; i += UPSERT_CHUNK) {
+    const chunk = rows.slice(i, i + UPSERT_CHUNK);
+    const up = await supabase
+      .from("master_specs" as never)
+      .upsert(chunk as never, { onConflict: "vendor,product_name" });
+    if (up.error) {
+      const e = up.error as { message?: string; details?: string; hint?: string; code?: string };
+      const parts = [e.message, e.details, e.hint, e.code ? `(${e.code})` : null].filter(Boolean);
+      throw new Error(parts.join(" — ") || "Database upsert failed");
+    }
+  }
 
   await supabase.from("master_spec_uploads" as never).insert({
     file_name: fileName,
