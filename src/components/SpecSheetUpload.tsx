@@ -178,8 +178,22 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
         return;
       }
 
-      // Ask AI to map columns across every sheet at once.
-      const mapping = await autoMap({ data: { sheets: sheetSamples } });
+      // Ask AI to map columns across every sheet at once. Guard against the
+      // serverFn rejecting with a Response (Cloudflare/Worker timeout etc.)
+      // so we never blank-screen on the user.
+      let mapping: Awaited<ReturnType<typeof autoMap>> | null = null;
+      try {
+        mapping = await autoMap({ data: { sheets: sheetSamples } });
+      } catch (rpcErr) {
+        let detail = "Unknown error";
+        if (rpcErr instanceof Response) {
+          const body = await rpcErr.text().catch(() => "");
+          detail = `Server returned ${rpcErr.status}${body ? `: ${body.slice(0, 200)}` : ""}`;
+        } else if (rpcErr instanceof Error) {
+          detail = rpcErr.message;
+        }
+        throw new Error(`AI auto-mapping failed. ${detail}`);
+      }
       if (!mapping || !Array.isArray(mapping.sheets)) {
         throw new Error("AI returned no sheet mappings. Please try again.");
       }
@@ -241,7 +255,14 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
       setStep(2);
       setIsProcessing(false);
     } catch (err) {
-      setError(`Failed to analyze spreadsheet: ${err instanceof Error ? err.message : "Unknown error"}`);
+      let msg = "Unknown error";
+      if (err instanceof Response) {
+        const body = await err.text().catch(() => "");
+        msg = `Server returned ${err.status}${body ? `: ${body.slice(0, 200)}` : ""}`;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+      setError(`Failed to analyze spreadsheet: ${msg}`);
       setIsProcessing(false);
     }
   };
