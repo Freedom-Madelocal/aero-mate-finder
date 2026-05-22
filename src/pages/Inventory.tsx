@@ -517,7 +517,7 @@ export default function Inventory() {
                         </td>
                         <td className="py-3 px-4">
                           <span className="text-sm font-mono text-muted-foreground">
-                            {material.maxServiceTemp === "—" ? "—" : material.maxServiceTemp.includes("°C") ? material.maxServiceTemp : `${material.maxServiceTemp}°C`}
+                            {material.maxServiceTemp === "—" ? "—" : /°[CF]/.test(material.maxServiceTemp) ? material.maxServiceTemp : `${material.maxServiceTemp}°F`}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right">

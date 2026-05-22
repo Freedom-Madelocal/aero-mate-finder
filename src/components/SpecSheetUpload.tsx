@@ -375,7 +375,7 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
     if (v === null || v === undefined || v === "") return null;
     if (typeof v === "number") return Number.isFinite(v) ? v : null;
     // Take the FIRST numeric token in the string. Vendor sheets often use
-    // dual-unit cells like "250 / 120" (°F / °C) or "350°F (175°C)" — keep
+    // dual-unit cells like "250 / 120" (°F / °F) or "350°F (175°F)" — keep
     // the leading value so units stay in the spreadsheet's original system.
     const match = String(v).match(/-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?/);
     if (!match) return null;
@@ -641,8 +641,8 @@ export default function SpecSheetUpload({ isOpen, onClose, onComplete }: SpecShe
                       <th className="text-left px-3 py-2 font-medium">Vendor</th>
                       <th className="text-left px-3 py-2 font-medium">Product</th>
                       <th className="text-left px-3 py-2 font-medium">Category</th>
-                      <th className="text-left px-3 py-2 font-medium">Cure °C</th>
-                      <th className="text-left px-3 py-2 font-medium">Tg °C</th>
+                      <th className="text-left px-3 py-2 font-medium">Cure °F</th>
+                      <th className="text-left px-3 py-2 font-medium">Tg °F</th>
                       <th className="text-left px-3 py-2 font-medium">Key Specs</th>
                       <th className="text-left px-3 py-2 font-medium">Customers</th>
                       <th className="text-left px-3 py-2 font-medium">Profiles</th>

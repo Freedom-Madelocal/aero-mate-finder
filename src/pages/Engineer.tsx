@@ -713,15 +713,15 @@ export default function Engineer() {
                     />
 
                     <RangeFilter
-                      title="Cure Temp (°C)" range={filters.cureC}
+                      title="Cure Temp (°F)" range={filters.cureC}
                       onChange={(r) => setFilters({ ...filters, cureC: r })}
                     />
                     <RangeFilter
-                      title="Peak Tg (°C)" range={filters.peakTgC}
+                      title="Peak Tg (°F)" range={filters.peakTgC}
                       onChange={(r) => setFilters({ ...filters, peakTgC: r })}
                     />
                     <RangeFilter
-                      title="Max Service Temp (°C)" range={filters.maxServiceC}
+                      title="Max Service Temp (°F)" range={filters.maxServiceC}
                       onChange={(r) => setFilters({ ...filters, maxServiceC: r })}
                     />
                     <RangeFilter
@@ -794,9 +794,9 @@ export default function Engineer() {
                   <option value="product:asc">Product (A–Z)</option>
                   <option value="product:desc">Product (Z–A)</option>
                   <option value="vendor:asc">Vendor (A–Z)</option>
-                  <option value="cure:asc">Cure °C ↑</option>
-                  <option value="cure:desc">Cure °C ↓</option>
-                  <option value="service:desc">Service °C ↓</option>
+                  <option value="cure:asc">Cure °F ↑</option>
+                  <option value="cure:desc">Cure °F ↓</option>
+                  <option value="service:desc">Service °F ↓</option>
                   <option value="e595:desc">E595 pass first</option>
                   <option value="inventory:asc">Inventory (stocked first)</option>
                   <option value="star:desc">Starred first</option>
@@ -819,10 +819,10 @@ export default function Engineer() {
                     const inCompare = compare.has(spec.id);
                     const metaBits = [
                       spec.productForm ?? spec.materialCategory,
-                      spec.cureTemperatureC !== null ? `Cure ${spec.cureTemperatureC}°C` : null,
+                      spec.cureTemperatureC !== null ? `Cure ${spec.cureTemperatureC}°F` : null,
                       spec.outLifeDays !== null ? `Out-life ${spec.outLifeDays}d` : null,
                       (spec.peakTgC ?? spec.dryTgOnsetC) !== null
-                        ? `Tg ${spec.peakTgC ?? spec.dryTgOnsetC}°C`
+                        ? `Tg ${spec.peakTgC ?? spec.dryTgOnsetC}°F`
                         : null,
                     ].filter(Boolean) as string[];
                     const description =
@@ -1335,12 +1335,12 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
           </DrawerSection>
 
           <DrawerSection title="Thermal & Cure">
-            <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °C")} />
+            <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °F")} />
             <Row label="Cure Time" value={spec.cureTime} />
-            <Row label="Dry Tg Onset" value={fmt(spec.dryTgOnsetC, " °C")} />
-            <Row label="Wet Tg" value={fmt(spec.wetTgC, " °C")} />
-            <Row label="Peak Tg" value={fmt(spec.peakTgC, " °C")} />
-            <Row label="Max Service Temp" value={fmt(spec.maxServiceTemperatureC, " °C")} />
+            <Row label="Dry Tg Onset" value={fmt(spec.dryTgOnsetC, " °F")} />
+            <Row label="Wet Tg" value={fmt(spec.wetTgC, " °F")} />
+            <Row label="Peak Tg" value={fmt(spec.peakTgC, " °F")} />
+            <Row label="Max Service Temp" value={fmt(spec.maxServiceTemperatureC, " °F")} />
           </DrawerSection>
 
           <DrawerSection title="Mechanical">
