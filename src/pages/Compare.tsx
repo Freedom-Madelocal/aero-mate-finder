@@ -79,9 +79,9 @@ export default function Compare() {
                 </tr>
               </thead>
               <tbody>
-                <Row label="Dry Tg" items={items} render={(s) => fmt(s.dryTgOnsetC, "°C")} />
-                <Row label="Peak Tg" items={items} render={(s) => fmt(s.peakTgC, "°C")} />
-                <Row label="Cure temperature" items={items} render={(s) => fmt(s.cureTemperatureC, "°C")} />
+                <Row label="Dry Tg" items={items} render={(s) => fmt(s.dryTgOnsetC, "°F")} />
+                <Row label="Peak Tg" items={items} render={(s) => fmt(s.peakTgC, "°F")} />
+                <Row label="Cure temperature" items={items} render={(s) => fmt(s.cureTemperatureC, "°F")} />
                 <Row label="Cure time" items={items} render={(s) => s.cureTime ?? "—"} />
                 <Row label="Out-life (days)" items={items} render={(s) => fmt(s.outLifeDays)} />
                 <Row label="Freezer life (months)" items={items} render={(s) => fmt(s.freezerLifeMonths)} />

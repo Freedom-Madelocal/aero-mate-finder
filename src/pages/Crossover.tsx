@@ -208,7 +208,7 @@ function SpecMiniCard({ spec, bestMatch = false }: { spec: MasterSpec; bestMatch
         )}
       </div>
       <p className="text-[11px] text-muted-foreground mt-1">
-        {[spec.materialCategory, spec.resinChemistry, spec.cureTemperatureC ? `${spec.cureTemperatureC}°C cure` : null]
+        {[spec.materialCategory, spec.resinChemistry, spec.cureTemperatureC ? `${spec.cureTemperatureC}°F cure` : null]
           .filter(Boolean)
           .join(" · ")}
       </p>
@@ -238,7 +238,7 @@ function Differences({ source, target }: { source: MasterSpec; target: MasterSpe
     diffs.push({
       kind: Math.abs(d) <= 5 ? "ok" : "warn",
       label: "Cure temperature",
-      value: `${source.cureTemperatureC}°C → ${target.cureTemperatureC}°C (${d >= 0 ? "+" : ""}${d}°C)`,
+      value: `${source.cureTemperatureC}°F → ${target.cureTemperatureC}°F (${d >= 0 ? "+" : ""}${d}°F)`,
     });
   }
 
@@ -249,7 +249,7 @@ function Differences({ source, target }: { source: MasterSpec; target: MasterSpe
     diffs.push({
       kind: Math.abs(d) <= 10 ? "ok" : "warn",
       label: "Tg",
-      value: `${sTg}°C → ${tTg}°C (${d >= 0 ? "+" : ""}${d}°C)`,
+      value: `${sTg}°F → ${tTg}°F (${d >= 0 ? "+" : ""}${d}°F)`,
     });
   }
 

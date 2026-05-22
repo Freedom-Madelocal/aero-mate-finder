@@ -183,9 +183,9 @@ export default function MasterSpecs() {
                   <Th>Category</Th>
                   <Th>Chemistry</Th>
                   <Th>Form</Th>
-                  <Th>Cure °C</Th>
-                  <Th>Max Service °C</Th>
-                  <Th>Tg °C</Th>
+                  <Th>Cure °F</Th>
+                  <Th>Max Service °F</Th>
+                  <Th>Tg °F</Th>
                   <Th>OOA</Th>
                   <Th>Out Life</Th>
                   <Th>Freezer Life</Th>
@@ -440,12 +440,12 @@ function SpecDrawer({
           )}
 
           <Section title="Thermal & Cure">
-            <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °C")} />
+            <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °F")} />
             <Row label="Cure Time" value={spec.cureTime} />
-            <Row label="Dry Tg Onset" value={fmt(spec.dryTgOnsetC, " °C")} />
-            <Row label="Wet Tg" value={fmt(spec.wetTgC, " °C")} />
-            <Row label="Peak Tg" value={fmt(spec.peakTgC, " °C")} />
-            <Row label="Max Service Temp" value={fmt(spec.maxServiceTemperatureC, " °C")} />
+            <Row label="Dry Tg Onset" value={fmt(spec.dryTgOnsetC, " °F")} />
+            <Row label="Wet Tg" value={fmt(spec.wetTgC, " °F")} />
+            <Row label="Peak Tg" value={fmt(spec.peakTgC, " °F")} />
+            <Row label="Max Service Temp" value={fmt(spec.maxServiceTemperatureC, " °F")} />
           </Section>
 
           <Section title="Storage">
