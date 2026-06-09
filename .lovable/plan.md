@@ -1,58 +1,78 @@
+## Goal
 
-# Crossover — diagnosis and fix
+Add a "Scrape TDS/PDS" capability to every material in the Master Spec list, powered by Gemini grounded web search. Supports per-item rescrape and a bulk "Scrape all" run from the Master Specs page that processes in batches of 5, shows progress, skips already-scraped items, and stores a link to the source PDF/page on each spec.
 
-## What I found
+## Data model
 
-**The page is not broken. The matching logic is too strict for the catalog you have.**
+Add columns to `master_specs`:
+- `tds_url text` — link to the manufacturer's TDS/PDS page or PDF
+- `tds_scraped_at timestamptz` — null = never scraped (drives "skip if already done")
+- `tds_scrape_status text` — `success` | `not_found` | `failed`
+- `tds_scrape_error text` — last error message (for the failed ones)
+- `tds_source_title text` — display label for the link
 
-Your `master_specs` table has 828 products across 5 main vendors (3M 178, Henkel 152, Hexcel 209, Syensqo 69, Toray 211). 812 have both `material_category` and `resin_chemistry` populated, so the data is there.
+New table `master_spec_scrape_jobs` for the bulk run:
+- `id`, `started_by`, `started_at`, `finished_at`
+- `total`, `processed`, `succeeded`, `failed`, `skipped`
+- `status` (`running` | `completed` | `cancelled` | `failed`)
+- `current_spec_id` (nullable)
 
-But `Crossover.tsx` requires an **exact string match on BOTH `materialCategory` AND `resinChemistry`** between two different vendors. Run against the live data, exactly **one** category+chemistry pair matches across vendors (`Thermoset Prepreg — Epoxy` + `Epoxy`, 2 vendors). That's why nearly every search returns "No equivalents."
+RLS: super-admins can read/write both surfaces.
 
-Why: the categories in the data are vendor-phrased and ultra-granular, e.g.:
-- `Prepreg — Epoxy (Self-Adhesive, FR)` (Hexcel)
-- `Thermoset Prepreg — Toughened Epoxy` (Syensqo)
-- `Film Adhesive — Metal & Honeycomb` (Henkel)
-- `Structural Adhesive Film` (3M)
+## Backend (TanStack server functions)
 
-These are functionally equivalent but never string-equal. Same for chemistry (`Epoxy` vs `Epoxy Film` vs `Toughened Epoxy` vs `Toughened Epoxy OOA`).
+In `src/lib/specScrape.functions.ts` (auth-gated, super-admin only):
 
-The uploaded spreadsheet (`Traceium_Master_Crossover-2-2.xlsx`) is the **same source data** already in the DB (401 products, same columns). It does **not** contain explicit crossover mappings — there's no "equivalent to" column. So crossovers have to be derived, not imported.
+1. `scrapeSpec({ specId, force })` — runs the pipeline for one material:
+   - Loads the spec row.
+   - Calls Gemini (`google/gemini-3-flash-preview` via Lovable AI Gateway) with web grounding enabled and a prompt: "Find the official manufacturer Technical/Product Data Sheet for `{vendor} {productName}`. Return JSON: `{ url, sourceTitle, fields: { cure_temperature_f, dry_tg_onset_f, wet_tg_f, peak_tg_f, max_service_temperature_f, out_life_days, freezer_life_months, tml_pct, cvcm_pct, tensile_lap_shear_mpa, t_peel_n_per_25mm, flatwise_tension_mpa, climbing_drum_peel_in_lb_per_in, cure_time, process_method, resin_chemistry, reinforcement, product_form, applications, qualifications_standards } }`. Temperatures must be Fahrenheit (matches the existing fix). Any field not stated on the sheet → null.
+   - Uses `Output.object` with a Zod schema so the response is typed.
+   - Merge policy:
+     - `force === true` (single-item rescrape button) → overwrite any field returned non-null.
+     - `force === false` (bulk path) → only fill fields currently null/empty.
+   - Always writes `tds_url`, `tds_source_title`, `tds_scraped_at = now()`, status, error.
+   - Returns `{ status, url, filledFields[] }`.
 
-## Recommended fix (no schema changes, no re-upload)
+2. `startBulkScrape()` — creates a `master_spec_scrape_jobs` row for all specs where `tds_scraped_at IS NULL`, returns `jobId` and `total`.
 
-Replace the strict equality match in `src/pages/Crossover.tsx` with a normalized, scored match.
+3. `runBulkScrapeBatch({ jobId })` — picks the next ≤5 pending specs, runs `scrapeSpec({ force:false })` for each in parallel, updates job counters, returns `{ processed, remaining, currentSpecId, status }`. The client polls this until `remaining === 0`. This avoids long-running serverless requests while still feeling like a background job.
 
-1. **Normalize** category + chemistry into canonical buckets before comparing:
-   - Category → strip everything after `—`/`(`, lowercase, map synonyms:
-     - "structural adhesive film", "film adhesive*" → `film-adhesive`
-     - "prepreg*", "thermoset prepreg*" → `prepreg`
-     - "paste adhesive*" → `paste-adhesive`
-     - "sealant*" → `sealant`
-     - "potting*" → `potting`
-     - "rtm resin*", "infusion resin*" → `liquid-resin`
-     - "reinforcement*", "fabric*", "fiber*" → `reinforcement`
-   - Chemistry → first token, lowercase: `epoxy`, `bmi`, `cyanate`, `phenolic`, `silicone`, `polyurethane`, `acrylic`, `polysulfide`, `peek`, `paek`, etc. "Toughened Epoxy OOA" → `epoxy`.
+4. `getBulkScrapeStatus({ jobId })` — read-only progress snapshot for the UI.
 
-2. **Score** candidates instead of binary-filtering. Sort by score, take top 5:
-   - +5 same normalized category
-   - +4 same normalized chemistry
-   - +2 cure temp within ±15 °C
-   - +2 same product form (film/paste/tape/fabric)
-   - +1 overlapping aerospace segment / application keyword
-   - −∞ same vendor (exclude)
-   - Keep the existing `crossoverProduct` pointer match as an automatic top hit.
+5. `cancelBulkScrape({ jobId })` — sets status to `cancelled`; the batch runner short-circuits.
 
-3. **Always show something**: drop the strict filter; if score > 0, show it (mark "Best match" only when score ≥ 9).
+All five use `requireSupabaseAuth` + a super-admin check via `has_role`.
 
-This is a ~60-line change to one file, no DB migration, no re-upload, and will surface real equivalents across all 5 vendors immediately.
+## Frontend changes
 
-## Optional follow-ups (later)
+### `src/pages/MasterSpecs.tsx`
+- Header gets a new button next to "Upload Spec Sheet": **"Scrape TDS/PDS for new items"**.
+- Clicking it: calls `startBulkScrape`, then opens a small progress modal showing `processed / total`, current vendor + product, succeeded/failed/skipped counts, a "Cancel" button, and a "Close (keeps running in background)" button. The modal drives the loop by calling `runBulkScrapeBatch` repeatedly until done.
+- Table gets a new "TDS" column showing one of:
+  - external-link icon → opens `tds_url` in a new tab
+  - "—" if never scraped
+  - small red dot if last attempt failed (tooltip = error)
+- New filter toggle "Missing TDS" to focus the next run.
 
-- Add an "Equivalence confidence" badge (High / Likely / Possible) based on score.
-- Persist canonical buckets as derived columns (`category_bucket`, `chemistry_bucket`) via a migration so other pages (Compare, search) benefit too.
-- If you want curated/expert crossovers, add a `crossovers` table (source_id, target_id, confidence, note) and a small admin UI — the spreadsheet would need a new column for this.
+### `SpecDrawer` (detail panel inside MasterSpecs.tsx)
+- Header gets a **"Scrape TDS"** / **"Rescrape TDS"** button (label depends on `tds_scraped_at`).
+- Shows a "Source" row with the linked TDS URL + title + last-scraped timestamp under a new "Source Document" section.
+- Single-item rescrape uses `force:true` (overwrites fields per the user's chosen policy).
 
-## Scope of the implementation step
+### `src/pages/Engineer.tsx` and `src/pages/MaterialDetail.tsx`
+- When a spec has `tds_url`, surface a small "View TDS" link (external-link icon) in the material header/detail block so engineers can reach the source sheet.
 
-Single file: `src/pages/Crossover.tsx` — replace the `equivalents` useMemo and add a `score()` helper plus the two normalizer maps. No other files, no backend, no schema changes.
+## Resume behavior
+
+- Bulk button always targets `tds_scraped_at IS NULL` → safely resumable; re-pressing it never re-hits successes.
+- Items that failed previously (`status='failed'`) stay marked with `tds_scraped_at` set, so they are skipped by bulk. The Master Specs table shows the failed indicator; the user can rescrape them individually from the drawer, or we can add a secondary "Retry failed" button later if they want.
+
+## Out of scope (call out if user wants these next)
+- Downloading and storing the PDF itself in Storage (we only store the URL).
+- OCR/parsing the PDF directly — Gemini grounded search reads the manufacturer page; if quality is weak for PDF-only specs, the natural follow-up is to add Firecrawl scrape of the URL as a second pass.
+- Per-org scraping (this is super-admin global).
+
+## Technical notes (for the engineer)
+- Add `LOVABLE_API_KEY` provider helper at `src/lib/ai-gateway.server.ts` per the gateway pattern; key already present in secrets.
+- Web grounding via `toolsSpec`-style `webGroundingSpec` isn't an AI SDK primitive — implement by calling Gemini with `tools: { googleSearch: {} }` parameter through the OpenAI-compatible adapter's `providerOptions`, or fall back to Firecrawl `/search` for URL discovery + Firecrawl `/scrape` of the URL as the grounding source if grounding via the gateway proves unreliable. Pick at implementation time based on a smoke test against 2–3 known materials (e.g. Hexcel HexBond ST 1035 — sample PDF attached).
+- Bulk run uses client-driven batch polling (no Inngest/cron needed). Keeps it simple and matches the "background job with progress" UX requested.

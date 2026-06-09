@@ -1,10 +1,12 @@
 import AdminShell from "@/components/AdminShell";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
-import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
+import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink, Sparkles, AlertCircle } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import BulkScrapeModal from "@/components/BulkScrapeModal";
+import ScrapeSpecButton from "@/components/ScrapeSpecButton";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
@@ -26,8 +28,10 @@ export default function MasterSpecs() {
   const [form, setForm] = useState("All");
   const [ooaOnly, setOoaOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [missingTdsOnly, setMissingTdsOnly] = useState(false);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [showBulkScrape, setShowBulkScrape] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
 
@@ -68,6 +72,7 @@ export default function MasterSpecs() {
         const m = getInventoryMatch(s, materials);
         if (m.status !== "in-stock") return false;
       }
+      if (missingTdsOnly && s.tdsScrapedAt) return false;
       if (!q) return true;
       const hay = [
         s.vendor, s.productName, s.productFamily, s.materialCategory,
@@ -79,7 +84,7 @@ export default function MasterSpecs() {
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, activeProfiles]);
+  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, missingTdsOnly, activeProfiles]);
 
   const inInventoryCount = useMemo(
     () => specs.filter((s) => getInventoryMatch(s, materials).status !== "none").length,
@@ -106,12 +111,20 @@ export default function MasterSpecs() {
               Canonical aerospace material spec catalog — search, compare, and qualify.
             </p>
           </div>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
-          >
-            <Upload className="w-4 h-4" /> Upload Spec Sheet
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowBulkScrape(true)}
+              className="inline-flex items-center gap-2 border border-border rounded px-4 py-2 text-sm font-medium hover:bg-secondary"
+            >
+              <Sparkles className="w-4 h-4" /> Scrape TDS/PDS
+            </button>
+            <button
+              onClick={() => setShowUpload(true)}
+              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
+            >
+              <Upload className="w-4 h-4" /> Upload Spec Sheet
+            </button>
+          </div>
         </div>
 
         {/* Metrics */}
@@ -140,6 +153,7 @@ export default function MasterSpecs() {
             <Select value={form} onChange={setForm} options={forms} label="Form" />
             <Toggle active={ooaOnly} onClick={() => setOoaOnly((v) => !v)} label="OOA only" />
             <Toggle active={inStockOnly} onClick={() => setInStockOnly((v) => !v)} label="In stock" />
+            <Toggle active={missingTdsOnly} onClick={() => setMissingTdsOnly((v) => !v)} label="Missing TDS" />
           </div>
           {allProfiles.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -190,12 +204,13 @@ export default function MasterSpecs() {
                   <Th>Out Life</Th>
                   <Th>Freezer Life</Th>
                   <Th>In Inventory</Th>
+                  <Th>TDS</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-12 text-muted-foreground text-sm">
+                    <td colSpan={13} className="text-center py-12 text-muted-foreground text-sm">
                       No specs match your filters.
                     </td>
                   </tr>
@@ -227,6 +242,9 @@ export default function MasterSpecs() {
                         <Td>{fmt(s.freezerLifeMonths, " mo")}</Td>
                         <Td>
                           <InventoryBadge status={inv.status} />
+                        </Td>
+                        <Td>
+                          <TdsCell spec={s} />
                         </Td>
                       </tr>
                     );
@@ -273,7 +291,38 @@ export default function MasterSpecs() {
           <SpecSheetUpload isOpen={showUpload} onClose={() => setShowUpload(false)} />
         </Suspense>
       )}
+
+      {showBulkScrape && <BulkScrapeModal onClose={() => setShowBulkScrape(false)} />}
     </AdminShell>
+  );
+}
+
+function TdsCell({ spec }: { spec: MasterSpec }) {
+  if (!spec.tdsScrapedAt) {
+    return <span className="text-muted-foreground text-xs">—</span>;
+  }
+  if (spec.tdsScrapeStatus === "success" && spec.tdsUrl) {
+    return (
+      <a
+        href={spec.tdsUrl}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 text-xs text-foreground hover:underline"
+        title={spec.tdsSourceTitle ?? spec.tdsUrl}
+      >
+        <ExternalLink className="w-3.5 h-3.5" /> TDS
+      </a>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-xs text-[var(--status-warning)]"
+      title={spec.tdsScrapeError ?? "TDS not found"}
+    >
+      <AlertCircle className="w-3.5 h-3.5" />
+      {spec.tdsScrapeStatus === "not_found" ? "Not found" : "Failed"}
+    </span>
   );
 }
 
@@ -369,18 +418,52 @@ function SpecDrawer({
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-xl bg-card border-l border-border h-full overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-3 flex items-start justify-between">
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-3 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">{spec.vendor}</p>
             <h3 className="text-base font-semibold text-foreground">{spec.productName}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{spec.materialCategory ?? "—"}</p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ScrapeSpecButton specId={spec.id} alreadyScraped={!!spec.tdsScrapedAt} />
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-5 space-y-5">
+          {spec.tdsScrapedAt && (
+            <div className="rounded-lg border border-border bg-secondary/20 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">TDS Source</p>
+                  {spec.tdsScrapeStatus === "success" && spec.tdsUrl ? (
+                    <a
+                      href={spec.tdsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-foreground hover:underline truncate"
+                      title={spec.tdsUrl}
+                    >
+                      {spec.tdsSourceTitle ?? spec.tdsUrl}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-[var(--status-warning)]">
+                      {spec.tdsScrapeStatus === "not_found" ? "Not found" : "Failed"}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {new Date(spec.tdsScrapedAt).toLocaleDateString()}
+                </span>
+              </div>
+              {spec.tdsScrapeError && (
+                <p className="text-[10px] text-muted-foreground mt-1">{spec.tdsScrapeError}</p>
+              )}
+            </div>
+          )}
           {/* Inventory link */}
           <div className="rounded-lg border border-border bg-secondary/20 p-3">
             <div className="flex items-center justify-between">
