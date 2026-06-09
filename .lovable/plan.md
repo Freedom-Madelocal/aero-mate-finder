@@ -1,78 +1,35 @@
-## Goal
+## What's actually happening
 
-Add a "Scrape TDS/PDS" capability to every material in the Master Spec list, powered by Gemini grounded web search. Supports per-item rescrape and a bulk "Scrape all" run from the Master Specs page that processes in batches of 5, shows progress, skips already-scraped items, and stores a link to the source PDF/page on each spec.
+Looking at the session replay from your click, the scrape **did run successfully** — the button spinner spun, then a link to `3m.com/.../b00037324/` titled "3M™ Adhesion Promoter 86A | 3M United States" was inserted into the page. So Gemini found the TDS and the DB row was updated.
 
-## Data model
+The reason it *feels* like nothing happened is that the **drawer panel doesn't re-render with the new data**:
 
-Add columns to `master_specs`:
-- `tds_url text` — link to the manufacturer's TDS/PDS page or PDF
-- `tds_scraped_at timestamptz` — null = never scraped (drives "skip if already done")
-- `tds_scrape_status text` — `success` | `not_found` | `failed`
-- `tds_scrape_error text` — last error message (for the failed ones)
-- `tds_source_title text` — display label for the link
+- `MasterSpecs.tsx` keeps the open drawer in local state: `const [selected, setSelected] = useState<MasterSpec | null>(null)`.
+- `ScrapeSpecButton` calls `refreshMasterSpecStore()` after a successful scrape, which updates the `specs` array in the store — but `selected` is a snapshot captured when you opened the drawer, so the TDS Source block and any newly-filled fields don't appear until you close and reopen.
+- There's also no toast / success indicator, which makes it look like the click was a no-op.
 
-New table `master_spec_scrape_jobs` for the bulk run:
-- `id`, `started_by`, `started_at`, `finished_at`
-- `total`, `processed`, `succeeded`, `failed`, `skipped`
-- `status` (`running` | `completed` | `cancelled` | `failed`)
-- `current_spec_id` (nullable)
+## Fix
 
-RLS: super-admins can read/write both surfaces.
+1. **Re-sync the open drawer to the latest store data.** In `MasterSpecs.tsx`, derive the drawer's spec from the store on every render instead of from `useState`:
+   - Track only `selectedId: string | null` in state.
+   - Compute `const selected = selectedId ? specs.find(s => s.id === selectedId) ?? null : null;`
+   - Update everywhere `setSelected(...)` is currently used.
+   This way, the moment `refreshMasterSpecStore()` finishes, the drawer rerenders with `tdsUrl`, `tdsSourceTitle`, `tdsScrapedAt`, and any newly filled cure-temp / Tg / etc. values.
 
-## Backend (TanStack server functions)
+2. **Surface success/failure in `ScrapeSpecButton`.** Right now only errors render. Add a short-lived inline status under the button:
+   - `success` → "Found TDS" with a small check (1.5s auto-clear).
+   - `not_found` → "No TDS found" with the warning color.
+   - `failed` → existing error message (already shown).
+   Pull these from the `scrapeSpec` return value (`status`, `url`).
 
-In `src/lib/specScrape.functions.ts` (auth-gated, super-admin only):
+3. **Pass an `onDone` callback from the drawer** to `ScrapeSpecButton` so it can also nudge a local state bump (belt-and-suspenders in case the store refresh races with the drawer rerender). No functional impact beyond ensuring the rerender happens.
 
-1. `scrapeSpec({ specId, force })` — runs the pipeline for one material:
-   - Loads the spec row.
-   - Calls Gemini (`google/gemini-3-flash-preview` via Lovable AI Gateway) with web grounding enabled and a prompt: "Find the official manufacturer Technical/Product Data Sheet for `{vendor} {productName}`. Return JSON: `{ url, sourceTitle, fields: { cure_temperature_f, dry_tg_onset_f, wet_tg_f, peak_tg_f, max_service_temperature_f, out_life_days, freezer_life_months, tml_pct, cvcm_pct, tensile_lap_shear_mpa, t_peel_n_per_25mm, flatwise_tension_mpa, climbing_drum_peel_in_lb_per_in, cure_time, process_method, resin_chemistry, reinforcement, product_form, applications, qualifications_standards } }`. Temperatures must be Fahrenheit (matches the existing fix). Any field not stated on the sheet → null.
-   - Uses `Output.object` with a Zod schema so the response is typed.
-   - Merge policy:
-     - `force === true` (single-item rescrape button) → overwrite any field returned non-null.
-     - `force === false` (bulk path) → only fill fields currently null/empty.
-   - Always writes `tds_url`, `tds_source_title`, `tds_scraped_at = now()`, status, error.
-   - Returns `{ status, url, filledFields[] }`.
+## Out of scope
 
-2. `startBulkScrape()` — creates a `master_spec_scrape_jobs` row for all specs where `tds_scraped_at IS NULL`, returns `jobId` and `total`.
+- No change to the scrape pipeline itself (Gemini call, schema, overwrite policy) — it's working.
+- No change to bulk-scrape behavior.
+- No PDF download or storage work (still just storing the URL, as before).
 
-3. `runBulkScrapeBatch({ jobId })` — picks the next ≤5 pending specs, runs `scrapeSpec({ force:false })` for each in parallel, updates job counters, returns `{ processed, remaining, currentSpecId, status }`. The client polls this until `remaining === 0`. This avoids long-running serverless requests while still feeling like a background job.
-
-4. `getBulkScrapeStatus({ jobId })` — read-only progress snapshot for the UI.
-
-5. `cancelBulkScrape({ jobId })` — sets status to `cancelled`; the batch runner short-circuits.
-
-All five use `requireSupabaseAuth` + a super-admin check via `has_role`.
-
-## Frontend changes
-
-### `src/pages/MasterSpecs.tsx`
-- Header gets a new button next to "Upload Spec Sheet": **"Scrape TDS/PDS for new items"**.
-- Clicking it: calls `startBulkScrape`, then opens a small progress modal showing `processed / total`, current vendor + product, succeeded/failed/skipped counts, a "Cancel" button, and a "Close (keeps running in background)" button. The modal drives the loop by calling `runBulkScrapeBatch` repeatedly until done.
-- Table gets a new "TDS" column showing one of:
-  - external-link icon → opens `tds_url` in a new tab
-  - "—" if never scraped
-  - small red dot if last attempt failed (tooltip = error)
-- New filter toggle "Missing TDS" to focus the next run.
-
-### `SpecDrawer` (detail panel inside MasterSpecs.tsx)
-- Header gets a **"Scrape TDS"** / **"Rescrape TDS"** button (label depends on `tds_scraped_at`).
-- Shows a "Source" row with the linked TDS URL + title + last-scraped timestamp under a new "Source Document" section.
-- Single-item rescrape uses `force:true` (overwrites fields per the user's chosen policy).
-
-### `src/pages/Engineer.tsx` and `src/pages/MaterialDetail.tsx`
-- When a spec has `tds_url`, surface a small "View TDS" link (external-link icon) in the material header/detail block so engineers can reach the source sheet.
-
-## Resume behavior
-
-- Bulk button always targets `tds_scraped_at IS NULL` → safely resumable; re-pressing it never re-hits successes.
-- Items that failed previously (`status='failed'`) stay marked with `tds_scraped_at` set, so they are skipped by bulk. The Master Specs table shows the failed indicator; the user can rescrape them individually from the drawer, or we can add a secondary "Retry failed" button later if they want.
-
-## Out of scope (call out if user wants these next)
-- Downloading and storing the PDF itself in Storage (we only store the URL).
-- OCR/parsing the PDF directly — Gemini grounded search reads the manufacturer page; if quality is weak for PDF-only specs, the natural follow-up is to add Firecrawl scrape of the URL as a second pass.
-- Per-org scraping (this is super-admin global).
-
-## Technical notes (for the engineer)
-- Add `LOVABLE_API_KEY` provider helper at `src/lib/ai-gateway.server.ts` per the gateway pattern; key already present in secrets.
-- Web grounding via `toolsSpec`-style `webGroundingSpec` isn't an AI SDK primitive — implement by calling Gemini with `tools: { googleSearch: {} }` parameter through the OpenAI-compatible adapter's `providerOptions`, or fall back to Firecrawl `/search` for URL discovery + Firecrawl `/scrape` of the URL as the grounding source if grounding via the gateway proves unreliable. Pick at implementation time based on a smoke test against 2–3 known materials (e.g. Hexcel HexBond ST 1035 — sample PDF attached).
-- Bulk run uses client-driven batch polling (no Inngest/cron needed). Keeps it simple and matches the "background job with progress" UX requested.
+## Files touched
+- `src/pages/MasterSpecs.tsx` — switch drawer to `selectedId` + derived spec; pass `onDone`.
+- `src/components/ScrapeSpecButton.tsx` — add ephemeral success/not-found status line.
