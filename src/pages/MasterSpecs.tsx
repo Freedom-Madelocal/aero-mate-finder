@@ -111,12 +111,20 @@ export default function MasterSpecs() {
               Canonical aerospace material spec catalog — search, compare, and qualify.
             </p>
           </div>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
-          >
-            <Upload className="w-4 h-4" /> Upload Spec Sheet
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowBulkScrape(true)}
+              className="inline-flex items-center gap-2 border border-border rounded px-4 py-2 text-sm font-medium hover:bg-secondary"
+            >
+              <Sparkles className="w-4 h-4" /> Scrape TDS/PDS
+            </button>
+            <button
+              onClick={() => setShowUpload(true)}
+              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
+            >
+              <Upload className="w-4 h-4" /> Upload Spec Sheet
+            </button>
+          </div>
         </div>
 
         {/* Metrics */}
@@ -145,6 +153,7 @@ export default function MasterSpecs() {
             <Select value={form} onChange={setForm} options={forms} label="Form" />
             <Toggle active={ooaOnly} onClick={() => setOoaOnly((v) => !v)} label="OOA only" />
             <Toggle active={inStockOnly} onClick={() => setInStockOnly((v) => !v)} label="In stock" />
+            <Toggle active={missingTdsOnly} onClick={() => setMissingTdsOnly((v) => !v)} label="Missing TDS" />
           </div>
           {allProfiles.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
