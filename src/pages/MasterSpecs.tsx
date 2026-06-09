@@ -286,7 +286,7 @@ export default function MasterSpecs() {
         <SpecDrawer
           spec={selected}
           inv={getInventoryMatch(selected, materials)}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelectedId(null)}
         />
       )}
 
