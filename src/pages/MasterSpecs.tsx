@@ -204,12 +204,13 @@ export default function MasterSpecs() {
                   <Th>Out Life</Th>
                   <Th>Freezer Life</Th>
                   <Th>In Inventory</Th>
+                  <Th>TDS</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-12 text-muted-foreground text-sm">
+                    <td colSpan={13} className="text-center py-12 text-muted-foreground text-sm">
                       No specs match your filters.
                     </td>
                   </tr>
@@ -241,6 +242,9 @@ export default function MasterSpecs() {
                         <Td>{fmt(s.freezerLifeMonths, " mo")}</Td>
                         <Td>
                           <InventoryBadge status={inv.status} />
+                        </Td>
+                        <Td>
+                          <TdsCell spec={s} />
                         </Td>
                       </tr>
                     );
