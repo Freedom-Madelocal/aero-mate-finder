@@ -29,7 +29,11 @@ export default function MasterSpecs() {
   const [ooaOnly, setOoaOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [missingTdsOnly, setMissingTdsOnly] = useState(false);
-  const [selected, setSelected] = useState<MasterSpec | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(
+    () => (selectedId ? specs.find((s) => s.id === selectedId) ?? null : null),
+    [selectedId, specs],
+  );
   const [showUpload, setShowUpload] = useState(false);
   const [showBulkScrape, setShowBulkScrape] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
