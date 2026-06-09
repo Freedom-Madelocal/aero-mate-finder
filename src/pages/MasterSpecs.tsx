@@ -224,7 +224,7 @@ export default function MasterSpecs() {
                     return (
                       <tr
                         key={s.id}
-                        onClick={() => setSelected(s)}
+                        onClick={() => setSelectedId(s.id)}
                         className="border-t border-border hover:bg-accent/20 cursor-pointer"
                       >
                         <Td className="text-muted-foreground">{s.vendor}</Td>
