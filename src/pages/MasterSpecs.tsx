@@ -1,10 +1,12 @@
 import AdminShell from "@/components/AdminShell";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
-import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
+import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink, Sparkles, AlertCircle } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import BulkScrapeModal from "@/components/BulkScrapeModal";
+import ScrapeSpecButton from "@/components/ScrapeSpecButton";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
