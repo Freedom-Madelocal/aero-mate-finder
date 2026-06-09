@@ -28,8 +28,10 @@ export default function MasterSpecs() {
   const [form, setForm] = useState("All");
   const [ooaOnly, setOoaOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [missingTdsOnly, setMissingTdsOnly] = useState(false);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [showBulkScrape, setShowBulkScrape] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
 
