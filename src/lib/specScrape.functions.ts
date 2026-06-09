@@ -196,7 +196,7 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       }
       const { error: updErr } = await supabase
         .from("master_specs")
-        .update(patch)
+        .update(patch as never)
         .eq("id", data.specId);
       if (updErr) throw new Error(updErr.message);
       return {
@@ -333,7 +333,7 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
               }
             }
           }
-          await supabase.from("master_specs").update(patch).eq("id", row.id);
+          await supabase.from("master_specs").update(patch as never).eq("id", row.id);
           return patch.tds_scrape_status === "success";
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
