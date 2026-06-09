@@ -72,6 +72,7 @@ export default function MasterSpecs() {
         const m = getInventoryMatch(s, materials);
         if (m.status !== "in-stock") return false;
       }
+      if (missingTdsOnly && s.tdsScrapedAt) return false;
       if (!q) return true;
       const hay = [
         s.vendor, s.productName, s.productFamily, s.materialCategory,
@@ -83,7 +84,7 @@ export default function MasterSpecs() {
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, activeProfiles]);
+  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, missingTdsOnly, activeProfiles]);
 
   const inInventoryCount = useMemo(
     () => specs.filter((s) => getInventoryMatch(s, materials).status !== "none").length,
