@@ -54,6 +54,11 @@ export interface MasterSpec {
   profiles: string[];
   keySpecs: string[];
   customers: string[];
+  tdsUrl: string | null;
+  tdsSourceTitle: string | null;
+  tdsScrapedAt: string | null;
+  tdsScrapeStatus: "success" | "not_found" | "failed" | null;
+  tdsScrapeError: string | null;
 }
 
 export interface MasterSpecUpload {
@@ -106,6 +111,11 @@ interface SpecRow {
   profiles: string[] | null;
   key_specs: string[] | null;
   customers: string[] | null;
+  tds_url: string | null;
+  tds_source_title: string | null;
+  tds_scraped_at: string | null;
+  tds_scrape_status: string | null;
+  tds_scrape_error: string | null;
 }
 
 const num = (v: number | string | null): number | null =>
@@ -156,6 +166,11 @@ function rowToSpec(r: SpecRow): MasterSpec {
     profiles: Array.isArray(r.profiles) ? r.profiles : [],
     keySpecs: Array.isArray(r.key_specs) ? r.key_specs : [],
     customers: Array.isArray(r.customers) ? r.customers : [],
+    tdsUrl: r.tds_url ?? null,
+    tdsSourceTitle: r.tds_source_title ?? null,
+    tdsScrapedAt: r.tds_scraped_at ?? null,
+    tdsScrapeStatus: (r.tds_scrape_status as MasterSpec["tdsScrapeStatus"]) ?? null,
+    tdsScrapeError: r.tds_scrape_error ?? null,
   };
 }
 
