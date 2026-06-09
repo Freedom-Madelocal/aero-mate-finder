@@ -260,6 +260,12 @@ export function preloadMasterSpecStore(): Promise<void> {
   return hydrate();
 }
 
+/** Force a refresh of the master spec store from the database. */
+export async function refreshMasterSpecStore(): Promise<void> {
+  _hydrated = false;
+  await hydrate();
+}
+
 /**
  * Upsert a batch of specs (keyed on vendor + product_name) and log the upload.
  *
