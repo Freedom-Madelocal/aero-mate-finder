@@ -155,6 +155,54 @@ export type Database = {
         }
         Relationships: []
       }
+      master_spec_scrape_jobs: {
+        Row: {
+          created_at: string
+          current_spec_id: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          processed: number
+          skipped: number
+          started_at: string
+          started_by: string | null
+          status: string
+          succeeded: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_spec_id?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          processed?: number
+          skipped?: number
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          succeeded?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_spec_id?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          processed?: number
+          skipped?: number
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          succeeded?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       master_spec_uploads: {
         Row: {
           created_at: string
@@ -222,6 +270,11 @@ export type Database = {
           resin_chemistry: string | null
           source_document: string | null
           t_peel_n_per_25mm: number | null
+          tds_scrape_error: string | null
+          tds_scrape_status: string | null
+          tds_scraped_at: string | null
+          tds_source_title: string | null
+          tds_url: string | null
           tensile_lap_shear_mpa: number | null
           tml_pct: number | null
           toughened: boolean
@@ -269,6 +322,11 @@ export type Database = {
           resin_chemistry?: string | null
           source_document?: string | null
           t_peel_n_per_25mm?: number | null
+          tds_scrape_error?: string | null
+          tds_scrape_status?: string | null
+          tds_scraped_at?: string | null
+          tds_source_title?: string | null
+          tds_url?: string | null
           tensile_lap_shear_mpa?: number | null
           tml_pct?: number | null
           toughened?: boolean
@@ -316,6 +374,11 @@ export type Database = {
           resin_chemistry?: string | null
           source_document?: string | null
           t_peel_n_per_25mm?: number | null
+          tds_scrape_error?: string | null
+          tds_scrape_status?: string | null
+          tds_scraped_at?: string | null
+          tds_source_title?: string | null
+          tds_url?: string | null
           tensile_lap_shear_mpa?: number | null
           tml_pct?: number | null
           toughened?: boolean
