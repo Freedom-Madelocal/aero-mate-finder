@@ -270,6 +270,9 @@ export type Database = {
           resin_chemistry: string | null
           source_document: string | null
           t_peel_n_per_25mm: number | null
+          tds_pdf_downloaded_at: string | null
+          tds_pdf_path: string | null
+          tds_pdf_size: number | null
           tds_scrape_error: string | null
           tds_scrape_status: string | null
           tds_scraped_at: string | null
@@ -322,6 +325,9 @@ export type Database = {
           resin_chemistry?: string | null
           source_document?: string | null
           t_peel_n_per_25mm?: number | null
+          tds_pdf_downloaded_at?: string | null
+          tds_pdf_path?: string | null
+          tds_pdf_size?: number | null
           tds_scrape_error?: string | null
           tds_scrape_status?: string | null
           tds_scraped_at?: string | null
@@ -374,6 +380,9 @@ export type Database = {
           resin_chemistry?: string | null
           source_document?: string | null
           t_peel_n_per_25mm?: number | null
+          tds_pdf_downloaded_at?: string | null
+          tds_pdf_path?: string | null
+          tds_pdf_size?: number | null
           tds_scrape_error?: string | null
           tds_scrape_status?: string | null
           tds_scraped_at?: string | null
