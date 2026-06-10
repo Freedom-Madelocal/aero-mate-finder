@@ -1,6 +1,49 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+
+const MAX_PDF_BYTES = 25 * 1024 * 1024; // 25 MB
+
+/**
+ * Best-effort download of a TDS PDF and upload to the private `tds-pdfs` bucket.
+ * Returns the stored object path and byte size, or null if the URL isn't a usable PDF.
+ */
+async function downloadAndStoreTdsPdf(
+  specId: string,
+  url: string,
+): Promise<{ path: string; size: number } | null> {
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; TraceiumTDSFetcher/1.0)",
+        Accept: "application/pdf,*/*;q=0.8",
+      },
+    });
+    if (!res.ok) return null;
+
+    const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
+    const looksLikePdfUrl = /\.pdf(\?|#|$)/i.test(url);
+    const looksLikePdfMime = contentType.includes("application/pdf") || contentType.includes("application/octet-stream");
+    if (!looksLikePdfMime && !looksLikePdfUrl) return null;
+
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (buf.byteLength === 0 || buf.byteLength > MAX_PDF_BYTES) return null;
+    // Magic-byte sanity check: %PDF
+    if (!(buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46)) return null;
+
+    const path = `${specId}.pdf`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("tds-pdfs")
+      .upload(path, buf, { contentType: "application/pdf", upsert: true });
+    if (upErr) return null;
+
+    return { path, size: buf.byteLength };
+  } catch {
+    return null;
+  }
+}
 
 const FieldsSchema = z.object({
   cure_temperature_f: z.number().nullable(),
@@ -176,13 +219,23 @@ export const scrapeSpec = createServerFn({ method: "POST" })
 
     try {
       const result = await callGemini(spec.vendor, spec.product_name);
+      const status = result.found && result.url ? "success" : "not_found";
       const patch: Record<string, unknown> = {
         tds_url: result.url,
         tds_source_title: result.source_title,
         tds_scraped_at: new Date().toISOString(),
-        tds_scrape_status: result.found && result.url ? "success" : "not_found",
+        tds_scrape_status: status,
         tds_scrape_error: null,
       };
+      let pdfStored: { path: string; size: number } | null = null;
+      if (status === "success" && result.url) {
+        pdfStored = await downloadAndStoreTdsPdf(data.specId, result.url);
+        if (pdfStored) {
+          patch.tds_pdf_path = pdfStored.path;
+          patch.tds_pdf_size = pdfStored.size;
+          patch.tds_pdf_downloaded_at = new Date().toISOString();
+        }
+      }
       const filled: string[] = [];
       for (const [field, col] of Object.entries(FIELD_TO_COLUMN) as [keyof ScrapeFields, string][]) {
         const v = result.fields[field];
@@ -204,6 +257,7 @@ export const scrapeSpec = createServerFn({ method: "POST" })
         url: result.url,
         sourceTitle: result.source_title,
         filled,
+        pdfStored: !!pdfStored,
       };
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
@@ -310,13 +364,22 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
             .update({ current_spec_id: row.id })
             .eq("id", data.jobId);
           const result = await callGemini(row.vendor, row.product_name);
+          const status = result.found && result.url ? "success" : "not_found";
           const patch: Record<string, unknown> = {
             tds_url: result.url,
             tds_source_title: result.source_title,
             tds_scraped_at: new Date().toISOString(),
-            tds_scrape_status: result.found && result.url ? "success" : "not_found",
+            tds_scrape_status: status,
             tds_scrape_error: null,
           };
+          if (status === "success" && result.url) {
+            const pdf = await downloadAndStoreTdsPdf(row.id, result.url);
+            if (pdf) {
+              patch.tds_pdf_path = pdf.path;
+              patch.tds_pdf_size = pdf.size;
+              patch.tds_pdf_downloaded_at = new Date().toISOString();
+            }
+          }
           // Need full spec for empty-check; refetch
           const { data: full } = await supabase
             .from("master_specs")
