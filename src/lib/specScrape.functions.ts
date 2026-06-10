@@ -257,6 +257,7 @@ export const scrapeSpec = createServerFn({ method: "POST" })
         url: result.url,
         sourceTitle: result.source_title,
         filled,
+        pdfStored: !!pdfStored,
       };
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
