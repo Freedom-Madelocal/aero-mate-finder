@@ -219,13 +219,23 @@ export const scrapeSpec = createServerFn({ method: "POST" })
 
     try {
       const result = await callGemini(spec.vendor, spec.product_name);
+      const status = result.found && result.url ? "success" : "not_found";
       const patch: Record<string, unknown> = {
         tds_url: result.url,
         tds_source_title: result.source_title,
         tds_scraped_at: new Date().toISOString(),
-        tds_scrape_status: result.found && result.url ? "success" : "not_found",
+        tds_scrape_status: status,
         tds_scrape_error: null,
       };
+      let pdfStored: { path: string; size: number } | null = null;
+      if (status === "success" && result.url) {
+        pdfStored = await downloadAndStoreTdsPdf(data.specId, result.url);
+        if (pdfStored) {
+          patch.tds_pdf_path = pdfStored.path;
+          patch.tds_pdf_size = pdfStored.size;
+          patch.tds_pdf_downloaded_at = new Date().toISOString();
+        }
+      }
       const filled: string[] = [];
       for (const [field, col] of Object.entries(FIELD_TO_COLUMN) as [keyof ScrapeFields, string][]) {
         const v = result.fields[field];
