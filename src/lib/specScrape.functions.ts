@@ -364,13 +364,22 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
             .update({ current_spec_id: row.id })
             .eq("id", data.jobId);
           const result = await callGemini(row.vendor, row.product_name);
+          const status = result.found && result.url ? "success" : "not_found";
           const patch: Record<string, unknown> = {
             tds_url: result.url,
             tds_source_title: result.source_title,
             tds_scraped_at: new Date().toISOString(),
-            tds_scrape_status: result.found && result.url ? "success" : "not_found",
+            tds_scrape_status: status,
             tds_scrape_error: null,
           };
+          if (status === "success" && result.url) {
+            const pdf = await downloadAndStoreTdsPdf(row.id, result.url);
+            if (pdf) {
+              patch.tds_pdf_path = pdf.path;
+              patch.tds_pdf_size = pdf.size;
+              patch.tds_pdf_downloaded_at = new Date().toISOString();
+            }
+          }
           // Need full spec for empty-check; refetch
           const { data: full } = await supabase
             .from("master_specs")
