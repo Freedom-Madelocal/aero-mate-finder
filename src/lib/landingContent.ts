@@ -5,44 +5,44 @@ export type LandingContent = Record<string, string>;
 
 export const DEFAULT_LANDING_CONTENT: LandingContent = {
   // Hero
-  hero_eyebrow: "Built for aerospace engineers & procurement",
-  hero_title_top: "Trace the data.",
-  hero_title_bottom: "Build the future.",
+  hero_eyebrow: "Material intelligence for aerospace teams",
+  hero_title_top: "Find qualified materials",
+  hero_title_bottom: "and prove compliance in seconds.",
   hero_body:
-    "Aerospace is the most complex supply chain on Earth. Today your team sees a sea of data through a straw. Traceium ingests every spec, cert, lot, and inventory record — and turns it into the answer an engineer or buyer actually needed.",
+    "Your engineers shouldn't lose a day to PDF archaeology. Your buyers shouldn't chase the same quotes every program. Your compliance team shouldn't dread the next audit. Traceium turns every spec, cert, lot, and vendor into one searchable system — so the answer takes seconds, not weeks.",
   hero_cta_primary: "Book a demo",
-  hero_cta_secondary: "See the platform",
-  hero_video_caption: "Live walkthrough — engineers narrowing 200+ specs to 3 in seconds.",
+  hero_cta_secondary: "See how it works",
+  hero_video_caption: "Live walkthrough — 200+ qualified specs narrowed to 3 in under 10 seconds.",
 
   // Problem
-  problem_eyebrow: "The problem",
-  problem_title: "You're drinking the ocean through a straw.",
+  problem_eyebrow: "Does this sound familiar?",
+  problem_title: "Hours disappear. Deadlines don't.",
   problem_body:
-    "An aerospace program touches thousands of qualified materials, each with a TDS, an SDS, a NASA outgassing report, a Tg curve, an out-life clock, an MOQ, a dozen vendor crossovers, and a lot history that lives in a binder, an inbox, and three different ERPs. Engineers guess. Buyers chase. Programs slip.",
+    "Aerospace teams waste an estimated 6–10 hours every week hunting qualified materials and proof of compliance — across PDFs, network shares, vendor emails, and the one person who still remembers where things live. Engineers guess. Buyers chase. Compliance scrambles. Programs slip.",
 
   // Platform
-  platform_eyebrow: "The platform",
-  platform_title: "One source of truth for every material in your program.",
+  platform_eyebrow: "The solution",
+  platform_title: "One searchable system for every material, cert, and vendor.",
   platform_body:
-    "Traceium ingests vendor TDS, internal qualification reports, NASA outgassing data, COAs, and your live inventory — and unifies them into a single, queryable model. Engineers search by what matters (cure temp, Tg, TML, chemistry, qualification). Procurement sees the aggregated demand and one-click reorders by vendor.",
+    "Traceium unifies vendor TDS, qualification reports, NASA outgassing data, COAs, lot history, and your live inventory into one queryable record per material. Engineers search by what matters. Procurement sees aggregated demand. Compliance pulls audit evidence in a click — no more inbox archaeology.",
 
   // Features (engineer)
   features_eyebrow: "For engineers",
-  features_title: "Find the right material in seconds, not days.",
+  features_title: "Find the right material in seconds — not a Tuesday afternoon.",
   features_body:
-    "Traceium's engineer workspace is built around the questions you actually ask: what's qualified for a 350°F autoclave cure with CVCM < 0.1? Filter by chemistry, form, cure window, Tg, outgassing, mechanical properties, and process compatibility. Click any result for the full datasheet, qualification evidence, and current stock — without leaving the page.",
+    "Stop guessing whether something is already qualified. Filter 200+ aerospace materials by chemistry, form, cure window, Tg, outgassing, FR, and mechanical properties. Every result links to the full datasheet, qualification evidence, and current stock — without leaving the page.",
 
   // Procurement
-  procurement_eyebrow: "For procurement",
-  procurement_title: "Stop chasing emails. Aggregate demand, then send.",
+  procurement_eyebrow: "For procurement & compliance",
+  procurement_title: "Cut procurement cycles from weeks to hours — and prove compliance on demand.",
   procurement_body:
-    "Every \"procure\" flag set by an engineer flows into a shared queue. Traceium groups items by vendor, looks up your saved contacts, and drafts a single email per supplier — so Henkel gets one message with three parts, not three messages from three engineers. Frequent reorders are starred and surface automatically.",
+    "Every \"procure\" flag set by engineering flows into a shared queue, grouped by vendor with your saved contacts. One email per supplier, not three. Every cert, COA, and qualification record stays attached to the spec — so when an auditor asks, the answer is one click, not one week.",
 
   // Demo
   demo_eyebrow: "30-minute working demo",
-  demo_title: "See Traceium against your own materials list.",
+  demo_title: "See Traceium against your real materials list.",
   demo_body:
-    "Bring a parts list, a spec sheet, or just a problem you keep solving by hand. We'll load it live and show you what an engineer-first material system feels like.",
+    "Bring a parts list, a spec sheet, or just the problem you keep solving by hand. In 30 minutes we'll show you the hours your team could be getting back — and what audit-ready compliance actually feels like.",
 };
 
 export const LANDING_SECTIONS: Array<{

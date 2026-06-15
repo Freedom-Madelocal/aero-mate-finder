@@ -128,7 +128,7 @@ export default function Landing() {
               </a>
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> NASA E595 outgassing</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> Audit-ready compliance evidence</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> AS9100-aligned lot traceability</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> Engineer-first search</span>
             </div>
@@ -183,16 +183,16 @@ export default function Landing() {
           <div className="mt-14 grid gap-4 md:grid-cols-3">
             {[
               {
-                t: "Engineers can't find what already qualified",
-                d: "Specs live in PDFs, network shares, and tribal knowledge. Picking the right adhesive for a 180°C cure with low CVCM means an afternoon of digging — or a phone call to the one person who knows.",
+                t: "Engineers lose afternoons to PDF hunts",
+                d: "You know the right material exists. Finding it means digging through PDFs, network shares, and a Slack to the one person who remembers — when the answer should take seconds.",
               },
               {
-                t: "Procurement reorders blind",
-                d: "Buyers re-request quotes from vendors every cycle, with no shared list of what engineering actually consumes, what's already on the shelf, or who the qualified second source is.",
+                t: "Procurement reorders blind, every program",
+                d: "Buyers re-request the same quotes cycle after cycle, with no shared view of what engineering actually consumes, what's already on the shelf, or who the qualified second source is.",
               },
               {
-                t: "Compliance lives in inboxes",
-                d: "COA, COC, NASA E595, flame retardancy, REACH, ITAR — every audit becomes an archaeology project across emails, drives, and printed binders.",
+                t: "Compliance is a scavenger hunt",
+                d: "COA, COC, NASA E595, flame retardancy, REACH, ITAR — every audit becomes archaeology across emails, drives, and printed binders. Until it isn't.",
               },
             ].map((x) => (
               <div key={x.t} className="rounded-xl border border-border/70 bg-card/60 p-6">
@@ -218,10 +218,10 @@ export default function Landing() {
               </p>
               <div className="mt-8 space-y-3">
                 {[
-                  "Engineer-first search across 200+ qualified specs",
-                  "Inventory + master spec linked automatically",
-                  "Compliance evidence attached to every product",
-                  "Procurement queue aggregated by vendor",
+                  "Engineer-first search across 200+ qualified specs — answers in seconds",
+                  "Inventory and master spec linked automatically — no double entry",
+                  "Compliance evidence attached to every product — audit-ready by default",
+                  "Procurement queue aggregated by vendor — one email, not ten",
                 ].map((b) => (
                   <div key={b} className="flex items-start gap-2 text-sm">
                     <ChevronRight className="mt-0.5 h-4 w-4 text-[var(--status-info)]" />
@@ -266,10 +266,10 @@ export default function Landing() {
               </p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
-                  ["Multi-axis filters", "Vendor, chemistry, form, cure, Tg, TML/CVCM, OOA, toughened, FR."],
-                  ["Side-by-side compare", "Stack candidate adhesives or prepregs by the properties that matter."],
-                  ["Compliance at a glance", "NASA E595, flame retardant, low-moisture surfaced on every row."],
-                  ["Procure flag", "Mark a material on the spot — your buyer sees it in the procurement queue."],
+                  ["Multi-axis filters", "Narrow 200+ specs to a shortlist in under 10 seconds."],
+                  ["Side-by-side compare", "Stack candidate adhesives or prepregs by the properties that actually matter."],
+                  ["Compliance at a glance", "NASA E595, FR, low-moisture, ITAR surfaced on every row — no extra clicks."],
+                  ["One-click procure", "Flag a material and your buyer sees it instantly — no email, no spreadsheet."],
                 ].map(([t, d]) => (
                   <li key={t} className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-compliant)]" />
@@ -360,10 +360,10 @@ export default function Landing() {
               </p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
-                  ["Aggregated by vendor", "One email per supplier, not one per engineer."],
-                  ["Vendor contact directory", "Maintain rep emails per vendor in one place."],
-                  ["Frequent reorder watchlist", "Star the materials that move every program."],
-                  ["Outreach log", "Every procurement send is timestamped and traceable."],
+                  ["Aggregated by vendor", "One email per supplier — save hours every procurement cycle."],
+                  ["Vendor contact directory", "Every rep, every vendor, in one place. No more inbox hunts."],
+                  ["Audit-ready compliance", "Every cert and COA stays attached to the spec — pull evidence in one click."],
+                  ["Outreach log", "Every send timestamped and traceable — for auditors and for you."],
                 ].map(([t, d]) => (
                   <li key={t} className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-compliant)]" />
@@ -381,10 +381,10 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14 sm:py-20">
           <div className="grid gap-8 md:grid-cols-4">
             {[
+              ["6–10 hrs", "Saved per engineer, per week"],
+              ["10x", "Faster spec selection than PDF hunting"],
+              ["1 click", "From auditor question to compliance evidence"],
               ["200+", "Aerospace specs catalogued at launch"],
-              ["10x", "Faster material selection vs. PDF hunting"],
-              ["1", "Email per vendor, not per engineer"],
-              ["100%", "Audit-ready compliance evidence"],
             ].map(([n, d]) => (
               <div key={d} className="rounded-xl border border-border/70 bg-card/60 p-6">
                 <div className="text-4xl font-semibold tracking-tight text-foreground">{n}</div>
