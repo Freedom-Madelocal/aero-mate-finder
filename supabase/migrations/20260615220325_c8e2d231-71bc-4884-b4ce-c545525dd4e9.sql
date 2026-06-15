@@ -1,0 +1,1 @@
+UPDATE public.site_settings SET content = '{}'::jsonb WHERE id = 'landing';
