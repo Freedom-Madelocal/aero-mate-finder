@@ -26,7 +26,12 @@ import {
   deleteDataSheet,
   autoAcceptHighConfidence,
   searchMasterSpecs,
+  listVendorsWithCounts,
 } from "@/lib/dataSheets.functions";
+
+const VENDOR_SEARCH_TEMPLATES: Record<string, string> = {
+  "3M": "https://technicaldatasheets.3m.com/?q={query}",
+};
 
 type Job = {
   id: string;
@@ -68,13 +73,22 @@ export default function DataSheetsAdminPage() {
   const deleteFn = useServerFn(deleteDataSheet);
   const autoFn = useServerFn(autoAcceptHighConfidence);
   const searchFn = useServerFn(searchMasterSpecs);
+  const vendorsFn = useServerFn(listVendorsWithCounts);
 
   const [showStart, setShowStart] = useState(false);
+  const [tab, setTab] = useState<"crawl" | "urls" | "search">("crawl");
   const [sourceUrl, setSourceUrl] = useState("");
   const [pdfList, setPdfList] = useState("");
   const [maxPages, setMaxPages] = useState(30);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+
+  // Search-mode state
+  const [searchVendor, setSearchVendor] = useState("3M");
+  const [searchTemplate, setSearchTemplate] = useState(VENDOR_SEARCH_TEMPLATES["3M"]);
+  const [productNumbersText, setProductNumbersText] = useState("");
+  const [useAllForVendor, setUseAllForVendor] = useState(false);
+  const [vendorList, setVendorList] = useState<{ vendor: string; total: number; missing: number }[]>([]);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [sheets, setSheets] = useState<Sheet[]>([]);
@@ -99,6 +113,12 @@ export default function DataSheetsAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeJobId]);
 
+  useEffect(() => {
+    if (!showStart || tab !== "search") return;
+    vendorsFn().then((v) => setVendorList(v as typeof vendorList)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showStart, tab]);
+
   const runJob = async (jobId: string) => {
     setProgressMsg("Running…");
     let keepGoing = true;
@@ -117,16 +137,32 @@ export default function DataSheetsAdminPage() {
     setStartError(null);
     setStarting(true);
     try {
-      const pdfUrls = pdfList
-        .split(/\s+|,/)
-        .map((s) => s.trim())
-        .filter((s) => /^https?:\/\//.test(s));
-      const r = await startFn({
-        data: { sourceUrl: sourceUrl.trim() || undefined, pdfUrls, maxPages },
-      });
+      let payload: Parameters<typeof startFn>[0]["data"];
+      if (tab === "search") {
+        const productNumbers = productNumbersText
+          .split(/\r?\n|,/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        payload = {
+          mode: "search",
+          vendor: searchVendor.trim(),
+          searchTemplate: searchTemplate.trim(),
+          productNumbers,
+          useAllForVendor,
+          maxPages,
+        };
+      } else {
+        const pdfUrls = pdfList
+          .split(/\s+|,/)
+          .map((s) => s.trim())
+          .filter((s) => /^https?:\/\//.test(s));
+        payload = { sourceUrl: sourceUrl.trim() || undefined, pdfUrls, maxPages };
+      }
+      const r = await startFn({ data: payload });
       setShowStart(false);
       setSourceUrl("");
       setPdfList("");
+      setProductNumbersText("");
       await reload();
       if (r.total > 0) runJob(r.jobId);
     } catch (e) {
@@ -345,7 +381,7 @@ export default function DataSheetsAdminPage() {
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Start a crawl</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Either paste a manufacturer landing/product URL to crawl, or a list of direct PDF URLs.
+                  Crawl a manufacturer site, paste direct PDF URLs, or search a vendor portal by product number.
                 </p>
               </div>
               <button
@@ -356,37 +392,120 @@ export default function DataSheetsAdminPage() {
               </button>
             </div>
 
-            <div>
-              <label className="text-xs text-muted-foreground">Source URL</label>
-              <input
-                type="url"
-                value={sourceUrl}
-                onChange={(e) => setSourceUrl(e.target.value)}
-                placeholder="https://www.henkel-adhesives.com/us/en/products/aerospace.html"
-                className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm"
-              />
+            <div className="flex border-b border-border -mx-6 px-6 gap-4 text-xs">
+              {(["crawl", "urls", "search"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`pb-2 -mb-px border-b-2 ${
+                    tab === t ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t === "crawl" ? "Crawl site" : t === "urls" ? "Direct PDF URLs" : "Search vendor site"}
+                </button>
+              ))}
             </div>
 
+            {tab === "crawl" && (
+              <div>
+                <label className="text-xs text-muted-foreground">Source URL</label>
+                <input
+                  type="url"
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="https://www.henkel-adhesives.com/us/en/products/aerospace.html"
+                  className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+
+            {tab === "urls" && (
+              <div>
+                <label className="text-xs text-muted-foreground">Direct PDF URLs (one per line)</label>
+                <textarea
+                  rows={5}
+                  value={pdfList}
+                  onChange={(e) => setPdfList(e.target.value)}
+                  placeholder={"https://example.com/sheet1.pdf\nhttps://example.com/sheet2.pdf"}
+                  className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono"
+                />
+              </div>
+            )}
+
+            {tab === "search" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Vendor</label>
+                  <input
+                    list="vendor-options"
+                    value={searchVendor}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setSearchVendor(v);
+                      if (VENDOR_SEARCH_TEMPLATES[v]) setSearchTemplate(VENDOR_SEARCH_TEMPLATES[v]);
+                    }}
+                    placeholder="3M"
+                    className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm"
+                  />
+                  <datalist id="vendor-options">
+                    {vendorList.map((v) => (
+                      <option key={v.vendor} value={v.vendor}>
+                        {v.missing} missing TDS of {v.total}
+                      </option>
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    Search URL template (must include <code>{"{query}"}</code>)
+                  </label>
+                  <input
+                    type="url"
+                    value={searchTemplate}
+                    onChange={(e) => setSearchTemplate(e.target.value)}
+                    placeholder="https://technicaldatasheets.3m.com/?q={query}"
+                    className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={useAllForVendor}
+                      onChange={(e) => setUseAllForVendor(e.target.checked)}
+                    />
+                    Use all master specs for this vendor missing a TDS
+                    {useAllForVendor && (
+                      <span className="text-muted-foreground">
+                        ({vendorList.find((v) => v.vendor.toLowerCase() === searchVendor.toLowerCase())?.missing ?? 0} items)
+                      </span>
+                    )}
+                  </label>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    {useAllForVendor ? "…plus extra product numbers (optional)" : "Product numbers (one per line)"}
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={productNumbersText}
+                    onChange={(e) => setProductNumbersText(e.target.value)}
+                    placeholder={"AC-130-2\nEC-2216 B/A\n..."}
+                    className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="text-xs text-muted-foreground">Max pages to scrape</label>
+              <label className="text-xs text-muted-foreground">Max items per job</label>
               <input
                 type="number"
                 min={1}
-                max={200}
+                max={500}
                 value={maxPages}
                 onChange={(e) => setMaxPages(parseInt(e.target.value || "30", 10))}
                 className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs text-muted-foreground">…or paste direct PDF URLs (one per line)</label>
-              <textarea
-                rows={4}
-                value={pdfList}
-                onChange={(e) => setPdfList(e.target.value)}
-                placeholder={"https://example.com/sheet1.pdf\nhttps://example.com/sheet2.pdf"}
-                className="w-full mt-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono"
               />
             </div>
 
@@ -395,6 +514,7 @@ export default function DataSheetsAdminPage() {
                 {startError}
               </p>
             )}
+
 
             <div className="flex gap-2">
               <button

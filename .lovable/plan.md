@@ -1,54 +1,63 @@
-# Rethink: PDS/TDS Data Sheet Library
+## Goal
 
-## Why the current tool is failing
+Add a third crawl mode to the Data Sheet Library that takes a **vendor search URL template + a list of product numbers** (or pulls them from existing `master_specs` rows filtered by vendor), submits each query, follows the top result(s) to the TDS/PDS PDF, and runs the existing extract → match → attach pipeline.
 
-Today's scrape lives on each master spec row and tries to do three things in one server call: Google-search the manufacturer site, fetch the page, ask Gemini to map fields, and (recently) download a PDF. Each step is fragile: Gemini's search-grounding often returns the wrong PDF, the row gets locked while it runs, and there's no way to review or re-match results. Failures look like "nothing happens".
+Works for 3M (`https://technicaldatasheets.3m.com/?q={query}`), Henkel, Momentive, Permatex, anything with a public search box.
 
-## Recommended approach
+## How it works
 
-Decouple **harvesting** from **matching**. Admin points at a manufacturer/distributor URL once; we crawl, store every TDS/PDS we find as a first-class record (PDF + extracted fields), then match those records to master specs. Engineers see the linked PDF + parsed specs on the material page.
+```text
+[vendor, product#] → Firecrawl search/scrape → top PDF link → download → Gemini extract → fuzzy-match → attach to master_spec
+```
 
-Three pieces:
+Two ways to drive it:
 
-1. **New table `data_sheets`** — one row per discovered TDS/PDS. Holds source URL, PDF storage path, document type (TDS/PDS/SDS), parsed product name + vendor, full extracted spec JSON, match status, and `master_spec_id` once linked.
-2. **New admin page `/admin/data-sheets`** — paste a root URL (e.g. a manufacturer's products page), choose crawl depth/limit, kick off a background job. Page shows: queued sources, discovered sheets with thumbnails/links, parsed fields, suggested master-spec match (with confidence), and Accept / Reject / Re-match controls. Bulk "Accept all high-confidence matches" button.
-3. **Background crawler** — uses **Firecrawl** (already a supported connector) to map the site, scrape each candidate page, and download the linked PDF. Then **Lovable AI Gateway (Gemini)** parses the PDF text into the same field schema as `master_specs`. Files go into the existing private `tds-pdfs` Supabase Storage bucket — no S3 needed (works the same, fewer moving parts, no extra secret to manage). If you specifically want S3 later we can swap the storage adapter.
+1. **Manual list** — admin picks vendor, pastes product numbers (one per line), and a search URL template containing `{query}`.
+2. **From existing specs** — admin picks a vendor; the crawler pulls every `master_specs` row for that vendor that has a `product_name`/SKU and no `tds_pdf_path` yet, and runs them as the input list. This is the "fill in the gaps for everything I already have" button.
 
-## Matching logic
+For each product number:
+- Render the search URL (`template.replace('{query}', encodeURIComponent(productNumber))`).
+- Use **Firecrawl `scrape`** with `formats: ['links', 'markdown']` on that search results page.
+- Pick the best candidate link: prefer `.pdf` URLs whose filename/text contains the product number; fall back to the first product-page link that contains the number, then scrape *that* page for a PDF link.
+- Download the PDF, store in `tds-pdfs` bucket, create a `data_sheets` row pre-linked to the originating `master_spec` (high confidence, since the query came from that spec) → status `auto` if confidence ≥ 0.85, else `suggested` for admin review.
 
-For each parsed sheet:
-- Normalize `vendor + product_name` and fuzzy-match against `master_specs` (trigram similarity on product_name within same vendor).
-- If similarity > 0.85 → auto-link (write `master_spec_id`, copy PDF path + extracted fields into the spec, only filling empty columns by default; admin can flip a switch to overwrite).
-- 0.6–0.85 → "suggested", needs one click.
-- < 0.6 → "unmatched"; admin can search & link manually, or mark "no match" (kept in library for future specs).
+## UI changes
 
-A master spec can have multiple linked data sheets (TDS + PDS + revision history). Engineer view shows the latest of each type with a download button and a "View parsed specs" diff.
+On `/admin/data-sheets`, the "Crawl a source" modal gets a third tab:
 
-## Engineer-facing change
+```text
+[ Crawl site ] [ Direct PDF URLs ] [ Search vendor site ]
+```
 
-On `/material/$id` (and the spec detail panel), add a "Data sheets" section listing each linked PDF (open / download), and merge parsed-but-empty fields into the displayed spec list with a small "from TDS" tag so they know the source.
+The new tab shows:
+- Vendor (dropdown of distinct `master_specs.vendor` values + free text)
+- Search URL template (with `{query}` placeholder, pre-filled for known vendors — 3M default: `https://technicaldatasheets.3m.com/?q={query}`)
+- Either: textarea of product numbers, OR a checkbox **"Use all master specs for this vendor missing a TDS"** with a live count
+- Max results per query (default 1)
 
-## Admin workflow (the outcome you described)
+A small `vendor_search_templates` JSON config in code seeds known vendors; admins can override per-job.
 
-1. Admin opens **Data Sheets** → "Add source URL" → pastes e.g. `https://www.henkel-adhesives.com/us/en/products/industrial-adhesives/aerospace.html`.
-2. Job runs (progress bar, cancelable, same pattern as current bulk scrape modal). Discovers ~N product pages, downloads N PDFs, parses each.
-3. Results table shows everything found. Admin clicks "Accept all high-confidence" → master specs get auto-filled and PDFs attached. Remaining ones reviewed manually in seconds each.
-4. Engineers immediately see the new specs + PDFs on each material.
+## Data model
 
-## Technical details
+No new tables. Add columns to `data_sheet_crawl_jobs`:
+- `crawl_mode` already exists — new value `search`
+- `search_template text` — the URL template used
+- `vendor text` — the vendor scope
 
-- **Crawl**: Firecrawl `map` (URL discovery, fast) → filter to PDF + product-page candidates → Firecrawl `scrape` with `formats: ['markdown','links']` per page → enqueue any PDF links found.
-- **PDF parse**: download PDF server-side, send bytes to Gemini via existing AI gateway with a strict JSON schema matching `master_specs` columns. Store both raw text and parsed JSON for re-parsing later without re-downloading.
-- **Storage**: `tds-pdfs` bucket already exists & is private. Path pattern: `data-sheets/{data_sheet_id}.pdf`. Signed URL on demand for download.
-- **Jobs table**: `data_sheet_crawl_jobs` (source_url, status, counts, error) — same shape as existing `master_spec_scrape_jobs`. Batch runner pattern reused from `runBulkScrapeBatch`.
-- **Schema additions** on `data_sheets`: `id, source_url, page_url, pdf_path, pdf_size, doc_type (tds|pds|sds|other), vendor, product_name, parsed_specs jsonb, raw_text, match_status (auto|suggested|manual|rejected|unmatched), master_spec_id (nullable FK), confidence numeric, created_at, updated_at`. RLS: admins only.
-- **Deprecate**: remove the per-row "Scrape" button and the bulk scrape modal once the new flow is in. Keep the existing `tds_pdf_path`/`tds_url` columns on `master_specs` (now populated by the matcher) so the engineer UI doesn't change shape.
+`data_sheets` already has `master_spec_id`; for search-mode rows we pre-fill it from the originating product number, so matching is essentially free.
 
-## Open questions before I build
+## Server-function changes (`src/lib/dataSheets.functions.ts` + `.server.ts`)
 
-1. Is **Supabase Storage** (already set up) fine, or do you specifically want **S3** for the PDFs? I'd recommend Storage — same signed-URL access, no extra connector.
-2. For auto-fill on match: **only fill empty fields** (safe default) or **overwrite** existing values? I'd default to "only fill empty" with a per-field "use scraped value" button.
-3. Should the crawler also pull **SDS** (safety data sheets) and **revision history**, or only TDS + PDS for now?
-4. Do you want the admin page to also accept **direct PDF URLs** (drop-in list of links) in addition to crawling a site root?
+- `startDataSheetCrawl` gains a new branch when `mode: 'search'` is passed. It expands product numbers (manual list or DB query for unfilled specs) into a `data_sheet_crawl_urls` queue, one row per `productNumber`, with the rendered search URL.
+- `runDataSheetCrawlBatch` handles the search case: scrape search page → pick PDF candidate → if HTML, scrape that page → download PDF → extract → upsert `data_sheets` with `master_spec_id` already set.
+- Reuse all existing extract / signed-URL / accept / reject logic unchanged.
 
-If you say "go", I'll build it with Supabase Storage, fill-empty-only, TDS+PDS, and both crawl-a-site + paste-PDF-list inputs.
+## Out of scope (call out)
+
+- Sites that require login or POST-only search forms. We rely on GET search URLs. If a vendor has no GET search endpoint, admin falls back to "Direct PDF URLs" mode.
+- CAPTCHA-gated search (rare for TDS portals; if hit, the row goes to `failed` with the captcha error and admin sees it in the jobs table).
+
+## Open questions
+
+1. For the default vendor list, do you want me to seed templates for **just 3M** for now, or include Henkel / Permatex / Momentive / Loctite up front?
+2. When "use all master specs missing a TDS" is checked, should it also re-run specs that already have a `tds_url` but no `tds_pdf_path` (i.e. we know the link but never downloaded the PDF)?

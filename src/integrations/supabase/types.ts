@@ -73,6 +73,7 @@ export type Database = {
           max_pages: number
           pending_urls: Json
           processed: number
+          search_template: string | null
           source_url: string
           status: string
           succeeded: number
@@ -89,6 +90,7 @@ export type Database = {
           max_pages?: number
           pending_urls?: Json
           processed?: number
+          search_template?: string | null
           source_url: string
           status?: string
           succeeded?: number
@@ -105,6 +107,7 @@ export type Database = {
           max_pages?: number
           pending_urls?: Json
           processed?: number
+          search_template?: string | null
           source_url?: string
           status?: string
           succeeded?: number
