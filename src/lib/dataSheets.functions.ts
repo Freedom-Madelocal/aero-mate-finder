@@ -177,6 +177,71 @@ export const runDataSheetCrawlBatch = createServerFn({ method: "POST" })
       try {
         const scraped = await firecrawlScrape(item.url);
         if (!scraped.isPdf) {
+          if (item.searchMode) {
+            // Search results page — pick the best candidate link(s).
+            const q = (item.productNumber ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            const candidatesLinks = scraped.links
+              .map((l) => ({ url: l, lower: l.toLowerCase() }))
+              .filter((l) => {
+                try {
+                  const u = new URL(l.url);
+                  // Stay roughly on-domain or follow PDF links anywhere
+                  return /\.pdf(\?|#|$)/i.test(l.url) || u.hostname === new URL(item.url).hostname;
+                } catch {
+                  return false;
+                }
+              });
+            const pdfMatches = candidatesLinks.filter((l) => /\.pdf(\?|#|$)/i.test(l.lower));
+            const scored = pdfMatches
+              .map((l) => {
+                const norm = l.lower.replace(/[^a-z0-9]/g, "");
+                const score = q && norm.includes(q) ? 2 : 1;
+                return { ...l, score };
+              })
+              .sort((a, b) => b.score - a.score);
+            let chosen: string[] = scored.slice(0, 2).map((s) => s.url);
+            if (chosen.length === 0) {
+              // Fall back to product-page links containing the number
+              const productPages = candidatesLinks
+                .filter((l) => !q || l.lower.replace(/[^a-z0-9]/g, "").includes(q))
+                .slice(0, 3)
+                .map((l) => l.url);
+              enqueued.push(
+                ...productPages.map((u) => ({
+                  url: u,
+                  vendorHint: item.vendorHint,
+                  pageUrl: scraped.sourceUrl,
+                  productNumber: item.productNumber,
+                  searchMode: false,
+                })),
+              );
+              if (productPages.length === 0) {
+                await supabaseAdmin.from("data_sheets").insert({
+                  job_id: data.jobId,
+                  source_url: job.source_url,
+                  pdf_url: item.url,
+                  doc_type: "other",
+                  match_status: "unmatched",
+                  parsed_specs: {} as never,
+                  vendor: item.vendorHint,
+                  product_name: item.productNumber ?? null,
+                  error: `No PDF or product link found for "${item.productNumber}"`,
+                });
+                failed++;
+              }
+              continue;
+            }
+            enqueued.push(
+              ...chosen.map((u) => ({
+                url: u,
+                vendorHint: item.vendorHint,
+                pageUrl: scraped.sourceUrl,
+                productNumber: item.productNumber,
+                searchMode: false,
+              })),
+            );
+            continue;
+          }
           // Enqueue PDF-looking links found on the page.
           const more = scraped.links
             .filter((l) => looksLikeDataSheetUrl(l))
