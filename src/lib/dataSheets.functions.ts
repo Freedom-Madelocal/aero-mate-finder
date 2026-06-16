@@ -270,8 +270,17 @@ export const runDataSheetCrawlBatch = createServerFn({ method: "POST" })
         }
 
         const vendor = fields.vendor ?? item.vendorHint;
-        const product = fields.product_name;
-        const match = bestMatch(vendor, product, candidates);
+        const product = fields.product_name ?? item.productNumber ?? null;
+        let match = bestMatch(vendor, product, candidates);
+        // If this came from a vendor search with a known product#, prefer that direct match.
+        if (item.productNumber && item.vendorHint) {
+          const direct = candidates.find(
+            (c) =>
+              c.vendor?.toLowerCase().includes(item.vendorHint!.toLowerCase()) &&
+              c.product_name?.toLowerCase() === item.productNumber!.toLowerCase(),
+          );
+          if (direct) match = { id: direct.id, confidence: 0.99 };
+        }
         let matchStatus: "auto" | "suggested" | "unmatched" = "unmatched";
         let masterSpecId: string | null = null;
         if (match) {
