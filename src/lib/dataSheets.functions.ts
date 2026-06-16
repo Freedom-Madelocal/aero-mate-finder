@@ -31,20 +31,66 @@ async function requireSuperAdmin(supabase: any, userId: string) {
 
 export const startDataSheetCrawl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { sourceUrl?: string; pdfUrls?: string[]; maxPages?: number }) => ({
+  .inputValidator((d: {
+    sourceUrl?: string;
+    pdfUrls?: string[];
+    maxPages?: number;
+    mode?: "crawl" | "urls" | "search";
+    vendor?: string;
+    searchTemplate?: string;
+    productNumbers?: string[];
+    useAllForVendor?: boolean;
+  }) => ({
     sourceUrl: d.sourceUrl?.trim() ?? "",
     pdfUrls: Array.isArray(d.pdfUrls) ? d.pdfUrls.map((u) => u.trim()).filter(Boolean) : [],
-    maxPages: Math.min(Math.max(d.maxPages ?? 50, 1), 200),
+    maxPages: Math.min(Math.max(d.maxPages ?? 50, 1), 500),
+    mode: d.mode,
+    vendor: d.vendor?.trim() ?? "",
+    searchTemplate: d.searchTemplate?.trim() ?? "",
+    productNumbers: Array.isArray(d.productNumbers)
+      ? d.productNumbers.map((s) => s.trim()).filter(Boolean)
+      : [],
+    useAllForVendor: !!d.useAllForVendor,
   }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await requireSuperAdmin(supabase, userId);
 
     let pending: CandidateUrl[] = [];
-    let mode: "crawl" | "urls" = "urls";
+    let mode: "crawl" | "urls" | "search" = "urls";
     let sourceUrl = data.sourceUrl;
 
-    if (data.pdfUrls.length > 0) {
+    const isSearchMode =
+      data.mode === "search" ||
+      (!!data.searchTemplate && (data.productNumbers.length > 0 || data.useAllForVendor));
+
+    if (isSearchMode) {
+      mode = "search";
+      if (!data.searchTemplate || !data.searchTemplate.includes("{query}")) {
+        throw new Error("Search template must contain {query}");
+      }
+      if (!data.vendor) throw new Error("Vendor is required for search mode");
+
+      let numbers = [...data.productNumbers];
+      if (data.useAllForVendor) {
+        const { data: specs } = await supabaseAdmin
+          .from("master_specs")
+          .select("product_name, tds_pdf_path")
+          .ilike("vendor", data.vendor);
+        for (const s of specs ?? []) {
+          if (s.product_name && !s.tds_pdf_path) numbers.push(s.product_name);
+        }
+      }
+      numbers = Array.from(new Set(numbers.map((n) => n.trim()).filter(Boolean)));
+      pending = numbers.slice(0, data.maxPages).map((n) => ({
+        url: data.searchTemplate.replace("{query}", encodeURIComponent(n)),
+        vendorHint: data.vendor,
+        pageUrl: null,
+        productNumber: n,
+        searchMode: true,
+      }));
+      sourceUrl = `search:${data.vendor}`;
+    } else if (data.pdfUrls.length > 0) {
       pending = data.pdfUrls.map((u) => ({ url: u, vendorHint: null, pageUrl: null }));
       sourceUrl = sourceUrl || data.pdfUrls[0];
       mode = "urls";
@@ -62,7 +108,7 @@ export const startDataSheetCrawl = createServerFn({ method: "POST" })
       })();
       pending = filtered.map((u) => ({ url: u, vendorHint, pageUrl: null }));
     } else {
-      throw new Error("Provide either a source URL to crawl or a list of PDF URLs.");
+      throw new Error("Provide either a source URL, PDF URLs, or a search template with product numbers.");
     }
 
     const total = pending.length;
@@ -75,6 +121,8 @@ export const startDataSheetCrawl = createServerFn({ method: "POST" })
         status: total === 0 ? "completed" : "running",
         total,
         pending_urls: pending as never,
+        vendor: data.vendor || null,
+        search_template: data.searchTemplate || null,
         created_by: userId,
       })
       .select("*")
