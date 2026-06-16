@@ -112,19 +112,20 @@ export const startDataSheetCrawl = createServerFn({ method: "POST" })
     }
 
     const total = pending.length;
+    const insertPayload: Record<string, unknown> = {
+      source_url: sourceUrl,
+      crawl_mode: mode,
+      max_pages: data.maxPages,
+      status: total === 0 ? "completed" : "running",
+      total,
+      pending_urls: pending,
+      vendor: data.vendor || null,
+      search_template: data.searchTemplate || null,
+      created_by: userId,
+    };
     const { data: job, error } = await supabaseAdmin
       .from("data_sheet_crawl_jobs")
-      .insert({
-        source_url: sourceUrl,
-        crawl_mode: mode,
-        max_pages: data.maxPages,
-        status: total === 0 ? "completed" : "running",
-        total,
-        pending_urls: pending as never,
-        vendor: data.vendor || null,
-        search_template: data.searchTemplate || null,
-        created_by: userId,
-      })
+      .insert(insertPayload as never)
       .select("*")
       .single();
     if (error || !job) throw new Error(error?.message ?? "Failed to start job");
