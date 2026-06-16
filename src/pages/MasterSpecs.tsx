@@ -7,6 +7,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import BulkScrapeModal from "@/components/BulkScrapeModal";
 import ScrapeSpecButton from "@/components/ScrapeSpecButton";
+import AttachedDataSheets from "@/components/AttachedDataSheets";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
