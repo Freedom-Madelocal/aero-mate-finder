@@ -11,6 +11,8 @@ export type CandidateUrl = {
   url: string;
   vendorHint: string | null;
   pageUrl: string | null;
+  productNumber?: string | null;
+  searchMode?: boolean;
 };
 
 function firecrawlKey(): string {
