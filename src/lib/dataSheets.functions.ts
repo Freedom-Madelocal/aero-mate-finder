@@ -605,3 +605,27 @@ export const searchMasterSpecs = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
+
+// -------- Vendor list & missing TDS count (for search-mode UI) --------
+
+export const listVendorsWithCounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireSuperAdmin(context.supabase, context.userId);
+    const { data, error } = await supabaseAdmin
+      .from("master_specs")
+      .select("vendor, tds_pdf_path");
+    if (error) throw new Error(error.message);
+    const map = new Map<string, { total: number; missing: number }>();
+    for (const r of data ?? []) {
+      const v = (r.vendor ?? "").trim();
+      if (!v) continue;
+      const entry = map.get(v) ?? { total: 0, missing: 0 };
+      entry.total++;
+      if (!r.tds_pdf_path) entry.missing++;
+      map.set(v, entry);
+    }
+    return Array.from(map.entries())
+      .map(([vendor, c]) => ({ vendor, ...c }))
+      .sort((a, b) => b.missing - a.missing);
+  });
