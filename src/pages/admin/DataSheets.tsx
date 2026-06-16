@@ -73,13 +73,22 @@ export default function DataSheetsAdminPage() {
   const deleteFn = useServerFn(deleteDataSheet);
   const autoFn = useServerFn(autoAcceptHighConfidence);
   const searchFn = useServerFn(searchMasterSpecs);
+  const vendorsFn = useServerFn(listVendorsWithCounts);
 
   const [showStart, setShowStart] = useState(false);
+  const [tab, setTab] = useState<"crawl" | "urls" | "search">("crawl");
   const [sourceUrl, setSourceUrl] = useState("");
   const [pdfList, setPdfList] = useState("");
   const [maxPages, setMaxPages] = useState(30);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+
+  // Search-mode state
+  const [searchVendor, setSearchVendor] = useState("3M");
+  const [searchTemplate, setSearchTemplate] = useState(VENDOR_SEARCH_TEMPLATES["3M"]);
+  const [productNumbersText, setProductNumbersText] = useState("");
+  const [useAllForVendor, setUseAllForVendor] = useState(false);
+  const [vendorList, setVendorList] = useState<{ vendor: string; total: number; missing: number }[]>([]);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [sheets, setSheets] = useState<Sheet[]>([]);
@@ -104,6 +113,12 @@ export default function DataSheetsAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeJobId]);
 
+  useEffect(() => {
+    if (!showStart || tab !== "search") return;
+    vendorsFn().then((v) => setVendorList(v as typeof vendorList)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showStart, tab]);
+
   const runJob = async (jobId: string) => {
     setProgressMsg("Running…");
     let keepGoing = true;
@@ -122,16 +137,32 @@ export default function DataSheetsAdminPage() {
     setStartError(null);
     setStarting(true);
     try {
-      const pdfUrls = pdfList
-        .split(/\s+|,/)
-        .map((s) => s.trim())
-        .filter((s) => /^https?:\/\//.test(s));
-      const r = await startFn({
-        data: { sourceUrl: sourceUrl.trim() || undefined, pdfUrls, maxPages },
-      });
+      let payload: Parameters<typeof startFn>[0]["data"];
+      if (tab === "search") {
+        const productNumbers = productNumbersText
+          .split(/\r?\n|,/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        payload = {
+          mode: "search",
+          vendor: searchVendor.trim(),
+          searchTemplate: searchTemplate.trim(),
+          productNumbers,
+          useAllForVendor,
+          maxPages,
+        };
+      } else {
+        const pdfUrls = pdfList
+          .split(/\s+|,/)
+          .map((s) => s.trim())
+          .filter((s) => /^https?:\/\//.test(s));
+        payload = { sourceUrl: sourceUrl.trim() || undefined, pdfUrls, maxPages };
+      }
+      const r = await startFn({ data: payload });
       setShowStart(false);
       setSourceUrl("");
       setPdfList("");
+      setProductNumbersText("");
       await reload();
       if (r.total > 0) runJob(r.jobId);
     } catch (e) {
