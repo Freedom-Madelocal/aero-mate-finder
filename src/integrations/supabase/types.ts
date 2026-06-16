@@ -62,6 +62,138 @@ export type Database = {
         }
         Relationships: []
       }
+      data_sheet_crawl_jobs: {
+        Row: {
+          crawl_mode: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          failed: number
+          id: string
+          max_pages: number
+          pending_urls: Json
+          processed: number
+          source_url: string
+          status: string
+          succeeded: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          crawl_mode?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          failed?: number
+          id?: string
+          max_pages?: number
+          pending_urls?: Json
+          processed?: number
+          source_url: string
+          status?: string
+          succeeded?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          crawl_mode?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          failed?: number
+          id?: string
+          max_pages?: number
+          pending_urls?: Json
+          processed?: number
+          source_url?: string
+          status?: string
+          succeeded?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      data_sheets: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          doc_type: string
+          error: string | null
+          id: string
+          job_id: string | null
+          master_spec_id: string | null
+          match_status: string
+          page_url: string | null
+          parsed_specs: Json
+          pdf_path: string | null
+          pdf_size: number | null
+          pdf_url: string | null
+          product_name: string | null
+          raw_text: string | null
+          source_url: string | null
+          title: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          doc_type?: string
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          master_spec_id?: string | null
+          match_status?: string
+          page_url?: string | null
+          parsed_specs?: Json
+          pdf_path?: string | null
+          pdf_size?: number | null
+          pdf_url?: string | null
+          product_name?: string | null
+          raw_text?: string | null
+          source_url?: string | null
+          title?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          doc_type?: string
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          master_spec_id?: string | null
+          match_status?: string
+          page_url?: string | null
+          parsed_specs?: Json
+          pdf_path?: string | null
+          pdf_size?: number | null
+          pdf_url?: string | null
+          product_name?: string | null
+          raw_text?: string | null
+          source_url?: string | null
+          title?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_sheets_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "data_sheet_crawl_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_sheets_master_spec_id_fkey"
+            columns: ["master_spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_requests: {
         Row: {
           company: string

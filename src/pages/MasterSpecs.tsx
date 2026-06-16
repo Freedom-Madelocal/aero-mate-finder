@@ -7,6 +7,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import BulkScrapeModal from "@/components/BulkScrapeModal";
 import ScrapeSpecButton from "@/components/ScrapeSpecButton";
+import AttachedDataSheets from "@/components/AttachedDataSheets";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
@@ -437,6 +438,8 @@ function SpecDrawer({
         </div>
 
         <div className="p-5 space-y-5">
+          <AttachedDataSheets specId={spec.id} />
+
           {spec.tdsScrapedAt && (
             <div className="rounded-lg border border-border bg-secondary/20 p-3">
               <div className="flex items-center justify-between gap-2">

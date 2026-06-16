@@ -24,6 +24,7 @@ import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
+import { Route as AdminDataSheetsRouteImport } from './routes/admin.data-sheets'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
 import { Route as AppSuppliersRouteImport } from './routes/_app.suppliers'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -112,6 +113,11 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
 const AdminMasterSpecsRoute = AdminMasterSpecsRouteImport.update({
   id: '/admin/master-specs',
   path: '/admin/master-specs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDataSheetsRoute = AdminDataSheetsRouteImport.update({
+  id: '/admin/data-sheets',
+  path: '/admin/data-sheets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCrmRoute = AdminCrmRouteImport.update({
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/suppliers'
     | '/admin/crm'
+    | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/users'
@@ -394,6 +406,7 @@ export interface RootRouteChildren {
   PiRoute: typeof PiRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminCrmRoute: typeof AdminCrmRoute
+  AdminDataSheetsRoute: typeof AdminDataSheetsRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -505,6 +518,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/master-specs'
       fullPath: '/admin/master-specs'
       preLoaderRoute: typeof AdminMasterSpecsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/data-sheets': {
+      id: '/admin/data-sheets'
+      path: '/admin/data-sheets'
+      fullPath: '/admin/data-sheets'
+      preLoaderRoute: typeof AdminDataSheetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/crm': {
@@ -674,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   PiRoute: PiRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminCrmRoute: AdminCrmRoute,
+  AdminDataSheetsRoute: AdminDataSheetsRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminUsersRoute: AdminUsersRoute,
