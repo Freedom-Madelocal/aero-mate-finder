@@ -35,7 +35,7 @@ export async function firecrawlMap(rootUrl: string, limit = 200): Promise<string
   });
   if (!res.ok) throw new Error(`Firecrawl map ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const json = await res.json();
-  const links: string[] = json?.links ?? json?.data?.links ?? [];
+  const links: unknown = json?.links ?? json?.data?.links ?? [];
   if (!Array.isArray(links)) return [];
   return links
     .map((l: unknown) => (typeof l === "string" ? l : (l as { url?: string })?.url ?? null))
