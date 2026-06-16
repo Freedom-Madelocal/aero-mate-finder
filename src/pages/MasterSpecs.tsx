@@ -438,6 +438,8 @@ function SpecDrawer({
         </div>
 
         <div className="p-5 space-y-5">
+          <AttachedDataSheets specId={spec.id} />
+
           {spec.tdsScrapedAt && (
             <div className="rounded-lg border border-border bg-secondary/20 p-3">
               <div className="flex items-center justify-between gap-2">
