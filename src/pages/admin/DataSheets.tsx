@@ -26,7 +26,12 @@ import {
   deleteDataSheet,
   autoAcceptHighConfidence,
   searchMasterSpecs,
+  listVendorsWithCounts,
 } from "@/lib/dataSheets.functions";
+
+const VENDOR_SEARCH_TEMPLATES: Record<string, string> = {
+  "3M": "https://technicaldatasheets.3m.com/?q={query}",
+};
 
 type Job = {
   id: string;
