@@ -331,7 +331,7 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
     const { data: batch, error: bErr } = await supabase
       .from("master_specs")
       .select("id, vendor, product_name")
-      .is("tds_scraped_at", null)
+      .is("tds_pdf_path", null)
       .order("vendor")
       .order("product_name")
       .limit(BATCH_SIZE);
