@@ -273,7 +273,7 @@ export const scrapeSpec = createServerFn({ method: "POST" })
     }
   });
 
-/** Start a bulk job for every spec where tds_scraped_at IS NULL. */
+/** Start a bulk job for every spec that doesn't yet have a stored TDS PDF. */
 export const startBulkScrape = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -283,7 +283,7 @@ export const startBulkScrape = createServerFn({ method: "POST" })
     const { count, error: cErr } = await supabase
       .from("master_specs")
       .select("id", { count: "exact", head: true })
-      .is("tds_scraped_at", null);
+      .is("tds_pdf_path", null);
     if (cErr) throw new Error(cErr.message);
 
     const { data: job, error: jErr } = await supabase
