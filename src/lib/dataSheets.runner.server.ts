@@ -166,11 +166,53 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
       attemptedUrl: item.url,
     };
 
-    // -------- Seed page: firecrawlMap then enqueue filtered candidates --------
+    // -------- Seed page: agent-crawl (interactive) or firecrawlMap --------
     if (item.seed) {
+      const { hasAgent, runAgentForSeed } = await import("@/lib/vendorAgents.server");
+      if (hasAgent(item.url) && item.vendorHint) {
+        try {
+          // For agent seeds, productFilterTokens carries the raw product NAMES
+          // (the orchestrator passes them through unchanged for agents).
+          const productNames = (item.productFilterTokens ?? []).map((s) => String(s));
+          const kept = await runAgentForSeed(
+            item.url,
+            item.vendorHint,
+            productNames,
+            async (entry) => {
+              await logScrape({
+                ...logBase,
+                step: "search",
+                status: entry.status,
+                attemptedUrl: entry.attemptedUrl ?? item.url,
+                errorMessage: entry.errorMessage ?? null,
+                details: entry.details ?? null,
+              });
+            },
+          );
+          enqueued.push(...kept);
+          await logScrape({
+            ...logBase,
+            step: "search",
+            status: kept.length > 0 ? "success" : "not_found",
+            errorMessage: `Agent finished for seed; enqueued ${kept.length} candidate(s)`,
+            details: { keptCount: kept.length, productCount: productNames.length },
+          });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          await logScrape({
+            ...logBase,
+            step: "search",
+            status: "failed",
+            errorMessage: `Agent seed failed: ${msg}`,
+          });
+        }
+        continue;
+      }
       try {
         const mapped = await firecrawlMap(item.url, 500);
-        const tokens = item.productFilterTokens ?? [];
+        const tokens = (item.productFilterTokens ?? []).map((t) =>
+          String(t).toLowerCase().replace(/[^a-z0-9]/g, ""),
+        );
         const kept: string[] = [];
         for (const link of mapped) {
           const lower = link.toLowerCase();
@@ -199,7 +241,6 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
               : `Seed mapped ${mapped.length} link(s); none matched TDS/PDS patterns or product tokens`,
           details: { mappedCount: mapped.length, keptCount: kept.length, tokenCount: tokens.length },
         });
-        // Don't count seeds toward succeeded/failed — they're discovery, not results.
         continue;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
