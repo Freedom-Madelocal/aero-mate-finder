@@ -29,10 +29,6 @@ async function isSuperAdmin(supabase: any, userId: string) {
   if (!data) throw new Response("Forbidden: super admin required", { status: 403 });
 }
 
-/** Alphanumeric-lowercase tokenizer used to filter mapped links by product name. */
-function tokenize(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
 
 /** Build initial pending_urls: one `seed` entry per curated vendor source page.
  *  productFilterTokens carries the RAW product names — the runner tokenizes
