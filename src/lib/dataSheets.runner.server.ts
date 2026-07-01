@@ -213,8 +213,9 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
       }
     }
 
-
+    try {
       const scraped = await firecrawlScrape(item.url);
+
       if (!scraped.isPdf) {
         if (item.searchMode) {
           const q = (item.productNumber ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
