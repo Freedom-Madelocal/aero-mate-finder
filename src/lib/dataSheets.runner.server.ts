@@ -154,6 +154,13 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
 
   for (const item of batch) {
     lastLabel = item.productNumber ?? item.url;
+    const logBase = {
+      childJobId: jobId,
+      vendor: item.vendorHint,
+      productName: item.productNumber ?? null,
+      sourceUrl: item.pageUrl ?? job.source_url,
+      attemptedUrl: item.url,
+    };
     try {
       const scraped = await firecrawlScrape(item.url);
       if (!scraped.isPdf) {
@@ -204,10 +211,32 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
                 product_name: item.productNumber ?? null,
                 error: `No PDF or product link found for "${item.productNumber}"`,
               });
+              await logScrape({
+                ...logBase,
+                step: "search",
+                status: "not_found",
+                errorMessage: `No PDF or product link found for "${item.productNumber}"`,
+                details: { totalLinksOnPage: scraped.links.length, sameHostLinks: candidatesLinks.length },
+              });
               failed++;
+            } else {
+              await logScrape({
+                ...logBase,
+                step: "search",
+                status: "info",
+                errorMessage: `No direct PDF; enqueued ${productPages.length} product page(s) for follow-up`,
+                details: { productPages },
+              });
             }
             continue;
           }
+          await logScrape({
+            ...logBase,
+            step: "search",
+            status: "success",
+            errorMessage: `Found ${chosen.length} PDF candidate(s); enqueued for download`,
+            details: { chosen, totalPdfsOnPage: pdfMatches.length },
+          });
           enqueued.push(
             ...chosen.map((u) => ({
               url: u,
@@ -224,6 +253,16 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
           .slice(0, 20)
           .map((u) => ({ url: u, vendorHint: item.vendorHint, pageUrl: scraped.sourceUrl }));
         enqueued.push(...more);
+        await logScrape({
+          ...logBase,
+          step: "scrape",
+          status: more.length > 0 ? "info" : "not_found",
+          errorMessage:
+            more.length > 0
+              ? `Page returned HTML (not PDF); enqueued ${more.length} data-sheet-looking link(s)`
+              : `Page returned HTML with no data-sheet links`,
+          details: { enqueuedCount: more.length },
+        });
         failed++;
         continue;
       }
@@ -241,7 +280,27 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
         if (!upErr) {
           pdfPath = path;
           pdfSize = bytes.byteLength;
+          await logScrape({
+            ...logBase,
+            step: "download_pdf",
+            status: "success",
+            details: { bytes: bytes.byteLength, path },
+          });
+        } else {
+          await logScrape({
+            ...logBase,
+            step: "download_pdf",
+            status: "failed",
+            errorMessage: `Storage upload failed: ${upErr.message}`,
+          });
         }
+      } else {
+        await logScrape({
+          ...logBase,
+          step: "download_pdf",
+          status: "failed",
+          errorMessage: "PDF fetch returned empty/invalid bytes (not a %PDF file, over 25 MB, or HTTP error)",
+        });
       }
 
       const vendor = fields.vendor ?? item.vendorHint;
@@ -287,11 +346,38 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
       });
       if (insErr) throw new Error(insErr.message);
 
+      await logScrape({
+        ...logBase,
+        masterSpecId,
+        dataSheetId: sheetId,
+        step: "match",
+        status: matchStatus === "unmatched" ? "not_found" : "success",
+        errorMessage:
+          matchStatus === "unmatched"
+            ? `No master spec matched (best confidence ${(match?.confidence ?? 0).toFixed(2)})`
+            : `Matched ${matchStatus} at confidence ${(match?.confidence ?? 0).toFixed(2)}`,
+        details: {
+          matchStatus,
+          confidence: match?.confidence ?? null,
+          extractedVendor: vendor,
+          extractedProduct: product,
+        },
+      });
+
       if (matchStatus === "auto" && masterSpecId) {
         await applySheetToSpec(masterSpecId, sheetId, false);
+        await logScrape({
+          ...logBase,
+          masterSpecId,
+          dataSheetId: sheetId,
+          step: "apply",
+          status: "success",
+          errorMessage: `Applied sheet fields + PDF pointer to master spec`,
+        });
       }
       succeeded++;
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       await supabaseAdmin.from("data_sheets").insert({
         job_id: jobId,
         source_url: job.source_url,
@@ -299,11 +385,18 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
         doc_type: "other",
         match_status: "unmatched",
         parsed_specs: {} as never,
-        error: (e instanceof Error ? e.message : String(e)).slice(0, 500),
+        error: msg.slice(0, 500),
+      });
+      await logScrape({
+        ...logBase,
+        step: "scrape",
+        status: "failed",
+        errorMessage: msg,
       });
       failed++;
     }
   }
+
 
   const newPending = [...rest, ...enqueued];
   const newProcessed = (job.processed as number) + batch.length;
