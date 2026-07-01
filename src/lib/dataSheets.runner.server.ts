@@ -6,6 +6,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   firecrawlScrape,
+  firecrawlMap,
   downloadPdf,
   extractFromMarkdown,
   looksLikeDataSheetUrl,
@@ -14,6 +15,9 @@ import {
   type CandidateUrl,
   type SpecCandidate,
 } from "@/lib/dataSheets.server";
+
+const MAX_PER_SEED = 60; // hard cap on candidates enqueued from one seed page
+
 
 export const BATCH_SIZE = 3;
 export const AUTO_MATCH_THRESHOLD = 0.85;
