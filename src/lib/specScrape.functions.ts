@@ -1,191 +1,24 @@
+// Orchestrates the "Scrape TDS/PDS" header button and the per-row "Scrape TDS"
+// button through the Firecrawl-backed Data Sheets pipeline (vendor search mode).
+//
+// Everything hits the same code path that /admin/data-sheets uses:
+//   1. Group specs missing a stored PDF by vendor.
+//   2. For each vendor, spawn a `data_sheet_crawl_jobs` row in search mode.
+//   3. Drain those child jobs batch-by-batch; every discovered PDF is stored,
+//      parsed, and auto-applied to the matching master spec when confidence is high.
+//
+// The legacy Gemini-URL-guessing path has been removed.
+
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { z } from "zod";
+import { runOneCrawlBatch } from "@/lib/dataSheets.runner.server";
+import { templateForVendor } from "@/lib/vendorSearchTemplates";
+import type { CandidateUrl } from "@/lib/dataSheets.server";
 
-const MAX_PDF_BYTES = 25 * 1024 * 1024; // 25 MB
+const PER_VENDOR_LIMIT = 200; // hard cap on product numbers per child crawl
 
-/**
- * Best-effort download of a TDS PDF and upload to the private `tds-pdfs` bucket.
- * Returns the stored object path and byte size, or null if the URL isn't a usable PDF.
- */
-async function downloadAndStoreTdsPdf(
-  specId: string,
-  url: string,
-): Promise<{ path: string; size: number } | null> {
-  try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; TraceiumTDSFetcher/1.0)",
-        Accept: "application/pdf,*/*;q=0.8",
-      },
-    });
-    if (!res.ok) return null;
-
-    const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
-    const looksLikePdfUrl = /\.pdf(\?|#|$)/i.test(url);
-    const looksLikePdfMime = contentType.includes("application/pdf") || contentType.includes("application/octet-stream");
-    if (!looksLikePdfMime && !looksLikePdfUrl) return null;
-
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.byteLength === 0 || buf.byteLength > MAX_PDF_BYTES) return null;
-    // Magic-byte sanity check: %PDF
-    if (!(buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46)) return null;
-
-    const path = `${specId}.pdf`;
-    const { error: upErr } = await supabaseAdmin.storage
-      .from("tds-pdfs")
-      .upload(path, buf, { contentType: "application/pdf", upsert: true });
-    if (upErr) return null;
-
-    return { path, size: buf.byteLength };
-  } catch {
-    return null;
-  }
-}
-
-const FieldsSchema = z.object({
-  cure_temperature_f: z.number().nullable(),
-  cure_time: z.string().nullable(),
-  dry_tg_onset_f: z.number().nullable(),
-  wet_tg_f: z.number().nullable(),
-  peak_tg_f: z.number().nullable(),
-  max_service_temperature_f: z.number().nullable(),
-  out_life_days: z.number().nullable(),
-  freezer_life_months: z.number().nullable(),
-  tml_pct: z.number().nullable(),
-  cvcm_pct: z.number().nullable(),
-  tensile_lap_shear_mpa: z.number().nullable(),
-  t_peel_n_per_25mm: z.number().nullable(),
-  flatwise_tension_mpa: z.number().nullable(),
-  climbing_drum_peel_in_lb_per_in: z.number().nullable(),
-  process_method: z.string().nullable(),
-  resin_chemistry: z.string().nullable(),
-  reinforcement: z.string().nullable(),
-  product_form: z.string().nullable(),
-  applications: z.string().nullable(),
-  qualifications_standards: z.string().nullable(),
-});
-
-const ScrapeResponseSchema = z.object({
-  url: z.string().nullable(),
-  source_title: z.string().nullable(),
-  found: z.boolean(),
-  notes: z.string().nullable(),
-  fields: FieldsSchema,
-});
-
-type ScrapeFields = z.infer<typeof FieldsSchema>;
-
-// Field name in scrape response -> column name in master_specs
-const FIELD_TO_COLUMN: Record<keyof ScrapeFields, string> = {
-  cure_temperature_f: "cure_temperature_c",
-  cure_time: "cure_time",
-  dry_tg_onset_f: "dry_tg_onset_c",
-  wet_tg_f: "wet_tg_c",
-  peak_tg_f: "peak_tg_c",
-  max_service_temperature_f: "max_service_temperature_c",
-  out_life_days: "out_life_days",
-  freezer_life_months: "freezer_life_months",
-  tml_pct: "tml_pct",
-  cvcm_pct: "cvcm_pct",
-  tensile_lap_shear_mpa: "tensile_lap_shear_mpa",
-  t_peel_n_per_25mm: "t_peel_n_per_25mm",
-  flatwise_tension_mpa: "flatwise_tension_mpa",
-  climbing_drum_peel_in_lb_per_in: "climbing_drum_peel_in_lb_per_in",
-  process_method: "process_method",
-  resin_chemistry: "resin_chemistry",
-  reinforcement: "reinforcement",
-  product_form: "product_form",
-  applications: "applications",
-  qualifications_standards: "qualifications_standards",
-};
-
-async function callGemini(vendor: string, productName: string) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-  const prompt = `You are helping populate a materials database with information from manufacturer Technical Data Sheets (TDS) or Product Data Sheets (PDS).
-
-Find the official publicly accessible TDS or PDS for this material:
-- Vendor / manufacturer: ${vendor}
-- Product name: ${productName}
-
-Search the manufacturer's official website. The result is the kind of page or PDF an engineer would find by Googling "${vendor} ${productName} TDS".
-
-Return STRICT JSON matching this schema:
-{
-  "found": boolean,
-  "url": string | null,         // direct URL to the TDS/PDS PDF or product page
-  "source_title": string | null, // short title of the source page or document
-  "notes": string | null,        // brief note if not found or partial
-  "fields": {
-    "cure_temperature_f": number | null,          // FAHRENHEIT
-    "cure_time": string | null,
-    "dry_tg_onset_f": number | null,              // FAHRENHEIT
-    "wet_tg_f": number | null,                    // FAHRENHEIT
-    "peak_tg_f": number | null,                   // FAHRENHEIT
-    "max_service_temperature_f": number | null,   // FAHRENHEIT
-    "out_life_days": number | null,
-    "freezer_life_months": number | null,
-    "tml_pct": number | null,
-    "cvcm_pct": number | null,
-    "tensile_lap_shear_mpa": number | null,
-    "t_peel_n_per_25mm": number | null,
-    "flatwise_tension_mpa": number | null,
-    "climbing_drum_peel_in_lb_per_in": number | null,
-    "process_method": string | null,
-    "resin_chemistry": string | null,
-    "reinforcement": string | null,
-    "product_form": string | null,
-    "applications": string | null,
-    "qualifications_standards": string | null
-  }
-}
-
-CRITICAL RULES:
-- ALL temperatures MUST be in degrees Fahrenheit. If the data sheet only gives Celsius, convert: F = C * 9/5 + 32.
-- Use null for any field not explicitly stated on the data sheet. Do NOT guess.
-- Only return URLs you have high confidence are real and publicly accessible.
-- Output ONLY the JSON object, no markdown fences, no commentary.`;
-
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": key,
-      "X-Lovable-AIG-SDK": "lovable-app",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: "You are a precise aerospace materials data extraction assistant. Always return strict JSON only." },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`AI gateway ${res.status}: ${body.slice(0, 300)}`);
-  }
-
-  const json = await res.json();
-  const text: string = json?.choices?.[0]?.message?.content ?? "";
-  let parsed: unknown;
-  try {
-    // Strip possible markdown fences just in case
-    const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error(`Model did not return JSON: ${text.slice(0, 200)}`);
-  }
-  return ScrapeResponseSchema.parse(parsed);
-}
-
-async function isSuperAdmin(supabase: ReturnType<typeof createServerFn> extends never ? never : any, userId: string) {
+async function isSuperAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
@@ -196,10 +29,47 @@ async function isSuperAdmin(supabase: ReturnType<typeof createServerFn> extends 
   if (!data) throw new Response("Forbidden: super admin required", { status: 403 });
 }
 
-/**
- * Scrape one master spec. force=true overwrites existing field values;
- * force=false (bulk default) only fills empty/null fields.
- */
+/** Build the initial pending_urls array for a vendor's search-mode child job. */
+function buildSearchPending(vendor: string, products: string[]): CandidateUrl[] {
+  const template = templateForVendor(vendor);
+  const uniq = Array.from(new Set(products.map((p) => p.trim()).filter(Boolean))).slice(
+    0,
+    PER_VENDOR_LIMIT,
+  );
+  return uniq.map((p) => ({
+    url: template.replace("{query}", encodeURIComponent(p)),
+    vendorHint: vendor,
+    pageUrl: null,
+    productNumber: p,
+    searchMode: true,
+  }));
+}
+
+/** Create one child crawl job for a vendor's products. Returns the job id + total pending. */
+async function createVendorChildJob(vendor: string, products: string[], userId: string) {
+  const pending = buildSearchPending(vendor, products);
+  if (pending.length === 0) return null;
+  const { data: job, error } = await supabaseAdmin
+    .from("data_sheet_crawl_jobs")
+    .insert({
+      source_url: `search:${vendor}`,
+      crawl_mode: "search",
+      max_pages: pending.length,
+      status: "running",
+      total: pending.length,
+      pending_urls: pending as never,
+      vendor,
+      search_template: templateForVendor(vendor),
+      created_by: userId,
+    })
+    .select("id, total")
+    .single();
+  if (error || !job) throw new Error(error?.message ?? "Failed to create child crawl job");
+  return { id: job.id as string, total: job.total as number };
+}
+
+// -------- Single-spec scrape (per-row "Scrape TDS" button) --------
+
 export const scrapeSpec = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { specId: string; force?: boolean }) => ({
@@ -212,95 +82,117 @@ export const scrapeSpec = createServerFn({ method: "POST" })
 
     const { data: spec, error: specErr } = await supabase
       .from("master_specs")
-      .select("*")
+      .select("id, vendor, product_name, tds_pdf_path")
       .eq("id", data.specId)
       .maybeSingle();
     if (specErr || !spec) throw new Response("Spec not found", { status: 404 });
-
-    try {
-      const result = await callGemini(spec.vendor, spec.product_name);
-      const status = result.found && result.url ? "success" : "not_found";
-      const patch: Record<string, unknown> = {
-        tds_url: result.url,
-        tds_source_title: result.source_title,
-        tds_scraped_at: new Date().toISOString(),
-        tds_scrape_status: status,
-        tds_scrape_error: null,
-      };
-      let pdfStored: { path: string; size: number } | null = null;
-      if (status === "success" && result.url) {
-        pdfStored = await downloadAndStoreTdsPdf(data.specId, result.url);
-        if (pdfStored) {
-          patch.tds_pdf_path = pdfStored.path;
-          patch.tds_pdf_size = pdfStored.size;
-          patch.tds_pdf_downloaded_at = new Date().toISOString();
-        }
-      }
-      const filled: string[] = [];
-      for (const [field, col] of Object.entries(FIELD_TO_COLUMN) as [keyof ScrapeFields, string][]) {
-        const v = result.fields[field];
-        if (v === null || v === undefined || v === "") continue;
-        const existing = (spec as Record<string, unknown>)[col];
-        const isEmpty = existing === null || existing === undefined || existing === "";
-        if (data.force || isEmpty) {
-          patch[col] = v;
-          filled.push(col);
-        }
-      }
-      const { error: updErr } = await supabase
-        .from("master_specs")
-        .update(patch as never)
-        .eq("id", data.specId);
-      if (updErr) throw new Error(updErr.message);
-      return {
-        status: patch.tds_scrape_status as string,
-        url: result.url,
-        sourceTitle: result.source_title,
-        filled,
-        pdfStored: !!pdfStored,
-      };
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      await supabase
-        .from("master_specs")
-        .update({
-          tds_scraped_at: new Date().toISOString(),
-          tds_scrape_status: "failed",
-          tds_scrape_error: message.slice(0, 500),
-        })
-        .eq("id", data.specId);
-      return { status: "failed" as const, url: null, sourceTitle: null, filled: [], error: message };
+    if (!spec.vendor || !spec.product_name) {
+      return { status: "failed" as const, url: null, sourceTitle: null, error: "Missing vendor or product name" };
     }
+
+    // Spawn a one-item search-mode child job and drain it here so the UI can
+    // await a definitive result.
+    const child = await createVendorChildJob(spec.vendor, [spec.product_name], userId);
+    if (!child) {
+      return { status: "not_found" as const, url: null, sourceTitle: null };
+    }
+
+    // Drain (search-mode child can re-enqueue PDF links, so loop until done or safety cap).
+    for (let i = 0; i < 20; i++) {
+      const r = await runOneCrawlBatch(child.id);
+      if (r.status !== "running" || r.remaining === 0) break;
+    }
+
+    // Did we produce a sheet matched to this spec?
+    const { data: sheet } = await supabaseAdmin
+      .from("data_sheets")
+      .select("id, pdf_url, title, match_status")
+      .eq("job_id", child.id)
+      .in("match_status", ["auto", "suggested", "manual"])
+      .eq("master_spec_id", data.specId)
+      .order("confidence", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (sheet?.pdf_url) {
+      return {
+        status: "success" as const,
+        url: sheet.pdf_url,
+        sourceTitle: sheet.title,
+      };
+    }
+
+    // Fall back: any sheet at all (even unmatched) means we found *something*.
+    const { data: anySheet } = await supabaseAdmin
+      .from("data_sheets")
+      .select("id, pdf_url, title, error")
+      .eq("job_id", child.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (anySheet?.pdf_url && !anySheet.error) {
+      return {
+        status: "success" as const,
+        url: anySheet.pdf_url,
+        sourceTitle: anySheet.title,
+      };
+    }
+
+    return { status: "not_found" as const, url: null, sourceTitle: null };
   });
 
-/** Start a bulk job for every spec that doesn't yet have a stored TDS PDF. */
+// -------- Bulk scrape (header "Scrape TDS/PDS" button) --------
+
 export const startBulkScrape = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     await isSuperAdmin(supabase, userId);
 
-    const { count, error: cErr } = await supabase
+    // Every spec still missing a stored PDF, grouped by vendor.
+    const { data: rows, error: rErr } = await supabaseAdmin
       .from("master_specs")
-      .select("id", { count: "exact", head: true })
+      .select("vendor, product_name")
       .is("tds_pdf_path", null);
-    if (cErr) throw new Error(cErr.message);
+    if (rErr) throw new Error(rErr.message);
 
-    const { data: job, error: jErr } = await supabase
+    const byVendor = new Map<string, string[]>();
+    for (const r of rows ?? []) {
+      const v = (r.vendor ?? "").trim();
+      const p = (r.product_name ?? "").trim();
+      if (!v || !p) continue;
+      if (!byVendor.has(v)) byVendor.set(v, []);
+      byVendor.get(v)!.push(p);
+    }
+
+    const childIds: string[] = [];
+    let total = 0;
+    for (const [vendor, products] of byVendor.entries()) {
+      const child = await createVendorChildJob(vendor, products, userId);
+      if (child) {
+        childIds.push(child.id);
+        total += child.total;
+      }
+    }
+
+    const status = total === 0 ? "completed" : "running";
+    const { data: job, error: jErr } = await supabaseAdmin
       .from("master_spec_scrape_jobs")
       .insert({
         started_by: userId,
-        total: count ?? 0,
-        status: (count ?? 0) === 0 ? "completed" : "running",
-        finished_at: (count ?? 0) === 0 ? new Date().toISOString() : null,
+        total,
+        status,
+        mode: "firecrawl",
+        child_job_ids: childIds as never,
+        finished_at: status === "completed" ? new Date().toISOString() : null,
       })
-      .select("*")
+      .select("id, total, status")
       .single();
-    if (jErr || !job) throw new Error(jErr?.message ?? "Failed to create job");
+    if (jErr || !job) throw new Error(jErr?.message ?? "Failed to create bulk job");
+
     return { jobId: job.id as string, total: job.total as number, status: job.status as string };
   });
-
-const BATCH_SIZE = 5;
 
 export const runBulkScrapeBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -309,143 +201,109 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await isSuperAdmin(supabase, userId);
 
-    const { data: job, error: jErr } = await supabase
+    const { data: job, error: jErr } = await supabaseAdmin
       .from("master_spec_scrape_jobs")
       .select("*")
       .eq("id", data.jobId)
       .maybeSingle();
     if (jErr || !job) throw new Response("Job not found", { status: 404 });
-    if (job.status !== "running") {
-      return {
-        status: job.status as string,
-        processed: job.processed as number,
-        total: job.total as number,
-        succeeded: job.succeeded as number,
-        failed: job.failed as number,
-        remaining: 0,
-        currentSpecId: null as string | null,
-        currentLabel: null as string | null,
-      };
+
+    const childIds: string[] = Array.isArray(job.child_job_ids) ? (job.child_job_ids as string[]) : [];
+
+    if (job.status !== "running" || childIds.length === 0) {
+      return summarize(job, 0, null);
     }
 
-    const { data: batch, error: bErr } = await supabase
-      .from("master_specs")
-      .select("id, vendor, product_name")
-      .is("tds_pdf_path", null)
-      .order("vendor")
-      .order("product_name")
-      .limit(BATCH_SIZE);
-    if (bErr) throw new Error(bErr.message);
+    // Fetch progress on all children.
+    const { data: children } = await supabaseAdmin
+      .from("data_sheet_crawl_jobs")
+      .select("id, status, total, processed, succeeded, failed, pending_urls, vendor")
+      .in("id", childIds);
+    const childMap = new Map((children ?? []).map((c) => [c.id as string, c]));
 
-    if (!batch || batch.length === 0) {
-      await supabase
-        .from("master_spec_scrape_jobs")
-        .update({ status: "completed", finished_at: new Date().toISOString(), current_spec_id: null })
-        .eq("id", data.jobId);
-      return {
-        status: "completed",
-        processed: job.processed as number,
-        total: job.total as number,
-        succeeded: job.succeeded as number,
-        failed: job.failed as number,
-        remaining: 0,
-        currentSpecId: null,
-        currentLabel: null,
-      };
+    // Find the first child that still has work.
+    const activeId = childIds.find((id) => {
+      const c = childMap.get(id);
+      return c && c.status === "running" && Array.isArray(c.pending_urls) && c.pending_urls.length > 0;
+    });
+
+    let currentLabel: string | null = null;
+    if (activeId) {
+      const before = childMap.get(activeId)!;
+      currentLabel = (before.vendor as string | null) ?? null;
+      try {
+        const r = await runOneCrawlBatch(activeId);
+        // refresh child snapshot with the post-batch numbers
+        childMap.set(activeId, { ...before, ...r, id: activeId, pending_urls: [] } as any);
+        currentLabel = r.currentLabel ?? currentLabel;
+      } catch (e) {
+        // Mark this child failed so we don't spin on it forever.
+        await supabaseAdmin
+          .from("data_sheet_crawl_jobs")
+          .update({ status: "failed", pending_urls: [] as never })
+          .eq("id", activeId);
+      }
     }
 
+    // Re-fetch aggregated child totals.
+    const { data: refreshed } = await supabaseAdmin
+      .from("data_sheet_crawl_jobs")
+      .select("status, total, processed, succeeded, failed, pending_urls")
+      .in("id", childIds);
+
+    let total = 0;
+    let processed = 0;
     let succeeded = 0;
     let failed = 0;
-    const results = await Promise.all(
-      batch.map(async (row) => {
-        try {
-          await supabase
-            .from("master_spec_scrape_jobs")
-            .update({ current_spec_id: row.id })
-            .eq("id", data.jobId);
-          const result = await callGemini(row.vendor, row.product_name);
-          const status = result.found && result.url ? "success" : "not_found";
-          const patch: Record<string, unknown> = {
-            tds_url: result.url,
-            tds_source_title: result.source_title,
-            tds_scraped_at: new Date().toISOString(),
-            tds_scrape_status: status,
-            tds_scrape_error: null,
-          };
-          if (status === "success" && result.url) {
-            const pdf = await downloadAndStoreTdsPdf(row.id, result.url);
-            if (pdf) {
-              patch.tds_pdf_path = pdf.path;
-              patch.tds_pdf_size = pdf.size;
-              patch.tds_pdf_downloaded_at = new Date().toISOString();
-            }
-          }
-          // Need full spec for empty-check; refetch
-          const { data: full } = await supabase
-            .from("master_specs")
-            .select("*")
-            .eq("id", row.id)
-            .single();
-          if (full) {
-            for (const [field, col] of Object.entries(FIELD_TO_COLUMN) as [keyof ScrapeFields, string][]) {
-              const v = result.fields[field];
-              if (v === null || v === undefined || v === "") continue;
-              const existing = (full as Record<string, unknown>)[col];
-              if (existing === null || existing === undefined || existing === "") {
-                patch[col] = v;
-              }
-            }
-          }
-          await supabase.from("master_specs").update(patch as never).eq("id", row.id);
-          return patch.tds_scrape_status === "success";
-        } catch (e) {
-          const message = e instanceof Error ? e.message : String(e);
-          await supabase
-            .from("master_specs")
-            .update({
-              tds_scraped_at: new Date().toISOString(),
-              tds_scrape_status: "failed",
-              tds_scrape_error: message.slice(0, 500),
-            })
-            .eq("id", row.id);
-          return false;
-        }
-      }),
-    );
-    for (const ok of results) ok ? succeeded++ : failed++;
+    let remaining = 0;
+    let anyRunning = false;
+    for (const c of refreshed ?? []) {
+      total += (c.total as number) ?? 0;
+      processed += (c.processed as number) ?? 0;
+      succeeded += (c.succeeded as number) ?? 0;
+      failed += (c.failed as number) ?? 0;
+      const pend = Array.isArray(c.pending_urls) ? (c.pending_urls as unknown[]).length : 0;
+      remaining += pend;
+      if (c.status === "running" && pend > 0) anyRunning = true;
+    }
 
-    const newProcessed = (job.processed as number) + batch.length;
-    const newSucceeded = (job.succeeded as number) + succeeded;
-    const newFailed = (job.failed as number) + failed;
-    const remaining = Math.max(0, (job.total as number) - newProcessed);
-    const done = remaining === 0;
-
-    const { data: updatedJob } = await supabase
+    const done = !anyRunning;
+    await supabaseAdmin
       .from("master_spec_scrape_jobs")
       .update({
-        processed: newProcessed,
-        succeeded: newSucceeded,
-        failed: newFailed,
+        total,
+        processed,
+        succeeded,
+        failed,
         status: done ? "completed" : "running",
         finished_at: done ? new Date().toISOString() : null,
-        current_spec_id: done ? null : batch[batch.length - 1].id,
       })
-      .eq("id", data.jobId)
-      .select("*")
-      .single();
+      .eq("id", data.jobId);
 
-    const last = batch[batch.length - 1];
     return {
-      status: (updatedJob?.status as string) ?? (done ? "completed" : "running"),
-      processed: newProcessed,
-      total: job.total as number,
-      succeeded: newSucceeded,
-      failed: newFailed,
+      status: done ? "completed" : "running",
+      processed,
+      total,
+      succeeded,
+      failed,
       remaining,
-      currentSpecId: done ? null : last.id,
-      currentLabel: done ? null : `${last.vendor} ${last.product_name}`,
+      currentSpecId: null as string | null,
+      currentLabel,
     };
   });
+
+function summarize(job: any, remaining: number, currentLabel: string | null) {
+  return {
+    status: job.status as string,
+    processed: (job.processed as number) ?? 0,
+    total: (job.total as number) ?? 0,
+    succeeded: (job.succeeded as number) ?? 0,
+    failed: (job.failed as number) ?? 0,
+    remaining,
+    currentSpecId: null as string | null,
+    currentLabel,
+  };
+}
 
 export const getBulkScrapeStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -468,11 +326,26 @@ export const cancelBulkScrape = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await isSuperAdmin(supabase, userId);
-    const { error } = await supabase
+
+    const { data: job } = await supabaseAdmin
+      .from("master_spec_scrape_jobs")
+      .select("child_job_ids")
+      .eq("id", data.jobId)
+      .maybeSingle();
+    const childIds: string[] = Array.isArray(job?.child_job_ids)
+      ? (job!.child_job_ids as string[])
+      : [];
+    if (childIds.length > 0) {
+      await supabaseAdmin
+        .from("data_sheet_crawl_jobs")
+        .update({ status: "cancelled", pending_urls: [] as never })
+        .in("id", childIds)
+        .eq("status", "running");
+    }
+    await supabaseAdmin
       .from("master_spec_scrape_jobs")
       .update({ status: "cancelled", finished_at: new Date().toISOString(), current_spec_id: null })
       .eq("id", data.jobId)
       .eq("status", "running");
-    if (error) throw new Error(error.message);
     return { ok: true };
   });
