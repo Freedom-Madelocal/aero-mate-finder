@@ -417,3 +417,47 @@ export const cancelBulkScrape = createServerFn({ method: "POST" })
       .eq("status", "running");
     return { ok: true };
   });
+
+// -------- Debug: read scrape logs --------
+
+export type ScrapeLogRow = {
+  id: string;
+  created_at: string;
+  master_spec_id: string | null;
+  bulk_job_id: string | null;
+  child_job_id: string | null;
+  data_sheet_id: string | null;
+  vendor: string | null;
+  product_name: string | null;
+  step: string;
+  status: string;
+  source_url: string | null;
+  attempted_url: string | null;
+  http_status: number | null;
+  error_message: string | null;
+  details: Record<string, unknown> | null;
+};
+
+export const listScrapeLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { specId?: string; status?: string; step?: string; limit?: number }) => ({
+    specId: d.specId ? String(d.specId) : undefined,
+    status: d.status ? String(d.status) : undefined,
+    step: d.step ? String(d.step) : undefined,
+    limit: Math.min(Math.max(Number(d.limit) || 200, 1), 1000),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await isSuperAdmin(supabase, userId);
+    let q = supabaseAdmin
+      .from("scrape_logs" as never)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.specId) q = q.eq("master_spec_id", data.specId);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.step) q = q.eq("step", data.step);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as unknown as ScrapeLogRow[];
+  });
