@@ -94,7 +94,7 @@ export default function BulkScrapeModal({ onClose }: { onClose: () => void }) {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Scrape TDS / PDS</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Crawls curated TDS/PDS pages for <strong>Hexcel, 3M, Toray, Syensqo, and Henkel</strong> (matweb + manufacturer sites), downloads each PDF, and auto-links to the matching master spec. Items with a stored PDF or from unsupported vendors are skipped.
+              Runs a browser agent that opens each manufacturer's TDS portal (<strong>Hexcel, 3M, Toray, Syensqo, Henkel</strong>), searches for the product, clicks through, and downloads the linked PDF. Items with a stored PDF or from unsupported vendors are skipped.
             </p>
 
 
