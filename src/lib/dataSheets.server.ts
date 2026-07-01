@@ -13,6 +13,10 @@ export type CandidateUrl = {
   pageUrl: string | null;
   productNumber?: string | null;
   searchMode?: boolean;
+  /** Vendor-source seed page: expand via firecrawlMap and enqueue filtered links. */
+  seed?: boolean;
+  /** Lowercase alphanumeric tokens (e.g. ["8552","ap130"]) used to filter follow-up links. */
+  productFilterTokens?: string[];
 };
 
 function firecrawlKey(): string {
