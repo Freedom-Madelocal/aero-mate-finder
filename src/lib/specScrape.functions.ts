@@ -34,20 +34,20 @@ function tokenize(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-/** Build initial pending_urls: one `seed` entry per curated vendor source page. */
+/** Build initial pending_urls: one `seed` entry per curated vendor source page.
+ *  productFilterTokens carries the RAW product names — the runner tokenizes
+ *  for map-mode filtering and passes them verbatim to the interactive agent. */
 function buildVendorSeedPending(vendorKey: string, products: string[]): CandidateUrl[] {
   const src = VENDOR_SOURCES[vendorKey];
   if (!src) return [];
-  const tokens = Array.from(
-    new Set(products.map(tokenize).filter((t) => t.length >= 3)),
-  );
+  const names = Array.from(new Set(products.map((p) => p.trim()).filter((p) => p.length >= 2)));
   return src.seeds.map((url) => ({
     url,
     vendorHint: vendorKey,
     pageUrl: null,
     productNumber: null,
     seed: true,
-    productFilterTokens: tokens,
+    productFilterTokens: names,
   }));
 }
 
