@@ -88,6 +88,12 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       .maybeSingle();
     if (specErr || !spec) throw new Response("Spec not found", { status: 404 });
     if (!spec.vendor || !spec.product_name) {
+      await logScrape({
+        masterSpecId: data.specId,
+        step: "orchestrate",
+        status: "skipped",
+        errorMessage: "Missing vendor or product name on master spec",
+      });
       return { status: "failed" as const, url: null, sourceTitle: null, error: "Missing vendor or product name" };
     }
 
@@ -95,8 +101,27 @@ export const scrapeSpec = createServerFn({ method: "POST" })
     // await a definitive result.
     const child = await createVendorChildJob(spec.vendor, [spec.product_name], userId);
     if (!child) {
+      await logScrape({
+        masterSpecId: data.specId,
+        vendor: spec.vendor,
+        productName: spec.product_name,
+        step: "orchestrate",
+        status: "not_found",
+        errorMessage: "No vendor search template produced any URLs",
+      });
       return { status: "not_found" as const, url: null, sourceTitle: null };
     }
+
+    await logScrape({
+      masterSpecId: data.specId,
+      childJobId: child.id,
+      vendor: spec.vendor,
+      productName: spec.product_name,
+      step: "orchestrate",
+      status: "info",
+      sourceUrl: templateForVendor(spec.vendor).replace("{query}", spec.product_name),
+      errorMessage: `Spawned search-mode crawl (${child.total} candidate URL${child.total === 1 ? "" : "s"})`,
+    });
 
     // Drain (search-mode child can re-enqueue PDF links, so loop until done or safety cap).
     for (let i = 0; i < 20; i++) {
@@ -116,6 +141,17 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (sheet?.pdf_url) {
+      await logScrape({
+        masterSpecId: data.specId,
+        childJobId: child.id,
+        dataSheetId: sheet.id,
+        vendor: spec.vendor,
+        productName: spec.product_name,
+        step: "orchestrate",
+        status: "success",
+        attemptedUrl: sheet.pdf_url,
+        errorMessage: `Scrape complete: ${sheet.match_status}`,
+      });
       return {
         status: "success" as const,
         url: sheet.pdf_url,
@@ -133,6 +169,17 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (anySheet?.pdf_url && !anySheet.error) {
+      await logScrape({
+        masterSpecId: data.specId,
+        childJobId: child.id,
+        dataSheetId: anySheet.id,
+        vendor: spec.vendor,
+        productName: spec.product_name,
+        step: "orchestrate",
+        status: "success",
+        attemptedUrl: anySheet.pdf_url,
+        errorMessage: "Scrape complete (unmatched sheet stored)",
+      });
       return {
         status: "success" as const,
         url: anySheet.pdf_url,
@@ -140,6 +187,15 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       };
     }
 
+    await logScrape({
+      masterSpecId: data.specId,
+      childJobId: child.id,
+      vendor: spec.vendor,
+      productName: spec.product_name,
+      step: "orchestrate",
+      status: "not_found",
+      errorMessage: "Crawl finished with no usable PDF — check per-step logs above for the reason",
+    });
     return { status: "not_found" as const, url: null, sourceTitle: null };
   });
 
