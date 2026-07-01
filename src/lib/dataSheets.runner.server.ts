@@ -6,6 +6,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   firecrawlScrape,
+  firecrawlMap,
   downloadPdf,
   extractFromMarkdown,
   looksLikeDataSheetUrl,
@@ -14,6 +15,9 @@ import {
   type CandidateUrl,
   type SpecCandidate,
 } from "@/lib/dataSheets.server";
+
+const MAX_PER_SEED = 60; // hard cap on candidates enqueued from one seed page
+
 
 export const BATCH_SIZE = 3;
 export const AUTO_MATCH_THRESHOLD = 0.85;
@@ -161,8 +165,57 @@ export async function runOneCrawlBatch(jobId: string): Promise<BatchOutcome> {
       sourceUrl: item.pageUrl ?? job.source_url,
       attemptedUrl: item.url,
     };
+
+    // -------- Seed page: firecrawlMap then enqueue filtered candidates --------
+    if (item.seed) {
+      try {
+        const mapped = await firecrawlMap(item.url, 500);
+        const tokens = item.productFilterTokens ?? [];
+        const kept: string[] = [];
+        for (const link of mapped) {
+          const lower = link.toLowerCase();
+          const norm = lower.replace(/[^a-z0-9]/g, "");
+          const isPdfish = looksLikeDataSheetUrl(link);
+          const tokenHit = tokens.length === 0 ? false : tokens.some((t) => t && norm.includes(t));
+          if (isPdfish || tokenHit) kept.push(link);
+          if (kept.length >= MAX_PER_SEED) break;
+        }
+        enqueued.push(
+          ...kept.map((u) => ({
+            url: u,
+            vendorHint: item.vendorHint,
+            pageUrl: item.url,
+            productNumber: null,
+            searchMode: false,
+          })),
+        );
+        await logScrape({
+          ...logBase,
+          step: "search",
+          status: kept.length > 0 ? "success" : "not_found",
+          errorMessage:
+            kept.length > 0
+              ? `Seed mapped ${mapped.length} link(s); enqueued ${kept.length} candidate(s)`
+              : `Seed mapped ${mapped.length} link(s); none matched TDS/PDS patterns or product tokens`,
+          details: { mappedCount: mapped.length, keptCount: kept.length, tokenCount: tokens.length },
+        });
+        // Don't count seeds toward succeeded/failed — they're discovery, not results.
+        continue;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        await logScrape({
+          ...logBase,
+          step: "search",
+          status: "failed",
+          errorMessage: `Seed map failed: ${msg}`,
+        });
+        continue;
+      }
+    }
+
     try {
       const scraped = await firecrawlScrape(item.url);
+
       if (!scraped.isPdf) {
         if (item.searchMode) {
           const q = (item.productNumber ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
