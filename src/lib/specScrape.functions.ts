@@ -12,7 +12,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { runOneCrawlBatch } from "@/lib/dataSheets.runner.server";
+import { runOneCrawlBatch, logScrape } from "@/lib/dataSheets.runner.server";
 import { templateForVendor } from "@/lib/vendorSearchTemplates";
 import type { CandidateUrl } from "@/lib/dataSheets.server";
 
@@ -88,6 +88,12 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       .maybeSingle();
     if (specErr || !spec) throw new Response("Spec not found", { status: 404 });
     if (!spec.vendor || !spec.product_name) {
+      await logScrape({
+        masterSpecId: data.specId,
+        step: "orchestrate",
+        status: "skipped",
+        errorMessage: "Missing vendor or product name on master spec",
+      });
       return { status: "failed" as const, url: null, sourceTitle: null, error: "Missing vendor or product name" };
     }
 
@@ -95,8 +101,27 @@ export const scrapeSpec = createServerFn({ method: "POST" })
     // await a definitive result.
     const child = await createVendorChildJob(spec.vendor, [spec.product_name], userId);
     if (!child) {
+      await logScrape({
+        masterSpecId: data.specId,
+        vendor: spec.vendor,
+        productName: spec.product_name,
+        step: "orchestrate",
+        status: "not_found",
+        errorMessage: "No vendor search template produced any URLs",
+      });
       return { status: "not_found" as const, url: null, sourceTitle: null };
     }
+
+    await logScrape({
+      masterSpecId: data.specId,
+      childJobId: child.id,
+      vendor: spec.vendor,
+      productName: spec.product_name,
+      step: "orchestrate",
+      status: "info",
+      sourceUrl: templateForVendor(spec.vendor).replace("{query}", spec.product_name),
+      errorMessage: `Spawned search-mode crawl (${child.total} candidate URL${child.total === 1 ? "" : "s"})`,
+    });
 
     // Drain (search-mode child can re-enqueue PDF links, so loop until done or safety cap).
     for (let i = 0; i < 20; i++) {
@@ -116,6 +141,17 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (sheet?.pdf_url) {
+      await logScrape({
+        masterSpecId: data.specId,
+        childJobId: child.id,
+        dataSheetId: sheet.id,
+        vendor: spec.vendor,
+        productName: spec.product_name,
+        step: "orchestrate",
+        status: "success",
+        attemptedUrl: sheet.pdf_url,
+        errorMessage: `Scrape complete: ${sheet.match_status}`,
+      });
       return {
         status: "success" as const,
         url: sheet.pdf_url,
@@ -133,6 +169,17 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (anySheet?.pdf_url && !anySheet.error) {
+      await logScrape({
+        masterSpecId: data.specId,
+        childJobId: child.id,
+        dataSheetId: anySheet.id,
+        vendor: spec.vendor,
+        productName: spec.product_name,
+        step: "orchestrate",
+        status: "success",
+        attemptedUrl: anySheet.pdf_url,
+        errorMessage: "Scrape complete (unmatched sheet stored)",
+      });
       return {
         status: "success" as const,
         url: anySheet.pdf_url,
@@ -140,6 +187,15 @@ export const scrapeSpec = createServerFn({ method: "POST" })
       };
     }
 
+    await logScrape({
+      masterSpecId: data.specId,
+      childJobId: child.id,
+      vendor: spec.vendor,
+      productName: spec.product_name,
+      step: "orchestrate",
+      status: "not_found",
+      errorMessage: "Crawl finished with no usable PDF — check per-step logs above for the reason",
+    });
     return { status: "not_found" as const, url: null, sourceTitle: null };
   });
 
@@ -360,4 +416,52 @@ export const cancelBulkScrape = createServerFn({ method: "POST" })
       .eq("id", data.jobId)
       .eq("status", "running");
     return { ok: true };
+  });
+
+// -------- Debug: read scrape logs --------
+
+export type ScrapeLogRow = {
+  id: string;
+  created_at: string;
+  master_spec_id: string | null;
+  bulk_job_id: string | null;
+  child_job_id: string | null;
+  data_sheet_id: string | null;
+  vendor: string | null;
+  product_name: string | null;
+  step: string;
+  status: string;
+  source_url: string | null;
+  attempted_url: string | null;
+  http_status: number | null;
+  error_message: string | null;
+  details: string | null;
+};
+
+export const listScrapeLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { specId?: string; status?: string; step?: string; limit?: number }) => ({
+    specId: d.specId ? String(d.specId) : undefined,
+    status: d.status ? String(d.status) : undefined,
+    step: d.step ? String(d.step) : undefined,
+    limit: Math.min(Math.max(Number(d.limit) || 200, 1), 1000),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await isSuperAdmin(supabase, userId);
+    let q = supabaseAdmin
+      .from("scrape_logs" as never)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.specId) q = q.eq("master_spec_id", data.specId);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.step) q = q.eq("step", data.step);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const raw = (rows ?? []) as unknown as Array<Record<string, unknown>>;
+    return raw.map((r) => ({
+      ...r,
+      details: r.details == null ? null : JSON.stringify(r.details),
+    })) as unknown as ScrapeLogRow[];
   });

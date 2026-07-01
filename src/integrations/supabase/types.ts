@@ -800,6 +800,89 @@ export type Database = {
           },
         ]
       }
+      scrape_logs: {
+        Row: {
+          attempted_url: string | null
+          bulk_job_id: string | null
+          child_job_id: string | null
+          created_at: string
+          data_sheet_id: string | null
+          details: Json | null
+          error_message: string | null
+          http_status: number | null
+          id: string
+          master_spec_id: string | null
+          product_name: string | null
+          source_url: string | null
+          status: string
+          step: string
+          vendor: string | null
+        }
+        Insert: {
+          attempted_url?: string | null
+          bulk_job_id?: string | null
+          child_job_id?: string | null
+          created_at?: string
+          data_sheet_id?: string | null
+          details?: Json | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          master_spec_id?: string | null
+          product_name?: string | null
+          source_url?: string | null
+          status: string
+          step: string
+          vendor?: string | null
+        }
+        Update: {
+          attempted_url?: string | null
+          bulk_job_id?: string | null
+          child_job_id?: string | null
+          created_at?: string
+          data_sheet_id?: string | null
+          details?: Json | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          master_spec_id?: string | null
+          product_name?: string | null
+          source_url?: string | null
+          status?: string
+          step?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrape_logs_bulk_job_id_fkey"
+            columns: ["bulk_job_id"]
+            isOneToOne: false
+            referencedRelation: "master_spec_scrape_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scrape_logs_child_job_id_fkey"
+            columns: ["child_job_id"]
+            isOneToOne: false
+            referencedRelation: "data_sheet_crawl_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scrape_logs_data_sheet_id_fkey"
+            columns: ["data_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "data_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scrape_logs_master_spec_id_fkey"
+            columns: ["master_spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           content: Json

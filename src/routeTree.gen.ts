@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminScrapeLogsRouteImport } from './routes/admin.scrape-logs'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
 import { Route as AdminDataSheetsRouteImport } from './routes/admin.data-sheets'
@@ -103,6 +104,11 @@ const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminScrapeLogsRoute = AdminScrapeLogsRouteImport.update({
+  id: '/admin/scrape-logs',
+  path: '/admin/scrape-logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/scrape-logs': typeof AdminScrapeLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/scrape-logs': typeof AdminScrapeLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin': typeof AdminIndexRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/scrape-logs': typeof AdminScrapeLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/scrape-logs'
     | '/admin/users'
     | '/console/login'
     | '/admin/'
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/scrape-logs'
     | '/admin/users'
     | '/console/login'
     | '/admin'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/scrape-logs'
     | '/admin/users'
     | '/console/login'
     | '/admin/'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   AdminDataSheetsRoute: typeof AdminDataSheetsRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
+  AdminScrapeLogsRoute: typeof AdminScrapeLogsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -504,6 +517,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/scrape-logs': {
+      id: '/admin/scrape-logs'
+      path: '/admin/scrape-logs'
+      fullPath: '/admin/scrape-logs'
+      preLoaderRoute: typeof AdminScrapeLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/organizations': {
@@ -697,6 +717,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDataSheetsRoute: AdminDataSheetsRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
+  AdminScrapeLogsRoute: AdminScrapeLogsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
