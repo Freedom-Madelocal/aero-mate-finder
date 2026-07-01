@@ -459,5 +459,9 @@ export const listScrapeLogs = createServerFn({ method: "GET" })
     if (data.step) q = q.eq("step", data.step);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []) as unknown as ScrapeLogRow[];
+    const raw = (rows ?? []) as unknown as Array<Record<string, unknown>>;
+    return raw.map((r) => ({
+      ...r,
+      details: r.details == null ? null : JSON.stringify(r.details),
+    })) as unknown as ScrapeLogRow[];
   });
