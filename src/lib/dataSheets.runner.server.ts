@@ -19,6 +19,46 @@ export const BATCH_SIZE = 3;
 export const AUTO_MATCH_THRESHOLD = 0.85;
 export const SUGGEST_THRESHOLD = 0.6;
 
+/**
+ * Insert one row into scrape_logs. Silently swallows any error — logging must
+ * never break the scrape pipeline itself.
+ */
+export async function logScrape(entry: {
+  masterSpecId?: string | null;
+  bulkJobId?: string | null;
+  childJobId?: string | null;
+  dataSheetId?: string | null;
+  vendor?: string | null;
+  productName?: string | null;
+  step: "search" | "scrape" | "download_pdf" | "extract" | "match" | "apply" | "orchestrate";
+  status: "success" | "not_found" | "failed" | "skipped" | "info";
+  sourceUrl?: string | null;
+  attemptedUrl?: string | null;
+  httpStatus?: number | null;
+  errorMessage?: string | null;
+  details?: Record<string, unknown> | null;
+}) {
+  try {
+    await supabaseAdmin.from("scrape_logs" as never).insert({
+      master_spec_id: entry.masterSpecId ?? null,
+      bulk_job_id: entry.bulkJobId ?? null,
+      child_job_id: entry.childJobId ?? null,
+      data_sheet_id: entry.dataSheetId ?? null,
+      vendor: entry.vendor ?? null,
+      product_name: entry.productName ?? null,
+      step: entry.step,
+      status: entry.status,
+      source_url: entry.sourceUrl ?? null,
+      attempted_url: entry.attemptedUrl ?? null,
+      http_status: entry.httpStatus ?? null,
+      error_message: entry.errorMessage ? String(entry.errorMessage).slice(0, 2000) : null,
+      details: (entry.details ?? null) as never,
+    } as never);
+  } catch {
+    /* logging must not throw */
+  }
+}
+
 export type BatchOutcome = {
   status: string;
   total: number;
