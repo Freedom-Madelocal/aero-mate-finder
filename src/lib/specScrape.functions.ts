@@ -215,12 +215,25 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
       return summarize(job, 0, null);
     }
 
-    // Fetch progress on all children.
-    const { data: children } = await supabaseAdmin
+    // Fetch progress on all children. Cast to a loose type because the generated
+    // Supabase types don't yet know about the `vendor` column added by the
+    // latest migration.
+    type ChildRow = {
+      id: string;
+      status: string;
+      total: number;
+      processed: number;
+      succeeded: number;
+      failed: number;
+      pending_urls: unknown[] | null;
+      vendor: string | null;
+    };
+    const { data: childrenRaw } = await supabaseAdmin
       .from("data_sheet_crawl_jobs")
       .select("id, status, total, processed, succeeded, failed, pending_urls, vendor")
       .in("id", childIds);
-    const childMap = new Map((children ?? []).map((c) => [c.id as string, c]));
+    const children = (childrenRaw ?? []) as unknown as ChildRow[];
+    const childMap = new Map(children.map((c) => [c.id, c]));
 
     // Find the first child that still has work.
     const activeId = childIds.find((id) => {
@@ -231,20 +244,18 @@ export const runBulkScrapeBatch = createServerFn({ method: "POST" })
     let currentLabel: string | null = null;
     if (activeId) {
       const before = childMap.get(activeId)!;
-      currentLabel = (before.vendor as string | null) ?? null;
+      currentLabel = before.vendor ?? null;
       try {
         const r = await runOneCrawlBatch(activeId);
-        // refresh child snapshot with the post-batch numbers
-        childMap.set(activeId, { ...before, ...r, id: activeId, pending_urls: [] } as any);
         currentLabel = r.currentLabel ?? currentLabel;
-      } catch (e) {
-        // Mark this child failed so we don't spin on it forever.
+      } catch {
         await supabaseAdmin
           .from("data_sheet_crawl_jobs")
-          .update({ status: "failed", pending_urls: [] as never })
+          .update({ status: "failed", pending_urls: [] as never } as never)
           .eq("id", activeId);
       }
     }
+
 
     // Re-fetch aggregated child totals.
     const { data: refreshed } = await supabaseAdmin
