@@ -12,7 +12,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { runOneCrawlBatch } from "@/lib/dataSheets.runner.server";
+import { runOneCrawlBatch, logScrape } from "@/lib/dataSheets.runner.server";
 import { templateForVendor } from "@/lib/vendorSearchTemplates";
 import type { CandidateUrl } from "@/lib/dataSheets.server";
 
