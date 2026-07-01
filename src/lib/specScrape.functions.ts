@@ -61,9 +61,10 @@ async function createVendorChildJob(vendor: string, products: string[], userId: 
       vendor,
       search_template: templateForVendor(vendor),
       created_by: userId,
-    })
+    } as never)
     .select("id, total")
     .single();
+
   if (error || !job) throw new Error(error?.message ?? "Failed to create child crawl job");
   return { id: job.id as string, total: job.total as number };
 }
