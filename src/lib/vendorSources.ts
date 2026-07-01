@@ -1,48 +1,39 @@
 // Curated per-manufacturer TDS/PDS seed pages. The bulk "Scrape TDS/PDS"
-// button and per-row Scrape button use these to feed Firecrawl instead of
-// blind Google/vendor-search queries.
+// button and per-row Scrape button use these to feed the vendor agent
+// (interactive Firecrawl scrapes with click/type/wait actions) instead of
+// blind Google/vendor-search queries. MatWeb is intentionally excluded —
+// it gates PDFs behind login and returned no useful sheets in testing.
 
 export type VendorSource = {
   aliases: string[]; // lowercased fuzzy tokens to match master_specs.vendor
-  seeds: string[]; // pages to map + follow one hop for PDFs
+  seeds: string[]; // pages to map/agent-crawl
 };
 
 export const VENDOR_SOURCES: Record<string, VendorSource> = {
   Hexcel: {
     aliases: ["hexcel"],
-    seeds: [
-      "https://www.hexcel.com/resources/",
-      "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=81",
-    ],
+    seeds: ["https://www.hexcel.com/resources/"],
   },
   "3M": {
     aliases: ["3m"],
     seeds: [
       "https://technicaldatasheets.3m.com/",
       "https://www.3m.com/3M/en_US/thinsulate-us/technical-data-sheets/",
-      "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=1",
     ],
   },
   Toray: {
     aliases: ["toray", "toray composite", "toray composites"],
-    seeds: [
-      "https://www.toraycma.com/resources/data-sheets/",
-      "https://matweb.com/search/GetMatlsByManufacturer.aspx?manID=1109",
-    ],
+    seeds: ["https://www.toraycma.com/resources/data-sheets/"],
   },
   Syensqo: {
     aliases: ["syensqo", "solvay"],
     seeds: [
       "https://www.syensqo.com/en/chemical-categories/specialty-polymers/product-data",
-      "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=139",
     ],
   },
   Henkel: {
     aliases: ["henkel", "loctite"],
-    seeds: [
-      "https://tdx.henkel.com/com/en.html",
-      "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?navletter=H&manID=835",
-    ],
+    seeds: ["https://tdx.henkel.com/com/en.html"],
   },
 };
 
