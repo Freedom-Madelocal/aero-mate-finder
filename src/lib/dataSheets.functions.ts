@@ -240,46 +240,8 @@ export const getDataSheetSignedUrl = createServerFn({ method: "POST" })
   });
 
 // -------- Apply / accept / reject --------
+// applySheetToSpec now lives in dataSheets.runner.server.ts (shared with bulk scrape).
 
-async function applySheetToSpec(specId: string, sheetId: string, overwrite: boolean) {
-  const { data: sheet } = await supabaseAdmin
-    .from("data_sheets")
-    .select("parsed_specs, pdf_path, pdf_size, pdf_url, doc_type, title")
-    .eq("id", sheetId)
-    .maybeSingle();
-  if (!sheet) return;
-  const { data: spec } = await supabaseAdmin
-    .from("master_specs")
-    .select("*")
-    .eq("id", specId)
-    .maybeSingle();
-  if (!spec) return;
-
-  const patch: Record<string, unknown> = {};
-  const parsed = (sheet.parsed_specs ?? {}) as Record<string, unknown>;
-  for (const [field, col] of Object.entries(FIELD_TO_COLUMN)) {
-    const v = parsed[field];
-    if (v === null || v === undefined || v === "") continue;
-    const existing = (spec as Record<string, unknown>)[col];
-    const isEmpty = existing === null || existing === undefined || existing === "";
-    if (overwrite || isEmpty) patch[col] = v;
-  }
-  if (sheet.pdf_path) {
-    patch.tds_pdf_path = sheet.pdf_path;
-    patch.tds_pdf_size = sheet.pdf_size;
-    patch.tds_pdf_downloaded_at = new Date().toISOString();
-  }
-  if (sheet.pdf_url) {
-    patch.tds_url = sheet.pdf_url;
-    patch.tds_source_title = sheet.title;
-    patch.tds_scraped_at = new Date().toISOString();
-    patch.tds_scrape_status = "success";
-    patch.tds_scrape_error = null;
-  }
-  if (Object.keys(patch).length > 0) {
-    await supabaseAdmin.from("master_specs").update(patch as never).eq("id", specId);
-  }
-}
 
 export const acceptDataSheetMatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
