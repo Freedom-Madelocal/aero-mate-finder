@@ -79,6 +79,7 @@ export type Database = {
           succeeded: number
           total: number
           updated_at: string
+          vendor: string | null
         }
         Insert: {
           crawl_mode?: string
@@ -96,6 +97,7 @@ export type Database = {
           succeeded?: number
           total?: number
           updated_at?: string
+          vendor?: string | null
         }
         Update: {
           crawl_mode?: string
@@ -113,6 +115,7 @@ export type Database = {
           succeeded?: number
           total?: number
           updated_at?: string
+          vendor?: string | null
         }
         Relationships: []
       }
