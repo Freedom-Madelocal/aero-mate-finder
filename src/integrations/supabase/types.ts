@@ -79,6 +79,7 @@ export type Database = {
           succeeded: number
           total: number
           updated_at: string
+          vendor: string | null
         }
         Insert: {
           crawl_mode?: string
@@ -96,6 +97,7 @@ export type Database = {
           succeeded?: number
           total?: number
           updated_at?: string
+          vendor?: string | null
         }
         Update: {
           crawl_mode?: string
@@ -113,6 +115,7 @@ export type Database = {
           succeeded?: number
           total?: number
           updated_at?: string
+          vendor?: string | null
         }
         Relationships: []
       }
@@ -292,11 +295,13 @@ export type Database = {
       }
       master_spec_scrape_jobs: {
         Row: {
+          child_job_ids: string[]
           created_at: string
           current_spec_id: string | null
           failed: number
           finished_at: string | null
           id: string
+          mode: string
           processed: number
           skipped: number
           started_at: string
@@ -307,11 +312,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          child_job_ids?: string[]
           created_at?: string
           current_spec_id?: string | null
           failed?: number
           finished_at?: string | null
           id?: string
+          mode?: string
           processed?: number
           skipped?: number
           started_at?: string
@@ -322,11 +329,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          child_job_ids?: string[]
           created_at?: string
           current_spec_id?: string | null
           failed?: number
           finished_at?: string | null
           id?: string
+          mode?: string
           processed?: number
           skipped?: number
           started_at?: string

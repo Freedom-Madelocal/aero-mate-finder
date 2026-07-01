@@ -3,19 +3,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   firecrawlMap,
-  firecrawlScrape,
-  downloadPdf,
-  extractFromMarkdown,
   looksLikeDataSheetUrl,
-  bestMatch,
-  FIELD_TO_COLUMN,
   type CandidateUrl,
-  type SpecCandidate,
 } from "@/lib/dataSheets.server";
 
-const BATCH_SIZE = 3;
-const AUTO_MATCH_THRESHOLD = 0.85;
-const SUGGEST_THRESHOLD = 0.6;
+import {
+  runOneCrawlBatch,
+  applySheetToSpec,
+  AUTO_MATCH_THRESHOLD,
+} from "@/lib/dataSheets.runner.server";
+
 
 async function requireSuperAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase
@@ -146,228 +143,10 @@ export const runDataSheetCrawlBatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await requireSuperAdmin(supabase, userId);
-
-    const { data: job, error: jErr } = await supabaseAdmin
-      .from("data_sheet_crawl_jobs")
-      .select("*")
-      .eq("id", data.jobId)
-      .maybeSingle();
-    if (jErr || !job) throw new Response("Job not found", { status: 404 });
-    if (job.status !== "running") {
-      return summarize(job, 0);
-    }
-
-    const pending: CandidateUrl[] = Array.isArray(job.pending_urls) ? (job.pending_urls as CandidateUrl[]) : [];
-    const batch = pending.slice(0, BATCH_SIZE);
-    const rest = pending.slice(batch.length);
-
-    // Load all specs once for matching (vendor + name only).
-    const { data: specs } = await supabaseAdmin
-      .from("master_specs")
-      .select("id, vendor, product_name");
-    const candidates: SpecCandidate[] = (specs ?? []) as SpecCandidate[];
-
-    let succeeded = 0;
-    let failed = 0;
-    let lastLabel: string | null = null;
-    const enqueued: CandidateUrl[] = [];
-
-    for (const item of batch) {
-      lastLabel = item.url;
-      try {
-        const scraped = await firecrawlScrape(item.url);
-        if (!scraped.isPdf) {
-          if (item.searchMode) {
-            // Search results page — pick the best candidate link(s).
-            const q = (item.productNumber ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-            const candidatesLinks = scraped.links
-              .map((l) => ({ url: l, lower: l.toLowerCase() }))
-              .filter((l) => {
-                try {
-                  const u = new URL(l.url);
-                  // Stay roughly on-domain or follow PDF links anywhere
-                  return /\.pdf(\?|#|$)/i.test(l.url) || u.hostname === new URL(item.url).hostname;
-                } catch {
-                  return false;
-                }
-              });
-            const pdfMatches = candidatesLinks.filter((l) => /\.pdf(\?|#|$)/i.test(l.lower));
-            const scored = pdfMatches
-              .map((l) => {
-                const norm = l.lower.replace(/[^a-z0-9]/g, "");
-                const score = q && norm.includes(q) ? 2 : 1;
-                return { ...l, score };
-              })
-              .sort((a, b) => b.score - a.score);
-            let chosen: string[] = scored.slice(0, 2).map((s) => s.url);
-            if (chosen.length === 0) {
-              // Fall back to product-page links containing the number
-              const productPages = candidatesLinks
-                .filter((l) => !q || l.lower.replace(/[^a-z0-9]/g, "").includes(q))
-                .slice(0, 3)
-                .map((l) => l.url);
-              enqueued.push(
-                ...productPages.map((u) => ({
-                  url: u,
-                  vendorHint: item.vendorHint,
-                  pageUrl: scraped.sourceUrl,
-                  productNumber: item.productNumber,
-                  searchMode: false,
-                })),
-              );
-              if (productPages.length === 0) {
-                await supabaseAdmin.from("data_sheets").insert({
-                  job_id: data.jobId,
-                  source_url: job.source_url,
-                  pdf_url: item.url,
-                  doc_type: "other",
-                  match_status: "unmatched",
-                  parsed_specs: {} as never,
-                  vendor: item.vendorHint,
-                  product_name: item.productNumber ?? null,
-                  error: `No PDF or product link found for "${item.productNumber}"`,
-                });
-                failed++;
-              }
-              continue;
-            }
-            enqueued.push(
-              ...chosen.map((u) => ({
-                url: u,
-                vendorHint: item.vendorHint,
-                pageUrl: scraped.sourceUrl,
-                productNumber: item.productNumber,
-                searchMode: false,
-              })),
-            );
-            continue;
-          }
-          // Enqueue PDF-looking links found on the page.
-          const more = scraped.links
-            .filter((l) => looksLikeDataSheetUrl(l))
-            .slice(0, 20)
-            .map((u) => ({ url: u, vendorHint: item.vendorHint, pageUrl: scraped.sourceUrl }));
-          enqueued.push(...more);
-          failed++; // counted as "processed but no sheet"
-          continue;
-        }
-
-        // It's a PDF — extract fields, download bytes, store.
-        const fields = await extractFromMarkdown(scraped.markdown, scraped.title, item.url);
-        const sheetId = crypto.randomUUID();
-        let pdfPath: string | null = null;
-        let pdfSize: number | null = null;
-        const bytes = await downloadPdf(item.url);
-        if (bytes) {
-          const path = `data-sheets/${sheetId}.pdf`;
-          const { error: upErr } = await supabaseAdmin.storage
-            .from("tds-pdfs")
-            .upload(path, bytes, { contentType: "application/pdf", upsert: true });
-          if (!upErr) {
-            pdfPath = path;
-            pdfSize = bytes.byteLength;
-          }
-        }
-
-        const vendor = fields.vendor ?? item.vendorHint;
-        const product = fields.product_name ?? item.productNumber ?? null;
-        let match = bestMatch(vendor, product, candidates);
-        // If this came from a vendor search with a known product#, prefer that direct match.
-        if (item.productNumber && item.vendorHint) {
-          const direct = candidates.find(
-            (c) =>
-              c.vendor?.toLowerCase().includes(item.vendorHint!.toLowerCase()) &&
-              c.product_name?.toLowerCase() === item.productNumber!.toLowerCase(),
-          );
-          if (direct) match = { id: direct.id, confidence: 0.99 };
-        }
-        let matchStatus: "auto" | "suggested" | "unmatched" = "unmatched";
-        let masterSpecId: string | null = null;
-        if (match) {
-          if (match.confidence >= AUTO_MATCH_THRESHOLD) {
-            matchStatus = "auto";
-            masterSpecId = match.id;
-          } else if (match.confidence >= SUGGEST_THRESHOLD) {
-            matchStatus = "suggested";
-            masterSpecId = match.id;
-          }
-        }
-
-        const { error: insErr } = await supabaseAdmin.from("data_sheets").insert({
-          id: sheetId,
-          job_id: data.jobId,
-          source_url: item.pageUrl ?? job.source_url,
-          page_url: item.pageUrl,
-          pdf_url: item.url,
-          pdf_path: pdfPath,
-          pdf_size: pdfSize,
-          doc_type: fields.doc_type ?? "tds",
-          vendor,
-          product_name: product,
-          title: scraped.title,
-          parsed_specs: fields as never,
-          raw_text: scraped.markdown.slice(0, 200_000),
-          match_status: matchStatus,
-          master_spec_id: masterSpecId,
-          confidence: match?.confidence ?? null,
-        });
-        if (insErr) throw new Error(insErr.message);
-
-        // Auto-apply if high confidence.
-        if (matchStatus === "auto" && masterSpecId) {
-          await applySheetToSpec(masterSpecId, sheetId, false);
-        }
-        succeeded++;
-      } catch (e) {
-        // Record a failed sheet row so admins see the error.
-        await supabaseAdmin.from("data_sheets").insert({
-          job_id: data.jobId,
-          source_url: job.source_url,
-          pdf_url: item.url,
-          doc_type: "other",
-          match_status: "unmatched",
-          parsed_specs: {} as never,
-          error: (e instanceof Error ? e.message : String(e)).slice(0, 500),
-        });
-        failed++;
-      }
-    }
-
-    const newPending = [...rest, ...enqueued];
-    const newProcessed = (job.processed as number) + batch.length;
-    const newSucceeded = (job.succeeded as number) + succeeded;
-    const newFailed = (job.failed as number) + failed;
-    const remaining = newPending.length;
-    const done = remaining === 0;
-
-    const { data: updated } = await supabaseAdmin
-      .from("data_sheet_crawl_jobs")
-      .update({
-        processed: newProcessed,
-        succeeded: newSucceeded,
-        failed: newFailed,
-        pending_urls: newPending as never,
-        total: Math.max(job.total as number, newProcessed + remaining),
-        status: done ? "completed" : "running",
-      })
-      .eq("id", data.jobId)
-      .select("*")
-      .single();
-
-    return summarize(updated ?? job, remaining, lastLabel);
+    return await runOneCrawlBatch(data.jobId);
   });
 
-function summarize(job: any, remaining: number, currentLabel: string | null = null) {
-  return {
-    status: job.status as string,
-    total: job.total as number,
-    processed: job.processed as number,
-    succeeded: job.succeeded as number,
-    failed: job.failed as number,
-    remaining,
-    currentLabel,
-  };
-}
+
 
 // -------- Cancel --------
 
@@ -461,46 +240,8 @@ export const getDataSheetSignedUrl = createServerFn({ method: "POST" })
   });
 
 // -------- Apply / accept / reject --------
+// applySheetToSpec now lives in dataSheets.runner.server.ts (shared with bulk scrape).
 
-async function applySheetToSpec(specId: string, sheetId: string, overwrite: boolean) {
-  const { data: sheet } = await supabaseAdmin
-    .from("data_sheets")
-    .select("parsed_specs, pdf_path, pdf_size, pdf_url, doc_type, title")
-    .eq("id", sheetId)
-    .maybeSingle();
-  if (!sheet) return;
-  const { data: spec } = await supabaseAdmin
-    .from("master_specs")
-    .select("*")
-    .eq("id", specId)
-    .maybeSingle();
-  if (!spec) return;
-
-  const patch: Record<string, unknown> = {};
-  const parsed = (sheet.parsed_specs ?? {}) as Record<string, unknown>;
-  for (const [field, col] of Object.entries(FIELD_TO_COLUMN)) {
-    const v = parsed[field];
-    if (v === null || v === undefined || v === "") continue;
-    const existing = (spec as Record<string, unknown>)[col];
-    const isEmpty = existing === null || existing === undefined || existing === "";
-    if (overwrite || isEmpty) patch[col] = v;
-  }
-  if (sheet.pdf_path) {
-    patch.tds_pdf_path = sheet.pdf_path;
-    patch.tds_pdf_size = sheet.pdf_size;
-    patch.tds_pdf_downloaded_at = new Date().toISOString();
-  }
-  if (sheet.pdf_url) {
-    patch.tds_url = sheet.pdf_url;
-    patch.tds_source_title = sheet.title;
-    patch.tds_scraped_at = new Date().toISOString();
-    patch.tds_scrape_status = "success";
-    patch.tds_scrape_error = null;
-  }
-  if (Object.keys(patch).length > 0) {
-    await supabaseAdmin.from("master_specs").update(patch as never).eq("id", specId);
-  }
-}
 
 export const acceptDataSheetMatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

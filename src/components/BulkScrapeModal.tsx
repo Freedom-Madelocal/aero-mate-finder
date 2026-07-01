@@ -94,8 +94,9 @@ export default function BulkScrapeModal({ onClose }: { onClose: () => void }) {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Scrape TDS / PDS</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Uses Gemini to find each material's Technical Data Sheet on the manufacturer's site, then fills any empty fields. Already-scraped items are skipped.
+              Uses Firecrawl (vendor search mode) to find each material's Technical Data Sheet directly from the manufacturer's site, downloads the PDF, and auto-fills any empty fields on high-confidence matches. Items that already have a stored PDF are skipped.
             </p>
+
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
