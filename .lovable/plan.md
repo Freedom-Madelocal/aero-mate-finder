@@ -1,63 +1,54 @@
 ## Goal
 
-Add a third crawl mode to the Data Sheet Library that takes a **vendor search URL template + a list of product numbers** (or pulls them from existing `master_specs` rows filtered by vendor), submits each query, follows the top result(s) to the TDS/PDS PDF, and runs the existing extract → match → attach pipeline.
+Kill the Gemini "guess a URL" bulk scraper. Make the header **Scrape TDS/PDS** button spawn a Firecrawl-backed Data Sheets crawl (vendor-search mode) covering every `master_specs` row that doesn't yet have a stored PDF.
 
-Works for 3M (`https://technicaldatasheets.3m.com/?q={query}`), Henkel, Momentive, Permatex, anything with a public search box.
+## What the button does today (broken)
 
-## How it works
+`BulkScrapeModal` → `startBulkScrape` / `runBulkScrapeBatch` in `src/lib/specScrape.functions.ts` calls `google/gemini-2.5-flash` per spec, asks it to invent a TDS URL, then tries to download that URL. Most URLs are hallucinated → nothing gets stored.
 
-```text
-[vendor, product#] → Firecrawl search/scrape → top PDF link → download → Gemini extract → fuzzy-match → attach to master_spec
-```
+## New behavior
 
-Two ways to drive it:
+Same button, same modal UX (progress + cancel), but under the hood it drives the existing Firecrawl pipeline in `src/lib/dataSheets.functions.ts` (`startDataSheetCrawl` / `runDataSheetCrawlBatch`). One crawl job per vendor, mode `search`, seeded with the product names of that vendor's spec rows missing a PDF. Matching + PDF storage + auto-apply already work there — we just fan out the work.
 
-1. **Manual list** — admin picks vendor, pastes product numbers (one per line), and a search URL template containing `{query}`.
-2. **From existing specs** — admin picks a vendor; the crawler pulls every `master_specs` row for that vendor that has a `product_name`/SKU and no `tds_pdf_path` yet, and runs them as the input list. This is the "fill in the gaps for everything I already have" button.
+## Changes
 
-For each product number:
-- Render the search URL (`template.replace('{query}', encodeURIComponent(productNumber))`).
-- Use **Firecrawl `scrape`** with `formats: ['links', 'markdown']` on that search results page.
-- Pick the best candidate link: prefer `.pdf` URLs whose filename/text contains the product number; fall back to the first product-page link that contains the number, then scrape *that* page for a PDF link.
-- Download the PDF, store in `tds-pdfs` bucket, create a `data_sheets` row pre-linked to the originating `master_spec` (high confidence, since the query came from that spec) → status `auto` if confidence ≥ 0.85, else `suggested` for admin review.
+### 1. New orchestration server functions — `src/lib/specScrape.functions.ts`
 
-## UI changes
+Rewrite `startBulkScrape`, `runBulkScrapeBatch`, `getBulkScrapeStatus`, `cancelBulkScrape` (keep the same names + shapes so `BulkScrapeModal` needs no API changes):
 
-On `/admin/data-sheets`, the "Crawl a source" modal gets a third tab:
+- `startBulkScrape`: query `master_specs` where `tds_pdf_path IS NULL`, group by `vendor`, and for each vendor with a `vendor_search_templates` entry (or generic fallback) call the existing `startDataSheetCrawl` logic with `mode: "search"` and the list of `product_name`s as queries. Record the created `data_sheet_crawl_jobs` ids in a new lightweight parent row (reuse `master_spec_scrape_jobs` table — add `child_job_ids uuid[]` column via migration, or store JSON in an existing `metadata` column if present). Return `{ jobId, total }` where `total` = sum of queued items across child jobs.
+- `runBulkScrapeBatch`: pop the next N pending items across the child jobs and delegate to the existing `runDataSheetCrawlBatch` handler (imported directly, not via RPC). Aggregate progress.
+- `getBulkScrapeStatus` / `cancelBulkScrape`: aggregate/cancel the child `data_sheet_crawl_jobs` rows.
+- Delete the Gemini URL-guessing code path (`ScrapeResponseSchema`, model call, `downloadAndStoreTdsPdf` invocation from the old handler). Keep the `downloadAndStoreTdsPdf` helper only if `dataSheets.server.ts` doesn't already own it (it does — `downloadPdf` + storage upload live there; drop the duplicate).
 
-```text
-[ Crawl site ] [ Direct PDF URLs ] [ Search vendor site ]
-```
+### 2. Vendor template fallback — `src/lib/dataSheets.server.ts` (small addition)
 
-The new tab shows:
-- Vendor (dropdown of distinct `master_specs.vendor` values + free text)
-- Search URL template (with `{query}` placeholder, pre-filled for known vendors — 3M default: `https://technicaldatasheets.3m.com/?q={query}`)
-- Either: textarea of product numbers, OR a checkbox **"Use all master specs for this vendor missing a TDS"** with a live count
-- Max results per query (default 1)
+If a vendor has no row in `vendor_search_templates`, use a generic `"{vendor} {product} technical data sheet filetype:pdf"` query so no vendor is skipped. Existing extraction/matching stays unchanged.
 
-A small `vendor_search_templates` JSON config in code seeds known vendors; admins can override per-job.
+### 3. Per-row `ScrapeSpecButton` — `src/components/ScrapeSpecButton.tsx`
 
-## Data model
+Repoint to a single-spec Firecrawl run: create a one-off `startDataSheetCrawl` with mode `search`, one query = that spec's product name, scoped to its vendor. Same toast UX. Drop the Gemini call.
 
-No new tables. Add columns to `data_sheet_crawl_jobs`:
-- `crawl_mode` already exists — new value `search`
-- `search_template text` — the URL template used
-- `vendor text` — the vendor scope
+### 4. Data model — migration
 
-`data_sheets` already has `master_spec_id`; for search-mode rows we pre-fill it from the originating product number, so matching is essentially free.
+Add `child_job_ids uuid[] DEFAULT '{}'` and `mode text` to `master_spec_scrape_jobs` (or reuse if a metadata jsonb column already exists — verify at build time and prefer that). GRANTs already in place; no RLS change needed (admin-only).
 
-## Server-function changes (`src/lib/dataSheets.functions.ts` + `.server.ts`)
+### 5. Cleanup
 
-- `startDataSheetCrawl` gains a new branch when `mode: 'search'` is passed. It expands product numbers (manual list or DB query for unfilled specs) into a `data_sheet_crawl_urls` queue, one row per `productNumber`, with the rendered search URL.
-- `runDataSheetCrawlBatch` handles the search case: scrape search page → pick PDF candidate → if HTML, scrape that page → download PDF → extract → upsert `data_sheets` with `master_spec_id` already set.
-- Reuse all existing extract / signed-URL / accept / reject logic unchanged.
+- Remove the now-unused Gemini fields/schema from `specScrape.functions.ts`.
+- No UI copy changes needed; the modal already says "Scrape TDS/PDS".
+- Docs comment at top of `specScrape.functions.ts` explaining it's now a thin orchestrator over `dataSheets`.
 
-## Out of scope (call out)
+## Validation
 
-- Sites that require login or POST-only search forms. We rely on GET search URLs. If a vendor has no GET search endpoint, admin falls back to "Direct PDF URLs" mode.
-- CAPTCHA-gated search (rare for TDS portals; if hit, the row goes to `failed` with the captcha error and admin sees it in the jobs table).
+1. Open **Master Spec Sheet** → click **Scrape TDS/PDS** → modal shows non-zero total (was `0` before).
+2. Batch runs; `data_sheet_crawl_jobs` rows fill in; `data_sheets` rows appear; high-confidence matches auto-apply and populate `master_specs.tds_pdf_path`.
+3. Re-open the modal → total drops as rows gain PDFs. Cancel works.
+4. Per-row **Scrape TDS** on a single row stores a PDF (or reports "no data sheet found") — no more hallucinated URLs.
+5. Check AI Gateway logs: Gemini calls only come from extraction (`extractFromMarkdown`), not URL guessing.
 
-## Open questions
+## Out of scope
 
-1. For the default vendor list, do you want me to seed templates for **just 3M** for now, or include Henkel / Permatex / Momentive / Loctite up front?
-2. When "use all master specs missing a TDS" is checked, should it also re-run specs that already have a `tds_url` but no `tds_pdf_path` (i.e. we know the link but never downloaded the PDF)?
+- Redesigning `/admin/data-sheets`.
+- Changing `vendor_search_templates` schema.
+- Touching the spreadsheet auto-mapper.
