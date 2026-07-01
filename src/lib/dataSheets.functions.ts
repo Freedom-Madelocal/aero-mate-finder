@@ -3,19 +3,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   firecrawlMap,
-  firecrawlScrape,
-  downloadPdf,
-  extractFromMarkdown,
   looksLikeDataSheetUrl,
-  bestMatch,
   FIELD_TO_COLUMN,
   type CandidateUrl,
-  type SpecCandidate,
 } from "@/lib/dataSheets.server";
+import {
+  runOneCrawlBatch,
+  applySheetToSpec,
+  AUTO_MATCH_THRESHOLD,
+} from "@/lib/dataSheets.runner.server";
 
-const BATCH_SIZE = 3;
-const AUTO_MATCH_THRESHOLD = 0.85;
-const SUGGEST_THRESHOLD = 0.6;
 
 async function requireSuperAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase
