@@ -1,80 +1,54 @@
-# Vendor-Targeted TDS Crawl & Auto-Link
 
-## Goal
-Replace generic Firecrawl "vendor search" mode with a **curated per-manufacturer source list**. For each supported vendor (Hexcel, 3M, Toray, Syensqo, Henkel), crawl a known set of matweb + manufacturer resource pages, harvest every TDS/PDS PDF, extract fields, and auto-match to `master_specs` rows so PDFs surface on `/engineer`.
+# Interactive vendor TDS agent
 
-## Why the current scrape fails
-Today's bulk scrape sends one `search`-mode Firecrawl job per vendor using a Google `filetype:pdf` fallback (`vendorSearchTemplates.ts`). Google increasingly returns JS-only SERPs that Firecrawl can't parse, and the 3M template hits a JS-rendered search that also comes back empty — so `scrape_logs` fills with `search / no_results`.
+## 1. Prune MatWeb from vendor sources
+Edit `src/lib/vendorSources.ts` — remove every `matweb.com` seed. Resulting seeds:
 
-## Plan
+- **Hexcel:** `https://www.hexcel.com/resources/`
+- **3M:** `https://technicaldatasheets.3m.com/`, `https://www.3m.com/3M/en_US/thinsulate-us/technical-data-sheets/`
+- **Toray:** `https://www.toraycma.com/resources/data-sheets/`
+- **Syensqo:** `https://www.syensqo.com/en/chemical-categories/specialty-polymers/product-data`
+- **Henkel:** `https://tdx.henkel.com/com/en.html`
 
-### 1. Curated vendor source registry
-Rewrite `src/lib/vendorSearchTemplates.ts` → `src/lib/vendorSources.ts`:
-```ts
-export const VENDOR_SOURCES: Record<string, {
-  aliases: string[];         // fuzzy match against master_specs.vendor
-  seeds: string[];           // pages to map/crawl
-  productSearchUrl?: (q: string) => string; // optional per-product query
-}> = {
-  Hexcel: { aliases:["hexcel"], seeds:[
-    "https://www.hexcel.com/resources/",
-    "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=81",
-  ]},
-  "3M":     { aliases:["3m"], seeds:[
-    "https://technicaldatasheets.3m.com/",
-    "https://www.3m.com/3M/en_US/thinsulate-us/technical-data-sheets/",
-    "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=1",
-  ]},
-  Toray:    { aliases:["toray","toray composite"], seeds:[
-    "https://www.toraycma.com/resources/data-sheets/",
-    "https://matweb.com/search/GetMatlsByManufacturer.aspx?manID=1109",
-  ]},
-  Syensqo:  { aliases:["syensqo","solvay"], seeds:[
-    "https://www.syensqo.com/en/chemical-categories/specialty-polymers/product-data",
-    "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=139",
-  ]},
-  Henkel:   { aliases:["henkel","loctite"], seeds:[
-    "https://tdx.henkel.com/com/en.html",
-    "https://www.matweb.com/search/GetMatlsByManufacturer.aspx?manID=835",
-  ]},
-};
-```
+Update `BulkScrapeModal.tsx` copy to drop the "MatWeb" mention.
 
-### 2. Two-phase crawler in `dataSheets.runner.server.ts`
-Add a new job `mode: "vendor_sources"`:
-- **Phase A – Discover.** For each seed URL: `firecrawlMap` (fast) → filter links by `looksLikeDataSheetUrl` + vendor-alias in URL/anchor text. For matweb manufacturer pages, also follow one hop into product datasheet pages.
-- **Phase B – Harvest.** For each candidate page: `firecrawlScrape`; if PDF, download → store in `tds-pdfs` bucket; else extract PDF links from markdown and download those. Cap per seed (e.g. 200 URLs).
-- Log every step (search / scrape / download / extract / match / apply) to `scrape_logs` — the infra already exists.
+## 2. Why Firecrawl alone isn't enough
+`tdx.henkel.com`, the Syensqo product-data page, and 3M's `technicaldatasheets.3m.com` are JS-driven catalogs behind dropdowns / search boxes / "Load more" buttons. `firecrawlMap` returns a near-empty link set on those, which is why scrapes come back with nothing. We need a real browser session that can type into search fields, pick dropdown values, and click through result cards.
 
-### 3. Orchestrator changes
-`src/lib/specScrape.functions.ts`:
-- `startBulkScrape` groups specs missing `tds_pdf_path` by resolved vendor (via aliases). For each supported vendor, spawn ONE `vendor_sources` crawl job seeded with `VENDOR_SOURCES[vendor].seeds` plus the vendor's product-name list (used in Phase B matching, not as search queries).
-- Unsupported vendors: log `orchestrate / skipped_unsupported_vendor` (no Google fallback — it's noise).
-- Per-spec `scrapeSpec` (single-row button) reuses the same crawler but with `productHint` narrowing Phase A to links whose text/URL contains the product number.
+## 3. Add a browser-agent crawl mode
+New file `src/lib/vendorAgents.server.ts` — one adapter per vendor site, each running Playwright (Chromium) via Firecrawl v2's **cloud browser** (`browser` + `browserExecute`, per the firecrawl knowledge card). This keeps us serverless-safe (no local Chromium in the Worker) and gives us `page.click`, `page.fill`, `page.selectOption`, `page.waitForSelector`, network sniffing for `.pdf` responses, etc.
 
-### 4. Matching & linking (unchanged wiring, tighter thresholds)
-`bestMatch` in `dataSheets.server.ts` already fuzzy-matches sheet → spec. After Phase B:
-- confidence ≥ 0.85 → auto-apply (attach PDF to `master_specs`, write extracted fields via `applySheetToSpec`).
-- 0.6–0.85 → attach as unlinked `data_sheets` row + log for admin review at `/admin/data-sheets`.
-- `<0.6` → keep sheet, no link.
+Adapters:
 
-Engineer page (`AttachedDataSheets`) already renders linked PDFs — no change needed.
+- **HenkelAgent** — open `tdx.henkel.com/com/en.html`, accept cookies, type each product name into the search box, wait for suggestions, click first match, on product page harvest any anchor ending in `.pdf` (TDS + SDS).
+- **SyensqoAgent** — open the specialty-polymers product-data page, use the family dropdown + text filter, iterate result cards, follow "Technical datasheet" link, capture the download URL.
+- **ThreeMTdsAgent** — `technicaldatasheets.3m.com`: fill the product-number search, wait for results grid, click each row, capture PDF download URL from the modal.
+- **ThreeMThinsulateAgent** — flat listing page, plain `firecrawlMap` + link filter is enough (kept as passive seed).
+- **HexcelAgent** — `hexcel.com/resources/` is a filterable resource library; adapter selects "Data Sheets" category then walks paginated cards.
+- **TorayAgent** — `toraycma.com/resources/data-sheets/` is a static grid; keep as passive seed (map + filter) — no interaction needed.
 
-### 5. UI copy
-- `BulkScrapeModal.tsx`: update body to list the 5 supported vendors and the source URLs it will crawl.
-- `/admin/data-sheets`: add a "Vendor Sources" tab that lets admins trigger one vendor's crawl on demand (reuses the same job).
+Each adapter returns `CandidateUrl[]` with `pageUrl` + resolved PDF `url`, ready to feed the existing download / extract / match pipeline.
 
-### 6. DB
-- `data_sheet_crawl_jobs`: add `source_urls text[]` and allow `mode='vendor_sources'` (currently 'site' | 'urls' | 'search'). One migration.
-- No new tables.
+## 4. Wire the runner
+`src/lib/dataSheets.runner.server.ts` — when a seed's host matches an interactive adapter, dispatch to `vendorAgents.server.ts` instead of `firecrawlMap`. Non-interactive seeds keep today's map+filter path. All existing `scrape_logs` steps (`search`, `scrape`, `download_pdf`, `extract`, `match`, `apply`) still fire, plus a new `agent` step logging each interactive action (opened URL, filled field, clicked selector, captured PDF, error).
+
+Cap per adapter: 25 product queries per job, 10 s per action, 60 s per product. Reuse one browser session per child job (`browser({ ttl: 600 })`, close in `finally`).
+
+## 5. Orchestrator
+`src/lib/specScrape.functions.ts` — no shape change. It still groups specs by vendor and creates one `data_sheet_crawl_jobs` child per vendor; the runner now decides interactive vs. passive per seed. Products for a vendor are passed through `productFilterTokens` (already exists) and read by the adapter as the query list.
+
+## 6. UI
+- `BulkScrapeModal.tsx` — update body: "Uses a browser agent to search each manufacturer's TDS portal (Hexcel, 3M, Toray, Syensqo, Henkel), open product pages, and download the linked PDFs."
+- `/admin/data-sheets` — add a per-vendor "Run agent now" button (reuses the same job creation path). Progress + failures visible via existing `/admin/scrape-logs` (filter `step=agent`).
+
+## 7. DB
+No schema changes. `scrape_logs.step` is free text so `agent` needs no migration.
 
 ## Files touched
-- **New:** `src/lib/vendorSources.ts`
-- **Rewrite:** `src/lib/vendorSearchTemplates.ts` → deleted, imports repointed
-- **Edit:** `src/lib/dataSheets.runner.server.ts`, `src/lib/specScrape.functions.ts`, `src/lib/dataSheets.functions.ts`, `src/pages/admin/DataSheets.tsx`, `src/components/BulkScrapeModal.tsx`
-- **Migration:** add `source_urls` column, extend `mode` check
+- **Edit:** `src/lib/vendorSources.ts`, `src/lib/dataSheets.runner.server.ts`, `src/lib/dataSheets.server.ts` (types), `src/components/BulkScrapeModal.tsx`, `src/pages/admin/DataSheets.tsx`
+- **New:** `src/lib/vendorAgents.server.ts` (one file, one adapter per vendor)
 
 ## Open questions
-1. Matweb often gates PDFs behind login — is it OK if matweb seeds mostly yield product *pages* (with specs in HTML) rather than PDFs? Extraction still works from the HTML→markdown.
-2. Should Henkel `tdx.henkel.com` (which requires an interactive product picker) fall back to Firecrawl's `search` mode scoped to `site:tdx.henkel.com` when map returns nothing?
-3. Do you want a scheduled re-crawl (e.g. weekly) or only on-demand from the admin button?
+1. **Cost:** Firecrawl cloud browser sessions bill by time. Ballpark ~5–15 s per product × ~25 products × 5 vendors ≈ 15–30 min of browser time per full bulk run. OK, or should the agent only run for specs with no PDF *and* no prior `agent` attempt in the last 7 days?
+2. **Henkel SDS vs TDS:** `tdx.henkel.com` product pages expose both. Attach both, or TDS only?
+3. **Fallback for zero results:** if the agent finds nothing for a product, should it fall back to Firecrawl `search` mode scoped `site:vendor.com "<product>" filetype:pdf`, or just log `agent/not_found` and stop?
