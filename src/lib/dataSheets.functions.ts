@@ -4,9 +4,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   firecrawlMap,
   looksLikeDataSheetUrl,
-  FIELD_TO_COLUMN,
   type CandidateUrl,
 } from "@/lib/dataSheets.server";
+
 import {
   runOneCrawlBatch,
   applySheetToSpec,
