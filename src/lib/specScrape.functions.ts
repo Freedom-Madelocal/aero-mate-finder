@@ -435,7 +435,7 @@ export type ScrapeLogRow = {
   attempted_url: string | null;
   http_status: number | null;
   error_message: string | null;
-  details: Record<string, unknown> | null;
+  details: unknown;
 };
 
 export const listScrapeLogs = createServerFn({ method: "GET" })
