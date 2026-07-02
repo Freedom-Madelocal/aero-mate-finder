@@ -708,7 +708,7 @@ export default function TdsUpload() {
               </span>
             )}
             <button
-              onClick={runUpload}
+              onClick={() => runUpload("all")}
               disabled={
                 uploading ||
                 files.length === 0 ||
