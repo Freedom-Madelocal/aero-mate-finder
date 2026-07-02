@@ -426,30 +426,59 @@ export default function TdsUpload() {
     URL.revokeObjectURL(url);
   }
 
-  async function runUpload() {
+  async function runUpload(mode: "all" | "retry" = "all") {
     if (files.length === 0) return;
-    // Hard gate: refuse if there are any error rows staged.
-    if (files.some((f) => f.status === "error")) {
-      toast.error("Fix or remove file errors before uploading.");
-      return;
+
+    // Compute target indices for this run.
+    let targets: number[];
+    if (mode === "retry") {
+      targets = files
+        .map((f, i) => ({ f, i }))
+        .filter(
+          ({ f }) =>
+            (f.status === "error" || f.status === "skipped") && f.materialNumber != null,
+        )
+        .map(({ i }) => i);
+      if (targets.length === 0) {
+        toast.info("Nothing to retry.");
+        return;
+      }
+      // Flip retry targets back to pending so the UI shows them as queued.
+      setFiles((prev) =>
+        prev.map((f, idx) =>
+          targets.includes(idx) ? { ...f, status: "pending", error: undefined } : f,
+        ),
+      );
+    } else {
+      if (files.some((f) => f.status === "error")) {
+        toast.error("Fix or remove file errors before uploading.");
+        return;
+      }
+      targets = files
+        .map((f, i) => ({ f, i }))
+        .filter(({ f }) => f.status === "pending" && f.materialNumber != null)
+        .map(({ i }) => i);
     }
+
     setUploading(true);
     let done = 0;
     let bytesDone = 0;
-    const pendingFiles = files.filter((f) => f.status === "pending");
-    const total = pendingFiles.length;
-    const bytesTotal = pendingFiles.reduce((s, f) => s + f.file.size, 0);
+    const total = targets.length;
+    const bytesTotal = targets.reduce((s, i) => s + files[i].file.size, 0);
     setProgress({ done, total });
     setBytes({ done: 0, total: bytesTotal });
     setStartedAt(Date.now());
     let succeeded = 0;
     let failed = 0;
     let skipped = 0;
-    for (let i = 0; i < files.length; i++) {
+
+    for (const i of targets) {
       const item = files[i];
-      if (item.status !== "pending" || item.materialNumber == null) continue;
+      if (item.materialNumber == null) continue;
       setCurrentFile(item.file.name);
-      setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f)));
+      setFiles((prev) =>
+        prev.map((f, idx) => (idx === i ? { ...f, status: "uploading", error: undefined } : f)),
+      );
       try {
         const signed = await createUrl({
           data: {
@@ -496,10 +525,11 @@ export default function TdsUpload() {
     setCurrentFile(null);
     setUploading(false);
     await refreshMasterSpecStore();
+    const label = mode === "retry" ? "Retry finished" : "Upload finished";
     if (failed > 0) {
-      toast.error(`Upload finished: ${succeeded} uploaded · ${failed} failed · ${skipped} skipped`);
+      toast.error(`${label}: ${succeeded} uploaded · ${failed} failed · ${skipped} skipped`);
     } else {
-      toast.success(`Upload finished: ${succeeded} uploaded · ${skipped} skipped`);
+      toast.success(`${label}: ${succeeded} uploaded · ${skipped} skipped`);
     }
   }
 
@@ -678,7 +708,7 @@ export default function TdsUpload() {
               </span>
             )}
             <button
-              onClick={runUpload}
+              onClick={() => runUpload("all")}
               disabled={
                 uploading ||
                 files.length === 0 ||
@@ -798,13 +828,27 @@ export default function TdsUpload() {
                   <XCircle className="w-4 h-4" />
                   Error log ({failedFiles.length} file{failedFiles.length === 1 ? "" : "s"})
                 </div>
-                <button
-                  type="button"
-                  onClick={downloadErrorLog}
-                  className="text-[11px] px-2 py-1 border border-border rounded hover:bg-secondary/40"
-                >
-                  Download CSV
-                </button>
+                <div className="flex items-center gap-2">
+                  {failedFiles.some((f) => f.materialNumber != null) && (
+                    <button
+                      type="button"
+                      onClick={() => runUpload("retry")}
+                      disabled={uploading}
+                      className="text-[11px] px-2 py-1 rounded bg-[var(--accent-blue)] text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-1"
+                      title="Retry only the files that failed or were skipped"
+                    >
+                      <Loader2 className={`w-3 h-3 ${uploading ? "animate-spin" : "hidden"}`} />
+                      Retry {failedFiles.filter((f) => f.materialNumber != null).length} failed
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={downloadErrorLog}
+                    className="text-[11px] px-2 py-1 border border-border rounded hover:bg-secondary/40"
+                  >
+                    Download CSV
+                  </button>
+                </div>
               </div>
               <div className="max-h-64 overflow-y-auto border border-border rounded bg-background">
                 <table className="w-full text-[11px]">
