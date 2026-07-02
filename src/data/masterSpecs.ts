@@ -12,6 +12,8 @@ import type { Material } from "@/data/materials";
 
 export interface MasterSpec {
   id: string;
+  materialNumber: number | null;
+  tdsPdfPath: string | null;
   vendor: string;
   productName: string;
   productFamily: string | null;
