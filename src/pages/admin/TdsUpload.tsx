@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import {
   importMaterialIndex,
+  validateTdsMaterialNumbers,
   createTdsUploadUrl,
   finalizeTdsUpload,
 } from "@/lib/tdsUpload.functions";
@@ -322,6 +323,7 @@ export default function TdsUpload() {
   const [startedAt, setStartedAt] = useState<number | null>(null);
 
   const importIndex = useServerFn(importMaterialIndex);
+  const validateMaterialNumbers = useServerFn(validateTdsMaterialNumbers);
   const createUrl = useServerFn(createTdsUploadUrl);
   const finalize = useServerFn(finalizeTdsUpload);
 
@@ -460,6 +462,41 @@ export default function TdsUpload() {
         .map(({ i }) => i);
     }
 
+    const materialNumbers = targets
+      .map((i) => files[i].materialNumber)
+      .filter((n): n is number => n != null);
+    if (materialNumbers.length > 0) {
+      try {
+        const check = await validateMaterialNumbers({ data: { materialNumbers } });
+        const missing = new Set(check.missing);
+        if (missing.size > 0) {
+          const missingTargets = targets.filter((i) => {
+            const materialNumber = files[i].materialNumber;
+            return materialNumber != null && missing.has(materialNumber);
+          });
+          setFiles((prev) =>
+            prev.map((f, idx) =>
+              missingTargets.includes(idx)
+                ? {
+                    ...f,
+                    status: "error",
+                    error:
+                      "Material ID is not assigned to any master spec. Run Assign Material IDs first, then re-select the folder.",
+                  }
+                : f,
+            ),
+          );
+          toast.error(
+            `${missing.size} Material ID${missing.size === 1 ? " is" : "s are"} not assigned to a master spec. Upload blocked before any PDFs were imported.`,
+          );
+          return;
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err));
+        return;
+      }
+    }
+
     setUploading(true);
     let done = 0;
     let bytesDone = 0;
@@ -487,6 +524,11 @@ export default function TdsUpload() {
             replaceExisting,
           },
         });
+        if (!signed.ok) {
+          const error = new Error(signed.message);
+          error.name = signed.code;
+          throw error;
+        }
         const putRes = await fetch(signed.signedUrl, {
           method: "PUT",
           headers: { "Content-Type": "application/pdf" },
@@ -500,7 +542,7 @@ export default function TdsUpload() {
         succeeded++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        const isExists = msg.includes("EXISTS:");
+        const isExists = (err instanceof Error && err.name === "EXISTS") || msg.includes("EXISTS:");
         setFiles((prev) =>
           prev.map((f, idx) =>
             idx === i
