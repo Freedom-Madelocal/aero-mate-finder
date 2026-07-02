@@ -435,11 +435,20 @@ export default function TdsUpload() {
     }
     setUploading(true);
     let done = 0;
-    const total = files.filter((f) => f.status === "pending").length;
+    let bytesDone = 0;
+    const pendingFiles = files.filter((f) => f.status === "pending");
+    const total = pendingFiles.length;
+    const bytesTotal = pendingFiles.reduce((s, f) => s + f.file.size, 0);
     setProgress({ done, total });
+    setBytes({ done: 0, total: bytesTotal });
+    setStartedAt(Date.now());
+    let succeeded = 0;
+    let failed = 0;
+    let skipped = 0;
     for (let i = 0; i < files.length; i++) {
       const item = files[i];
       if (item.status !== "pending" || item.materialNumber == null) continue;
+      setCurrentFile(item.file.name);
       setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f)));
       try {
         const signed = await createUrl({
@@ -454,11 +463,12 @@ export default function TdsUpload() {
           headers: { "Content-Type": "application/pdf" },
           body: item.file,
         });
-        if (!putRes.ok) throw new Error(`Storage PUT ${putRes.status}`);
+        if (!putRes.ok) throw new Error(`Storage PUT ${putRes.status} ${putRes.statusText}`);
         await finalize({
           data: { specId: signed.specId, path: signed.path, size: item.file.size },
         });
         setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "done" } : f)));
+        succeeded++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         const isExists = msg.includes("EXISTS:");
@@ -475,13 +485,48 @@ export default function TdsUpload() {
               : f,
           ),
         );
+        if (isExists) skipped++;
+        else failed++;
       }
       done++;
+      bytesDone += item.file.size;
       setProgress({ done, total });
+      setBytes({ done: bytesDone, total: bytesTotal });
     }
+    setCurrentFile(null);
     setUploading(false);
     await refreshMasterSpecStore();
-    toast.success(`Upload complete: ${done}/${total}`);
+    if (failed > 0) {
+      toast.error(`Upload finished: ${succeeded} uploaded · ${failed} failed · ${skipped} skipped`);
+    } else {
+      toast.success(`Upload finished: ${succeeded} uploaded · ${skipped} skipped`);
+    }
+  }
+
+  function downloadErrorLog() {
+    const rows = [
+      ["material_number", "file", "status", "error"],
+      ...failedFiles.map((f) => [
+        f.materialNumber != null ? String(f.materialNumber).padStart(4, "0") : "",
+        f.file.name,
+        f.status,
+        (f.error ?? "").replace(/"/g, '""'),
+      ]),
+    ];
+    const csvText = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csvText], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tds-upload-errors-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function fmtBytes(n: number): string {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
   }
 
   return (
