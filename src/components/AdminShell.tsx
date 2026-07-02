@@ -9,7 +9,7 @@ const TABS = [
   { path: "/admin/organizations", label: "Organizations" },
   { path: "/admin/crm", label: "CRM" },
   { path: "/admin/master-specs", label: "Master Specs" },
-  { path: "/admin/data-sheets", label: "Data Sheets" },
+  { path: "/admin/tds-upload", label: "TDS Upload" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
