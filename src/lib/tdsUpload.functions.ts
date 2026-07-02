@@ -76,11 +76,29 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       return p;
     };
 
-    type SpecRef = { id: string; existing: number | null };
+    const firstToken = (s: string) => s.split(" ").filter(Boolean)[0] ?? "";
+
+    type SpecRef = {
+      id: string;
+      vendor: string;
+      product: string;
+      vendorKey: string;
+      productKey: string;
+      existing: number | null;
+    };
     const byVendorProduct = new Map<string, SpecRef>();
     const byProductOnly = new Map<string, SpecRef[]>();
+    const refs: SpecRef[] = [];
     for (const s of specs ?? []) {
-      const ref: SpecRef = { id: s.id, existing: s.material_number };
+      const ref: SpecRef = {
+        id: s.id,
+        vendor: s.vendor,
+        product: s.product_name,
+        vendorKey: norm(s.vendor),
+        productKey: stripVendorPrefix(s.vendor, s.product_name),
+        existing: s.material_number,
+      };
+      refs.push(ref);
       const prodKey = stripVendorPrefix(s.vendor, s.product_name);
       byVendorProduct.set(`${norm(s.vendor)}|${prodKey}`, ref);
       const list = byProductOnly.get(prodKey) ?? [];
@@ -88,26 +106,68 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       byProductOnly.set(prodKey, list);
     }
 
+    const scoreCandidate = (rowVendor: string, rowProduct: string, ref: SpecRef) => {
+      const rowVendorKey = norm(rowVendor);
+      const rowProductKey = stripVendorPrefix(rowVendor, rowProduct);
+      let score = 0;
+
+      if (ref.vendorKey === rowVendorKey) score += 1000;
+      else if (ref.vendorKey && rowProductKey.includes(ref.vendorKey)) score += 300;
+      else if (rowVendorKey && ref.productKey.includes(rowVendorKey)) score += 300;
+      else return -1;
+
+      if (ref.productKey === rowProductKey) return score + 10000;
+      if (rowProductKey.startsWith(`${ref.productKey} `)) return score + 5000 + ref.productKey.length;
+      if (ref.productKey.startsWith(`${rowProductKey} `)) return score + 3000 + rowProductKey.length;
+
+      // The INDEX CSV often appends descriptors after the product code:
+      // "1035 Hexcel E-Glass E595" should match DB product "1035".
+      const code = firstToken(rowProductKey);
+      if (code && (ref.productKey === code || ref.productKey.startsWith(`${code} `))) {
+        return score + 1500 + code.length;
+      }
+
+      return -1;
+    };
+
+    const findBestSpec = (rowVendor: string, rowProduct: string) => {
+      const rowProdKey = stripVendorPrefix(rowVendor, rowProduct);
+      const exact = byVendorProduct.get(`${norm(rowVendor)}|${rowProdKey}`);
+      if (exact) return { hit: exact, ambiguous: false };
+
+      const productOnly = byProductOnly.get(rowProdKey);
+      if (productOnly && productOnly.length === 1) return { hit: productOnly[0], ambiguous: false };
+
+      let best: SpecRef | null = null;
+      let bestScore = -1;
+      let tied = false;
+      for (const ref of refs) {
+        const score = scoreCandidate(rowVendor, rowProduct, ref);
+        if (score > bestScore) {
+          best = ref;
+          bestScore = score;
+          tied = false;
+        } else if (score === bestScore && score >= 0) {
+          tied = true;
+        }
+      }
+      return { hit: bestScore >= 0 && !tied ? best : null, ambiguous: bestScore >= 0 && tied };
+    };
+
     let matched = 0;
     let alreadySet = 0;
     let conflicted = 0;
     const unmatched: { materialNumber: number; vendor: string; product: string }[] = [];
     const updates: { id: string; material_number: number }[] = [];
+    const plannedBySpecId = new Map<string, number>();
 
     for (const row of data.rows) {
-      const rowProdKey = stripVendorPrefix(row.vendor, row.product);
-      let hit = byVendorProduct.get(`${norm(row.vendor)}|${rowProdKey}`);
-      // Fallback: vendor names differ (CSV "Hexcel" vs DB "HexForce")
-      // but the product name uniquely identifies the spec.
-      if (!hit) {
-        const candidates = byProductOnly.get(rowProdKey);
-        if (candidates && candidates.length === 1) hit = candidates[0];
-      }
+      const { hit, ambiguous } = findBestSpec(row.vendor, row.product);
       if (!hit) {
         unmatched.push({
           materialNumber: row.materialNumber,
           vendor: row.vendor,
-          product: row.product,
+          product: ambiguous ? `${row.product} (ambiguous match)` : row.product,
         });
         continue;
       }
@@ -119,6 +179,12 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
         alreadySet++;
         continue;
       }
+      const plannedNumber = plannedBySpecId.get(hit.id);
+      if (plannedNumber != null && plannedNumber !== row.materialNumber) {
+        conflicted++;
+        continue;
+      }
+      plannedBySpecId.set(hit.id, row.materialNumber);
       updates.push({ id: hit.id, material_number: row.materialNumber });
     }
 
