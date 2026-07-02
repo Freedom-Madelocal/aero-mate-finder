@@ -850,6 +850,14 @@ export default function Engineer() {
                               <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary text-foreground">
                                 {spec.vendor}
                               </span>
+                              {spec.materialNumber !== null && (
+                                <span
+                                  className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground"
+                                  title="Traceium ID"
+                                >
+                                  TID {spec.materialNumber}
+                                </span>
+                              )}
                               {spec.resinChemistry && (
                                 <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground">
                                   {spec.resinChemistry}
@@ -1308,7 +1316,14 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
       <div className="relative ml-auto w-full max-w-xl bg-card border-l border-border h-full overflow-y-auto">
         <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-3 flex items-start justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">{spec.vendor}</p>
+            <p className="text-xs text-muted-foreground">
+              {spec.vendor}
+              {spec.materialNumber !== null && (
+                <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground/80">
+                  Traceium ID {spec.materialNumber}
+                </span>
+              )}
+            </p>
             <h3 className="text-base font-semibold text-foreground">{spec.productName}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{spec.materialCategory ?? "—"}</p>
           </div>

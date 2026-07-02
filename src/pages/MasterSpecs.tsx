@@ -186,6 +186,7 @@ export default function MasterSpecs() {
             <table className="w-full text-sm">
               <thead className="bg-secondary/50 text-xs uppercase text-muted-foreground">
                 <tr>
+                  <Th>TID</Th>
                   <Th>Vendor</Th>
                   <Th>Product</Th>
                   <Th>Category</Th>
@@ -203,7 +204,7 @@ export default function MasterSpecs() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-12 text-muted-foreground text-sm">
+                    <td colSpan={13} className="text-center py-12 text-muted-foreground text-sm">
                       No specs match your filters.
                     </td>
                   </tr>
@@ -216,6 +217,7 @@ export default function MasterSpecs() {
                         onClick={() => setSelectedId(s.id)}
                         className="border-t border-border hover:bg-accent/20 cursor-pointer"
                       >
+                        <Td className="font-mono text-muted-foreground">{s.materialNumber ?? "—"}</Td>
                         <Td className="text-muted-foreground">{s.vendor}</Td>
                         <Td className="font-medium text-foreground">{s.productName}</Td>
                         <Td className="text-muted-foreground">{s.materialCategory ?? "—"}</Td>
@@ -380,7 +382,14 @@ function SpecDrawer({
       <div className="relative ml-auto w-full max-w-xl bg-card border-l border-border h-full overflow-y-auto">
         <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-3 flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs text-muted-foreground">{spec.vendor}</p>
+            <p className="text-xs text-muted-foreground">
+              {spec.vendor}
+              {spec.materialNumber !== null && (
+                <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground/80">
+                  Traceium ID {spec.materialNumber}
+                </span>
+              )}
+            </p>
             <h3 className="text-base font-semibold text-foreground">{spec.productName}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{spec.materialCategory ?? "—"}</p>
           </div>
