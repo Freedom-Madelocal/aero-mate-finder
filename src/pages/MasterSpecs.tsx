@@ -285,34 +285,6 @@ export default function MasterSpecs() {
   );
 }
 
-function TdsCell({ spec }: { spec: MasterSpec }) {
-  if (!spec.tdsScrapedAt) {
-    return <span className="text-muted-foreground text-xs">—</span>;
-  }
-  if (spec.tdsScrapeStatus === "success" && spec.tdsUrl) {
-    return (
-      <a
-        href={spec.tdsUrl}
-        target="_blank"
-        rel="noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 text-xs text-foreground hover:underline"
-        title={spec.tdsSourceTitle ?? spec.tdsUrl}
-      >
-        <ExternalLink className="w-3.5 h-3.5" /> TDS
-      </a>
-    );
-  }
-  return (
-    <span
-      className="inline-flex items-center gap-1 text-xs text-[var(--status-warning)]"
-      title={spec.tdsScrapeError ?? "TDS not found"}
-    >
-      <AlertCircle className="w-3.5 h-3.5" />
-      {spec.tdsScrapeStatus === "not_found" ? "Not found" : "Failed"}
-    </span>
-  );
-}
 
 function Th({ children }: { children: React.ReactNode }) {
   return <th className="text-left px-3 py-2 font-medium whitespace-nowrap">{children}</th>;
