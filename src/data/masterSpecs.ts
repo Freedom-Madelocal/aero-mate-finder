@@ -179,6 +179,7 @@ function rowToSpec(r: SpecRow): MasterSpec {
     tdsScrapedAt: r.tds_scraped_at ?? null,
     tdsScrapeStatus: (r.tds_scrape_status as MasterSpec["tdsScrapeStatus"]) ?? null,
     tdsScrapeError: r.tds_scrape_error ?? null,
+    tdsAnalyzedAt: r.tds_analyzed_at ?? null,
   };
 }
 
