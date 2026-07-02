@@ -236,9 +236,6 @@ export default function MasterSpecs() {
                         <Td>
                           <InventoryBadge status={inv.status} />
                         </Td>
-                        <Td>
-                          <TdsCell spec={s} />
-                        </Td>
                       </tr>
                     );
                   })
