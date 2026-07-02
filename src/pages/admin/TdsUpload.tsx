@@ -315,6 +315,7 @@ export default function TdsUpload() {
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [folderWarnings, setFolderWarnings] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [replaceExisting, setReplaceExisting] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
 
   const importIndex = useServerFn(importMaterialIndex);
