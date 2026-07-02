@@ -315,6 +315,7 @@ export default function TdsUpload() {
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [folderWarnings, setFolderWarnings] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [replaceExisting, setReplaceExisting] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
 
   const importIndex = useServerFn(importMaterialIndex);
@@ -432,7 +433,11 @@ export default function TdsUpload() {
       setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f)));
       try {
         const signed = await createUrl({
-          data: { materialNumber: item.materialNumber, fileName: item.file.name },
+          data: {
+            materialNumber: item.materialNumber,
+            fileName: item.file.name,
+            replaceExisting,
+          },
         });
         const putRes = await fetch(signed.signedUrl, {
           method: "PUT",
@@ -445,10 +450,18 @@ export default function TdsUpload() {
         });
         setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "done" } : f)));
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const isExists = msg.includes("EXISTS:");
         setFiles((prev) =>
           prev.map((f, idx) =>
             idx === i
-              ? { ...f, status: "error", error: err instanceof Error ? err.message : String(err) }
+              ? {
+                  ...f,
+                  status: isExists ? "skipped" : "error",
+                  error: isExists
+                    ? "Already has a PDF — enable Replace to overwrite"
+                    : msg,
+                }
               : f,
           ),
         );
@@ -623,6 +636,22 @@ export default function TdsUpload() {
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Upload & Attach
             </button>
+            <label className="inline-flex items-center gap-2 text-xs text-muted-foreground select-none cursor-pointer ml-auto">
+              <input
+                type="checkbox"
+                checked={replaceExisting}
+                onChange={(e) => setReplaceExisting(e.target.checked)}
+                disabled={uploading}
+                className="accent-[var(--accent-blue)]"
+              />
+              Replace existing PDFs
+              <span
+                className="text-[10px] text-muted-foreground/70"
+                title="On: overwrite any PDF already attached to a Material ID (old file removed, link updated — no duplicates, no broken links). Off: skip Material IDs that already have a PDF."
+              >
+                (?)
+              </span>
+            </label>
           </div>
 
           {folderStats.errored > 0 && (
