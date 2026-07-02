@@ -1333,6 +1333,28 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
         </div>
 
         <div className="p-5 space-y-5">
+          {spec.tdsPdfPath && (
+            <div className="rounded-lg border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Technical Data Sheet</p>
+                <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[22rem]">{spec.tdsPdfPath}</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
+                    const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
+                    window.open(res.url, "_blank", "noopener");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to open TDS");
+                  }
+                }}
+                className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded shrink-0"
+              >
+                View PDF <ExternalLink className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           {(spec.keySpecs ?? []).length > 0 && (
             <DrawerSection title="Key Specifications" tone="primary">
               <p className="text-[11px] text-muted-foreground mb-2">
