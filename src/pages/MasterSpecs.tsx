@@ -115,9 +115,11 @@ export default function MasterSpecs() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <BulkAnalyzeTdsButton specs={specs} onRunningChange={setBulkRunning} />
             <button
+              disabled={bulkRunning}
               onClick={() => setShowUpload(true)}
-              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
+              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Upload className="w-4 h-4" /> Upload Spec Sheet
             </button>
