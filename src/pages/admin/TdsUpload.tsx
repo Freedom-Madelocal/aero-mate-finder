@@ -636,6 +636,22 @@ export default function TdsUpload() {
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Upload & Attach
             </button>
+            <label className="inline-flex items-center gap-2 text-xs text-muted-foreground select-none cursor-pointer ml-auto">
+              <input
+                type="checkbox"
+                checked={replaceExisting}
+                onChange={(e) => setReplaceExisting(e.target.checked)}
+                disabled={uploading}
+                className="accent-[var(--accent-blue)]"
+              />
+              Replace existing PDFs
+              <span
+                className="text-[10px] text-muted-foreground/70"
+                title="On: overwrite any PDF already attached to a Material ID (old file removed, link updated — no duplicates, no broken links). Off: skip Material IDs that already have a PDF."
+              >
+                (?)
+              </span>
+            </label>
           </div>
 
           {folderStats.errored > 0 && (
