@@ -86,7 +86,7 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       productKey: string;
       existing: number | null;
     };
-    const byVendorProduct = new Map<string, SpecRef>();
+    const byVendorProduct = new Map<string, SpecRef[]>();
     const byProductOnly = new Map<string, SpecRef[]>();
     const refs: SpecRef[] = [];
     for (const s of specs ?? []) {
@@ -100,7 +100,10 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       };
       refs.push(ref);
       const prodKey = stripVendorPrefix(s.vendor, s.product_name);
-      byVendorProduct.set(`${norm(s.vendor)}|${prodKey}`, ref);
+      const vendorProductKey = `${norm(s.vendor)}|${prodKey}`;
+      const vendorProductList = byVendorProduct.get(vendorProductKey) ?? [];
+      vendorProductList.push(ref);
+      byVendorProduct.set(vendorProductKey, vendorProductList);
       const list = byProductOnly.get(prodKey) ?? [];
       list.push(ref);
       byProductOnly.set(prodKey, list);
@@ -133,7 +136,8 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
     const findBestSpec = (rowVendor: string, rowProduct: string) => {
       const rowProdKey = stripVendorPrefix(rowVendor, rowProduct);
       const exact = byVendorProduct.get(`${norm(rowVendor)}|${rowProdKey}`);
-      if (exact) return { hit: exact, ambiguous: false };
+      if (exact && exact.length === 1) return { hit: exact[0], ambiguous: false };
+      if (exact && exact.length > 1) return { hit: null, ambiguous: true };
 
       const productOnly = byProductOnly.get(rowProdKey);
       if (productOnly && productOnly.length === 1) return { hit: productOnly[0], ambiguous: false };
