@@ -67,11 +67,27 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
 
+    const rawNorm = (s: string) =>
+      s
+        .normalize("NFKD")
+        .replace(/[®™©]/g, "")
+        .replace(/[\u2018\u2019\u201C\u201D]/g, "'")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
     // Some DB product names embed the vendor as a prefix
     // ("HexForce® 43596 ..."). Strip it so CSVs without the prefix match.
     const stripVendorPrefix = (vendor: string, product: string) => {
       const v = norm(vendor);
       const p = norm(product);
+      if (v && p.startsWith(v + " ")) return p.slice(v.length + 1);
+      return p;
+    };
+
+    const stripVendorPrefixRaw = (vendor: string, product: string) => {
+      const v = rawNorm(vendor);
+      const p = rawNorm(product);
       if (v && p.startsWith(v + " ")) return p.slice(v.length + 1);
       return p;
     };
@@ -84,6 +100,7 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       product: string;
       vendorKey: string;
       productKey: string;
+      rawProductKey: string;
       existing: number | null;
     };
     const byVendorProduct = new Map<string, SpecRef[]>();
@@ -96,6 +113,7 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
         product: s.product_name,
         vendorKey: norm(s.vendor),
         productKey: stripVendorPrefix(s.vendor, s.product_name),
+        rawProductKey: stripVendorPrefixRaw(s.vendor, s.product_name),
         existing: s.material_number,
       };
       refs.push(ref);
@@ -112,6 +130,7 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
     const scoreCandidate = (rowVendor: string, rowProduct: string, ref: SpecRef) => {
       const rowVendorKey = norm(rowVendor);
       const rowProductKey = stripVendorPrefix(rowVendor, rowProduct);
+      const rowRawProductKey = stripVendorPrefixRaw(rowVendor, rowProduct);
       let score = 0;
 
       if (ref.vendorKey === rowVendorKey) score += 1000;
@@ -119,6 +138,8 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       else if (rowVendorKey && ref.productKey.includes(rowVendorKey)) score += 300;
       else return -1;
 
+      if (ref.rawProductKey === rowRawProductKey) return score + 12000;
+      if (rowRawProductKey.startsWith(`${ref.rawProductKey} `)) return score + 7000 + ref.rawProductKey.length;
       if (ref.productKey === rowProductKey) return score + 10000;
       if (rowProductKey.startsWith(`${ref.productKey} `)) return score + 5000 + ref.productKey.length;
       if (ref.productKey.startsWith(`${rowProductKey} `)) return score + 3000 + rowProductKey.length;
