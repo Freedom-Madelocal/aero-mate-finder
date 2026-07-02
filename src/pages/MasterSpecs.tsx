@@ -204,7 +204,7 @@ export default function MasterSpecs() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-12 text-muted-foreground text-sm">
+                    <td colSpan={13} className="text-center py-12 text-muted-foreground text-sm">
                       No specs match your filters.
                     </td>
                   </tr>
@@ -217,6 +217,7 @@ export default function MasterSpecs() {
                         onClick={() => setSelectedId(s.id)}
                         className="border-t border-border hover:bg-accent/20 cursor-pointer"
                       >
+                        <Td className="font-mono text-muted-foreground">{s.materialNumber ?? "—"}</Td>
                         <Td className="text-muted-foreground">{s.vendor}</Td>
                         <Td className="font-medium text-foreground">{s.productName}</Td>
                         <Td className="text-muted-foreground">{s.materialCategory ?? "—"}</Td>
