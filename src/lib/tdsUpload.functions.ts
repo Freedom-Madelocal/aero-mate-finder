@@ -52,7 +52,9 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
 
     const { data: specs, error } = await supabaseAdmin
       .from("master_specs")
-      .select("id, vendor, product_name, material_number");
+      .select(
+        "id, vendor, product_name, product_family, product_form, resin_chemistry, reinforcement, material_category, material_number",
+      );
     if (error) throw new Error(error.message);
 
     // Aggressive normalization: strip ®™©, unicode-fold, drop punctuation,
@@ -100,7 +102,14 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       product: string;
       vendorKey: string;
       productKey: string;
+      fullProductKey: string;
       rawProductKey: string;
+      rawFullProductKey: string;
+      familyKey: string;
+      formKey: string;
+      resinKey: string;
+      reinforcementKey: string;
+      categoryKey: string;
       existing: number | null;
     };
     const byVendorProduct = new Map<string, SpecRef[]>();
@@ -113,7 +122,14 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
         product: s.product_name,
         vendorKey: norm(s.vendor),
         productKey: stripVendorPrefix(s.vendor, s.product_name),
+        fullProductKey: norm(s.product_name),
         rawProductKey: stripVendorPrefixRaw(s.vendor, s.product_name),
+        rawFullProductKey: rawNorm(s.product_name),
+        familyKey: norm(s.product_family ?? ""),
+        formKey: norm(s.product_form ?? ""),
+        resinKey: norm(s.resin_chemistry ?? ""),
+        reinforcementKey: norm(s.reinforcement ?? ""),
+        categoryKey: norm(s.material_category ?? ""),
         existing: s.material_number,
       };
       refs.push(ref);
@@ -131,27 +147,63 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       const rowVendorKey = norm(rowVendor);
       const rowProductKey = stripVendorPrefix(rowVendor, rowProduct);
       const rowRawProductKey = stripVendorPrefixRaw(rowVendor, rowProduct);
+      const rowRawFullProductKey = rawNorm(rowProduct);
       let score = 0;
 
-      if (ref.vendorKey === rowVendorKey) score += 1000;
-      else if (ref.vendorKey && rowProductKey.includes(ref.vendorKey)) score += 300;
-      else if (rowVendorKey && ref.productKey.includes(rowVendorKey)) score += 300;
-      else return -1;
+      const tailAfter = (value: string, prefix: string) =>
+        prefix && value.startsWith(prefix) ? value.slice(prefix.length).replace(/^[-_\s/&]+/, "") : "";
 
-      if (ref.rawProductKey === rowRawProductKey) return score + 12000;
-      if (rowRawProductKey.startsWith(`${ref.rawProductKey} `)) return score + 7000 + ref.rawProductKey.length;
-      if (ref.productKey === rowProductKey) return score + 10000;
-      if (rowProductKey.startsWith(`${ref.productKey} `)) return score + 5000 + ref.productKey.length;
-      if (ref.productKey.startsWith(`${rowProductKey} `)) return score + 3000 + rowProductKey.length;
-
-      // The INDEX CSV often appends descriptors after the product code:
-      // "1035 Hexcel E-Glass E595" should match DB product "1035".
-      const code = firstToken(rowProductKey);
-      if (code && (ref.productKey === code || ref.productKey.startsWith(`${code} `))) {
-        return score + 1500 + code.length;
+      let tail = "";
+      if (ref.rawFullProductKey && rowRawFullProductKey.startsWith(ref.rawFullProductKey)) {
+        score += 10000 + ref.rawFullProductKey.length * 100;
+        tail = tailAfter(rowRawFullProductKey, ref.rawFullProductKey);
+      } else if (ref.rawProductKey && rowRawProductKey.startsWith(ref.rawProductKey)) {
+        score += 8500 + ref.rawProductKey.length * 100;
+        tail = tailAfter(rowRawProductKey, ref.rawProductKey);
+      } else if (ref.productKey === rowProductKey) {
+        score += 7500 + ref.productKey.length * 100;
+      } else if (ref.productKey && rowProductKey.startsWith(`${ref.productKey} `)) {
+        score += 6000 + ref.productKey.length * 100;
+        tail = tailAfter(rowProductKey, ref.productKey);
+      } else if (ref.productKey && ref.productKey.startsWith(`${rowProductKey} `)) {
+        score += 3500 + rowProductKey.length * 100;
+      } else {
+        // The INDEX CSV often appends descriptors after the product code:
+        // "1035 Hexcel E-Glass E595" should match DB product "1035".
+        const code = firstToken(rowProductKey);
+        if (code && (ref.productKey === code || ref.productKey.startsWith(`${code} `))) {
+          score += 1500 + code.length * 100;
+        } else {
+          return -1;
+        }
       }
 
-      return -1;
+      const tailKey = norm(tail);
+      const tailTokens = new Set(tailKey.split(" ").filter(Boolean));
+      const vendorMatches = ref.vendorKey === rowVendorKey;
+      const tailNamesVendor = !!ref.vendorKey && tailTokens.has(ref.vendorKey);
+      const embeddedVendor =
+        (!!ref.vendorKey && rowProductKey.split(" ").includes(ref.vendorKey)) ||
+        (!!rowVendorKey && ref.productKey.split(" ").includes(rowVendorKey));
+
+      if (vendorMatches) score += 1000;
+      if (tailNamesVendor) score += 3500;
+      else if (embeddedVendor) score += 300;
+
+      if (!vendorMatches && !tailNamesVendor && !embeddedVendor) return -1;
+
+      const contextFields: Array<[string, number]> = [
+        [ref.familyKey, 800],
+        [ref.formKey, 250],
+        [ref.resinKey, 250],
+        [ref.reinforcementKey, 250],
+        [ref.categoryKey, 150],
+      ];
+      for (const [context, bonus] of contextFields) {
+        if (context && tailKey && tailKey.includes(context)) score += bonus + Math.min(context.length, 30);
+      }
+
+      return score;
     };
 
     const findBestSpec = (rowVendor: string, rowProduct: string) => {
