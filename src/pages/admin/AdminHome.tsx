@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Users, Building2, Briefcase, FlaskConical, FileSearch, Bug } from "lucide-react";
+import { Users, Building2, Briefcase, FlaskConical } from "lucide-react";
 import AdminShell from "@/components/AdminShell";
 
 const CARDS = [
@@ -7,8 +7,6 @@ const CARDS = [
   { to: "/admin/organizations", label: "Organizations", desc: "Create and manage tenant organizations.", Icon: Building2 },
   { to: "/admin/crm", label: "CRM", desc: "Leads from the free guide and manually-added contacts.", Icon: Briefcase },
   { to: "/admin/master-specs", label: "Master Specs", desc: "Canonical aerospace material spec catalog.", Icon: FlaskConical },
-  { to: "/admin/data-sheets", label: "Data Sheets", desc: "Crawl vendor sites for TDS/PDS PDFs and link them to specs.", Icon: FileSearch },
-  { to: "/admin/scrape-logs", label: "Scrape Logs", desc: "Per-step debug trail: source URL, error reason, and status for every scrape attempt.", Icon: Bug },
 ] as const;
 
 

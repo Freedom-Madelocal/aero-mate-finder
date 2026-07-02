@@ -22,10 +22,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminScrapeLogsRouteImport } from './routes/admin.scrape-logs'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
-import { Route as AdminDataSheetsRouteImport } from './routes/admin.data-sheets'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
 import { Route as AppSuppliersRouteImport } from './routes/_app.suppliers'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -106,11 +104,6 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminScrapeLogsRoute = AdminScrapeLogsRouteImport.update({
-  id: '/admin/scrape-logs',
-  path: '/admin/scrape-logs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
   id: '/admin/organizations',
   path: '/admin/organizations',
@@ -119,11 +112,6 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
 const AdminMasterSpecsRoute = AdminMasterSpecsRouteImport.update({
   id: '/admin/master-specs',
   path: '/admin/master-specs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminDataSheetsRoute = AdminDataSheetsRouteImport.update({
-  id: '/admin/data-sheets',
-  path: '/admin/data-sheets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCrmRoute = AdminCrmRouteImport.update({
@@ -225,10 +213,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
-  '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
-  '/admin/scrape-logs': typeof AdminScrapeLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -258,10 +244,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
-  '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
-  '/admin/scrape-logs': typeof AdminScrapeLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin': typeof AdminIndexRoute
@@ -293,10 +277,8 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
-  '/admin/data-sheets': typeof AdminDataSheetsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
-  '/admin/scrape-logs': typeof AdminScrapeLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -328,10 +310,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
-    | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
-    | '/admin/scrape-logs'
     | '/admin/users'
     | '/console/login'
     | '/admin/'
@@ -361,10 +341,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
-    | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
-    | '/admin/scrape-logs'
     | '/admin/users'
     | '/console/login'
     | '/admin'
@@ -395,10 +373,8 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/suppliers'
     | '/admin/crm'
-    | '/admin/data-sheets'
     | '/admin/master-specs'
     | '/admin/organizations'
-    | '/admin/scrape-logs'
     | '/admin/users'
     | '/console/login'
     | '/admin/'
@@ -418,10 +394,8 @@ export interface RootRouteChildren {
   PiRoute: typeof PiRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminCrmRoute: typeof AdminCrmRoute
-  AdminDataSheetsRoute: typeof AdminDataSheetsRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
-  AdminScrapeLogsRoute: typeof AdminScrapeLogsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -519,13 +493,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/scrape-logs': {
-      id: '/admin/scrape-logs'
-      path: '/admin/scrape-logs'
-      fullPath: '/admin/scrape-logs'
-      preLoaderRoute: typeof AdminScrapeLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/organizations': {
       id: '/admin/organizations'
       path: '/admin/organizations'
@@ -538,13 +505,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/master-specs'
       fullPath: '/admin/master-specs'
       preLoaderRoute: typeof AdminMasterSpecsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/data-sheets': {
-      id: '/admin/data-sheets'
-      path: '/admin/data-sheets'
-      fullPath: '/admin/data-sheets'
-      preLoaderRoute: typeof AdminDataSheetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/crm': {
@@ -714,23 +674,11 @@ const rootRouteChildren: RootRouteChildren = {
   PiRoute: PiRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminCrmRoute: AdminCrmRoute,
-  AdminDataSheetsRoute: AdminDataSheetsRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
-  AdminScrapeLogsRoute: AdminScrapeLogsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
