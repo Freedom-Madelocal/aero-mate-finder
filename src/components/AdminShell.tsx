@@ -39,7 +39,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             </span>
           </div>
           <Link
-            to="/"
+            to="/engineer"
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Exit to platform
