@@ -114,6 +114,7 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
       .object({
         materialNumber: z.number().int().min(1).max(100000),
         fileName: z.string().min(1).max(255),
+        replaceExisting: z.boolean().optional().default(false),
       })
       .parse(input),
   )
@@ -123,7 +124,7 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
     // Confirm the material_number exists.
     const { data: spec, error: specErr } = await supabaseAdmin
       .from("master_specs")
-      .select("id")
+      .select("id, tds_pdf_path")
       .eq("material_number", data.materialNumber)
       .maybeSingle();
     if (specErr) throw new Error(specErr.message);
@@ -133,8 +134,15 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
     const paddedNum = String(data.materialNumber).padStart(4, "0");
     const path = `${paddedNum}/${safeName}`;
 
-    // Remove any prior objects in that folder (overwrite semantics).
+    // Check for prior objects in this material's folder.
     const { data: existing } = await supabaseAdmin.storage.from(BUCKET).list(paddedNum);
+    const hasExisting = (existing?.length ?? 0) > 0 || !!spec.tds_pdf_path;
+
+    if (hasExisting && !data.replaceExisting) {
+      // Signal "already exists — skipped" without failing the whole batch.
+      throw new Error("EXISTS: A PDF is already attached to this Material ID.");
+    }
+
     if (existing && existing.length > 0) {
       await supabaseAdmin.storage
         .from(BUCKET)
@@ -151,6 +159,7 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
       path,
       token: signed.token,
       signedUrl: signed.signedUrl,
+      replaced: hasExisting,
     };
   });
 
