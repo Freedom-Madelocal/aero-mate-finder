@@ -5,6 +5,7 @@ import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "luci
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
