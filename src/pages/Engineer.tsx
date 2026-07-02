@@ -1341,7 +1341,7 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
                 <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[22rem]">{spec.tdsPdfPath}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <AnalyzeTdsButton specId={spec.id} />
+                <AnalyzeTdsButton specId={spec.id} analyzedAt={spec.tdsAnalyzedAt} />
                 <button
                   onClick={async () => {
                     try {
