@@ -426,10 +426,22 @@ export default function TdsUpload() {
     URL.revokeObjectURL(url);
   }
 
-  async function runUpload() {
+  async function runUpload(mode: "all" | "retry" = "all") {
     if (files.length === 0) return;
-    // Hard gate: refuse if there are any error rows staged.
-    if (files.some((f) => f.status === "error")) {
+    if (mode === "retry") {
+      // Reset only prior failures/skips that have a resolvable Material ID.
+      // Pre-flight validation errors (no materialNumber) are left alone.
+      setFiles((prev) =>
+        prev.map((f) =>
+          (f.status === "error" || f.status === "skipped") && f.materialNumber != null
+            ? { ...f, status: "pending", error: undefined }
+            : f,
+        ),
+      );
+      // Let React commit the state before we re-read `files` below.
+      await new Promise((r) => setTimeout(r, 0));
+    } else if (files.some((f) => f.status === "error")) {
+      // Full run: refuse if there are any error rows staged.
       toast.error("Fix or remove file errors before uploading.");
       return;
     }
