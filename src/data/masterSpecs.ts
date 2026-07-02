@@ -71,6 +71,8 @@ export interface MasterSpecUpload {
 
 interface SpecRow {
   id: string;
+  material_number: number | null;
+  tds_pdf_path: string | null;
   vendor: string;
   product_name: string;
   product_family: string | null;
