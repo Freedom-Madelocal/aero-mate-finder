@@ -5,6 +5,7 @@ import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "luci
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
@@ -426,25 +427,28 @@ function SpecDrawer({
           </div>
 
           {spec.tdsPdfPath && (
-            <div className="rounded-lg border border-border bg-secondary/20 p-3 flex items-center justify-between">
-              <div>
+            <div className="rounded-lg border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Technical Data Sheet</p>
                 <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[24rem]">{spec.tdsPdfPath}</p>
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
-                    const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
-                    window.open(res.url, "_blank", "noopener");
-                  } catch (err) {
-                    alert(err instanceof Error ? err.message : "Failed to open TDS");
-                  }
-                }}
-                className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded"
-              >
-                View PDF <ExternalLink className="w-3 h-3" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <AnalyzeTdsButton specId={spec.id} />
+                <button
+                  onClick={async () => {
+                    try {
+                      const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
+                      const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
+                      window.open(res.url, "_blank", "noopener");
+                    } catch (err) {
+                      alert(err instanceof Error ? err.message : "Failed to open TDS");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded"
+                >
+                  View PDF <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           )}
 

@@ -1,66 +1,40 @@
 ## Goal
+On every master spec that has a TDS PDF attached, add an "Analyze TDS" button that uses AI to read the PDF and fill in the spec's technical detail fields (the ones the platform already shows). No new fields are added — only existing ones on the master_specs row are updated, and only where the AI finds a value.
 
-Upload the `01_By_Material/` PDF folder + `INDEX_all_materials.csv` once, have every PDF auto-attach to its Traceium material row, and expose a "View TDS" link on the Engineer page.
+## New server function — `src/lib/specTdsAnalyze.functions.ts`
 
-## What already exists
+`analyzeSpecTds({ specId })` — auth-gated (`requireSupabaseAuth`):
 
-- `tds-pdfs` private storage bucket (super-admin write, authenticated read) — reused as-is.
-- `master_specs` table has `tds_pdf_path`, `tds_pdf_size`, `tds_pdf_downloaded_at` columns — reused.
-- 898 master_specs rows; `(vendor, product_name)` is unique across all 898.
+1. Load the master spec row by id; require `tds_pdf_path`.
+2. Download the PDF from the `tds-pdfs` storage bucket via `supabaseAdmin` (dynamic import inside the handler, per server-side-modern rules).
+3. Base64-encode the bytes and POST to Lovable AI Gateway (`google/gemini-2.5-pro`) with a single-row tool-calling schema — reuse the field list and system-prompt style from `specPdfExtract.functions.ts`, but instruct the model to return exactly one row for the named vendor + product.
+4. Merge into the existing row using the same "keep existing when new value is missing" rules already used by `addMasterSpecs`:
+   - Text: overwrite when AI returns a non-empty, non-"none given" string.
+   - Number: overwrite when AI returns a finite number.
+   - Boolean: overwrite only when AI explicitly returns `true` (avoid flipping true → false on a silent PDF).
+   - Arrays (`key_specs`, `profiles`, `customers`, `qualifications_standards` string): union with existing.
+5. `UPDATE public.master_specs` for that id and return the updated field list + count.
 
-## What's missing
+Vendor / productName / material_number / tds_pdf_path / crossover / notes / frequent_reorder / engineer_default_name are **not** touched.
 
-- No stable integer Material ID on `master_specs` (only UUIDs). The CSV uses IDs 1–898.
-- No UI to upload PDFs.
-- No UI to view the attached PDF on Engineer cards or the Master Spec drawer.
+## UI — button placement
 
-## Plan
+Both drawers already show a "Technical Data Sheet" card with a "View PDF" button:
 
-### 1. Schema: add `material_number`
+- `src/pages/MasterSpecs.tsx` around line 428
+- `src/pages/Engineer.tsx` around line 1336
 
-Migration adds `material_number INT UNIQUE` to `master_specs`. Backfilled from the uploaded INDEX CSV during the first import (matched by `vendor` + `product_name`). Once populated, all future re-imports use `material_number` as the join key — no fuzzy matching.
+Add an "Analyze TDS" button next to "View PDF" in the same card. On click:
+- Show inline spinner state ("Analyzing…"), disable the button.
+- Call `analyzeSpecTds({ data: { specId: spec.id } })`.
+- Toast success with count of fields updated; toast error with server message.
+- Call `refreshMasterSpecStore()` so the drawer re-reads the fresh row.
 
-### 2. Admin page: `/admin/tds-upload` (super-admin only)
+Only shown when `spec.tdsPdfPath` is present (matches existing View PDF gating). On `/engineer`, the button appears for admins/engineers exactly where View PDF appears today — no separate permission gate is added.
 
-Two-step wizard:
+## Files touched
+- Create `src/lib/specTdsAnalyze.functions.ts` (new server fn).
+- Edit `src/pages/MasterSpecs.tsx` (add button + handler in the TDS card).
+- Edit `src/pages/Engineer.tsx` (add button + handler in the TDS card).
 
-**Step A — Upload the INDEX CSV.** Parses `Material ID, Vendor, Product, Has TDS PDF, PDF Filename`. Server function:
-- For each row, finds the matching `master_specs` row by `(vendor, product_name)`.
-- Writes `material_number` on the spec if not already set.
-- Returns a preview table: matched / unmatched / already-linked, with counts and a downloadable "unmatched.csv" for the user to fix.
-
-**Step B — Drop the PDF folder.** User drags the `01_By_Material/` folder into a dropzone (HTML `<input webkitdirectory>` supports whole-folder select). For each file:
-- Parse the `NNNN_` prefix → `material_number`.
-- Client requests a signed upload URL from a server function; server verifies caller is super-admin, then uploads directly to `tds-pdfs/{material_number}/{original_filename}`.
-- On success, server function updates the matching spec's `tds_pdf_path`, `tds_pdf_size`, `tds_pdf_downloaded_at`.
-- Progress bar with per-file status (uploaded / skipped / failed). Idempotent — re-uploads overwrite the same path.
-
-### 3. Surface the PDF on Engineer + Master Spec drawer
-
-- Engineer card: when `tds_pdf_path` is set, show a small "TDS" pill/link. Clicking calls a server function that returns a short-lived signed download URL, then opens it in a new tab.
-- Master Spec detail drawer: same "View TDS" link near the header, plus filename and uploaded date.
-
-### 4. Storage layout
-
-```text
-tds-pdfs/
-  0002/0002_1035_Hexcel_E-Glass_E595.pdf
-  0004/0004_1078-1_Hexcel.pdf
-  ...
-```
-
-Zero-padded folder per material — easy to spot in the bucket, avoids collisions on filename changes.
-
-## Technical notes
-
-- Migration only adds one nullable column; safe on the existing 898 rows.
-- All server functions gated by `has_role(auth.uid(), 'super_admin')` before touching storage or writing paths.
-- Uploads go browser → Supabase Storage directly via signed URL, not through a server function body, so 800 × ~1 MB PDFs don't hit any request-size limits.
-- CSV parsing done client-side with a small parser (no new dep needed).
-- Unmatched rows are logged in a temporary in-memory report the admin can export — no new audit table needed unless you want one later.
-
-## Out of scope (say so if you want it in)
-
-- Multiple PDFs per material (TDS + PDS + SDS). Current plan is one TDS per spec, overwrite on re-upload.
-- Auto-diff / versioning of PDF revisions.
-- Backfilling `material_number` from anything other than the INDEX CSV.
+No DB migrations, no schema changes, no new columns.
