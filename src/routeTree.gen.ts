@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTdsUploadRouteImport } from './routes/admin.tds-upload'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
@@ -102,6 +103,11 @@ const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTdsUploadRoute = AdminTdsUploadRouteImport.update({
+  id: '/admin/tds-upload',
+  path: '/admin/tds-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/admin/crm': typeof AdminCrmRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/admin/crm': typeof AdminCrmRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin': typeof AdminIndexRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/admin/crm': typeof AdminCrmRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/crm'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/tds-upload'
     | '/admin/users'
     | '/console/login'
     | '/admin/'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/admin/crm'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/tds-upload'
     | '/admin/users'
     | '/console/login'
     | '/admin'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/admin/crm'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/tds-upload'
     | '/admin/users'
     | '/console/login'
     | '/admin/'
@@ -396,6 +408,7 @@ export interface RootRouteChildren {
   AdminCrmRoute: typeof AdminCrmRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
+  AdminTdsUploadRoute: typeof AdminTdsUploadRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -491,6 +504,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tds-upload': {
+      id: '/admin/tds-upload'
+      path: '/admin/tds-upload'
+      fullPath: '/admin/tds-upload'
+      preLoaderRoute: typeof AdminTdsUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/organizations': {
@@ -676,6 +696,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCrmRoute: AdminCrmRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
+  AdminTdsUploadRoute: AdminTdsUploadRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
