@@ -121,6 +121,7 @@ interface SpecRow {
   tds_scraped_at: string | null;
   tds_scrape_status: string | null;
   tds_scrape_error: string | null;
+  tds_analyzed_at: string | null;
 }
 
 const num = (v: number | string | null): number | null =>
