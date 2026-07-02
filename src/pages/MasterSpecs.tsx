@@ -186,6 +186,7 @@ export default function MasterSpecs() {
             <table className="w-full text-sm">
               <thead className="bg-secondary/50 text-xs uppercase text-muted-foreground">
                 <tr>
+                  <Th>TID</Th>
                   <Th>Vendor</Th>
                   <Th>Product</Th>
                   <Th>Category</Th>
