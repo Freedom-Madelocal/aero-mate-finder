@@ -1,51 +1,61 @@
-## Goal
-Add a "Analyze All TDS PDFs" button to `/master-specs` that runs the existing per-spec AI analysis over every spec with an attached PDF, and skips specs that have already been analyzed unless the user opts to re-analyze.
+# New UI Theme: "Royal Charcoal" (Neumorphic + Glass)
 
-## Tracking analyzed state
+Gated behind existing `new_ui_theme` feature flag. When ON, the app switches to a dark neumorphism base with selective glassmorphism accents. When OFF, the current theme is untouched.
 
-There is no reliable way to infer "already analyzed" from existing columns. Add a single timestamp column:
+## Design tokens
 
-- Migration: `ALTER TABLE public.master_specs ADD COLUMN tds_analyzed_at timestamptz;`
-- Existing `analyzeSpecTds` server fn sets `tds_analyzed_at = now()` in its patch on every successful run (even when 0 fields changed — the PDF has still been analyzed).
-- `MasterSpec` type + `rowToSpec` in `src/data/masterSpecs.ts` expose the new field as `tdsAnalyzedAt: string | null`.
+Palette
+- Base surface: `#1e1f22` (Royal Charcoal)
+- Elevated surface: `#292D32` (neumorphic shape color)
+- Deep shadow: `#141E30` (Navy Mirage dark)
+- Highlight shadow: `#35577D` (Navy Mirage light) — used tinted, low opacity
+- Accent: `#35577D` for interactive/active states
+- Text primary: `rgba(245,245,245,1)`
+- Text secondary: `rgba(245,245,245,0.72)`
+- Text over glass headers: `rgba(255,255,255,0.9)`
 
-## Server fn — `src/lib/specTdsAnalyze.functions.ts`
-- Always include `tds_analyzed_at: new Date().toISOString()` in the patch on success (so the update runs even when nothing else changed).
-- Return `{ updatedCount, fields, analyzedAt }` so the client can show timestamps.
+Typography
+- Headings: **Clash Display** (Fontshare) — 500/600, tracking `0.02em`; UPPERCASE labels/nav use `0.05em`
+- Body: **Satoshi** (Fontshare) — 400 default, 500 on glass panels
+- Loaded via `<link>` in `src/routes/__root.tsx` head
+- New CSS vars `--font-display`, `--font-body`
 
-## UI — `src/pages/MasterSpecs.tsx`
+Neumorphism utilities (in `src/styles.css` under `@utility`)
+- `.neu-raised` — dual box-shadow (`-8px -8px 20px #383B40 / 38%`, `8px 8px 20px #101316 / 100%`) on `#292D32`
+- `.neu-inset` — inner shadow variant for pressed/inputs
+- `.neu-emboss-text` — text-shadow pair (`1px 1px 1px rgba(255,255,255,0.04)`, `-1px -1px 2px rgba(0,0,0,0.6)`) matching surface color, for counts + nav labels (Clash Display embossed effect)
 
-Add a "Analyze All TDS" button in the admin header (super-admin only, matches existing gate). Clicking it:
+Glass utilities
+- `.glass-panel` — `background: rgba(53,87,125,0.14)`, `backdrop-filter: blur(20px) saturate(140%)`, `border: 1px solid rgba(255,255,255,0.08)`, subtle inner highlight
+- `.glass-button` — pill/round variant with brighter border + specular highlight gradient
+- Reserved for: primary CTAs, active nav pill, key modals/drawers, top-of-card action buttons
 
-1. Compute queue = specs where `tdsPdfPath` is set.
-2. Split into `pending` (no `tdsAnalyzedAt`) and `alreadyAnalyzed`.
-3. Open a small dialog:
-   - "N materials have PDFs. M were already analyzed."
-   - Options:
-     - **Analyze N-M new** (skip already analyzed) — default.
-     - **Re-analyze all N** — reruns everything.
-     - **Cancel**.
-4. Run the chosen queue sequentially through the shared helper `runAnalyzeSpecTds(specId)` (extracted from `AnalyzeTdsButton` — no duplicated logic). Show live progress: `Analyzing 12 / 87 — Toray TC275…` with running tally of updated / unchanged / failed.
-5. On 429 wait ~30s then retry once; on any other error record + continue.
-6. Cancel button stops after the current item.
-7. On finish: summary with a collapsible failures list, then one `refreshMasterSpecStore()` call.
+## Wiring
 
-## Single-row button — `src/components/AnalyzeTdsButton.tsx`
+1. **Theme runtime** — new `src/contexts/UiThemeContext.tsx` reads `useFeatureFlag("new_ui_theme", false)` and toggles `data-ui-theme="royal"` on `<html>`. `ThemeProvider` continues to manage light/dark class.
+2. **Scoped CSS** — all new tokens/utilities live under `:root[data-ui-theme="royal"] { … }` and `[data-ui-theme="royal"] .neu-*` so default theme is unaffected. shadcn semantic tokens (`--background`, `--card`, `--primary`, `--border`, `--input`, `--muted`, `--accent`, `--ring`, `--sidebar-*`) get remapped inside that scope so existing components automatically pick up the palette without touching component files.
+3. **Font load** — Clash Display + Satoshi `<link>` added to root head unconditionally (needed as soon as flag flips; cheap). `body { font-family: var(--font-body); }` and `h1–h6 { font-family: var(--font-display); letter-spacing: 0.02em; }` scoped under `[data-ui-theme="royal"]`.
+4. **Targeted component polish** (only where semantic tokens aren't enough):
+   - `DashboardLayout` header/sidebar → `.glass-panel` when royal theme active
+   - Nav item pills → `.neu-raised` default, `.glass-button` on active; label uses `.neu-emboss-text` uppercase tracking
+   - Engineer material cards → `.neu-raised` container; primary action buttons → `.glass-button`
+   - Count badges (compare count, unread, TID pills) → `.neu-emboss-text`
+   - Inputs / search → `.neu-inset`
+   - Dialogs/drawers → `.glass-panel`
+5. **Feature-flag seed** — `new_ui_theme` row already exists; no migration needed.
 
-- Extract the per-spec call into `runAnalyzeSpecTds(specId)` so bulk + single share code.
-- Add a subtle "Analyzed <relative time>" hint under the button when `spec.tdsAnalyzedAt` is set (in the drawer where the button lives).
-- Single-row button still always runs; it doesn't need a re-analyze prompt (user explicitly clicked it).
+## Verification
 
-## Guardrails
-- Bulk button visible only to super admins.
-- Confirmation before starting when the chosen queue is >5 items.
-- Disable Upload / Import controls while a bulk run is active.
+- Toggle flag off → screenshots of `/engineer`, `/master-specs`, `/compare`, `/admin/feature-flags` match current build (no visual diff).
+- Toggle flag on → same routes render in royal charcoal, Clash/Satoshi loaded, neumorphic cards, glass header + primary buttons, embossed nav labels.
+- Light-mode toggle path continues to work when flag is off; when flag is on, force dark (royal theme is dark-only for now).
 
 ## Files touched
-- New migration adding `tds_analyzed_at` to `master_specs`.
-- `src/lib/specTdsAnalyze.functions.ts` — stamp `tds_analyzed_at` on success, return it.
-- `src/data/masterSpecs.ts` — expose `tdsAnalyzedAt` on `MasterSpec`.
-- `src/components/AnalyzeTdsButton.tsx` — extract shared runner, show analyzed timestamp hint.
-- `src/pages/MasterSpecs.tsx` — bulk button, choice dialog, progress modal, cancel + summary.
 
-No RLS/policy changes (existing policies already govern `master_specs`).
+- `src/styles.css` — add scoped tokens + `@utility neu-raised / neu-inset / neu-emboss-text / glass-panel / glass-button`
+- `src/routes/__root.tsx` — Fontshare `<link>` tags; wrap tree in `UiThemeProvider`
+- `src/contexts/UiThemeContext.tsx` — new, sets `data-ui-theme` attr from flag
+- `src/components/DashboardLayout.tsx` — conditional class hooks for header/sidebar/nav
+- `src/pages/Engineer.tsx` — card + primary button class hooks
+- `src/pages/Compare.tsx`, `src/pages/MasterSpecs.tsx` — drawer/panel class hooks
+- No changes to shadcn primitives, business logic, or data layer.
