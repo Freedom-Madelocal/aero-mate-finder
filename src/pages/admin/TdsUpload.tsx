@@ -433,7 +433,11 @@ export default function TdsUpload() {
       setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f)));
       try {
         const signed = await createUrl({
-          data: { materialNumber: item.materialNumber, fileName: item.file.name },
+          data: {
+            materialNumber: item.materialNumber,
+            fileName: item.file.name,
+            replaceExisting,
+          },
         });
         const putRes = await fetch(signed.signedUrl, {
           method: "PUT",
@@ -446,10 +450,18 @@ export default function TdsUpload() {
         });
         setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "done" } : f)));
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const isExists = msg.includes("EXISTS:");
         setFiles((prev) =>
           prev.map((f, idx) =>
             idx === i
-              ? { ...f, status: "error", error: err instanceof Error ? err.message : String(err) }
+              ? {
+                  ...f,
+                  status: isExists ? "skipped" : "error",
+                  error: isExists
+                    ? "Already has a PDF — enable Replace to overwrite"
+                    : msg,
+                }
               : f,
           ),
         );
