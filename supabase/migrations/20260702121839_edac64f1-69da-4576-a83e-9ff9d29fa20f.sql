@@ -1,0 +1,1 @@
+ALTER TABLE public.master_specs ADD COLUMN IF NOT EXISTS tds_analyzed_at timestamptz;
