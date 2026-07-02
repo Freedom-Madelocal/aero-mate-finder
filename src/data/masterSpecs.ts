@@ -12,6 +12,8 @@ import type { Material } from "@/data/materials";
 
 export interface MasterSpec {
   id: string;
+  materialNumber: number | null;
+  tdsPdfPath: string | null;
   vendor: string;
   productName: string;
   productFamily: string | null;
@@ -69,6 +71,8 @@ export interface MasterSpecUpload {
 
 interface SpecRow {
   id: string;
+  material_number: number | null;
+  tds_pdf_path: string | null;
   vendor: string;
   product_name: string;
   product_family: string | null;
@@ -124,6 +128,8 @@ const num = (v: number | string | null): number | null =>
 function rowToSpec(r: SpecRow): MasterSpec {
   return {
     id: r.id,
+    materialNumber: r.material_number ?? null,
+    tdsPdfPath: r.tds_pdf_path ?? null,
     vendor: r.vendor,
     productName: r.product_name,
     productFamily: r.product_family,

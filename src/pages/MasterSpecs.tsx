@@ -416,6 +416,29 @@ function SpecDrawer({
             )}
           </div>
 
+          {spec.tdsPdfPath && (
+            <div className="rounded-lg border border-border bg-secondary/20 p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Technical Data Sheet</p>
+                <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[24rem]">{spec.tdsPdfPath}</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
+                    const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
+                    window.open(res.url, "_blank", "noopener");
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : "Failed to open TDS");
+                  }
+                }}
+                className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded"
+              >
+                View PDF <ExternalLink className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
           <Section title="Identity">
             <Row label="Product Family" value={spec.productFamily} />
             <Row label="Reinforcement" value={spec.reinforcement} />

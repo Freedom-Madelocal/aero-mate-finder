@@ -398,6 +398,7 @@ export type Database = {
           low_dielectric: boolean
           low_moisture_absorption: boolean
           material_category: string | null
+          material_number: number | null
           max_service_temperature_c: number | null
           minimum_order_quantity: string | null
           notes: string | null
@@ -453,6 +454,7 @@ export type Database = {
           low_dielectric?: boolean
           low_moisture_absorption?: boolean
           material_category?: string | null
+          material_number?: number | null
           max_service_temperature_c?: number | null
           minimum_order_quantity?: string | null
           notes?: string | null
@@ -508,6 +510,7 @@ export type Database = {
           low_dielectric?: boolean
           low_moisture_absorption?: boolean
           material_category?: string | null
+          material_number?: number | null
           max_service_temperature_c?: number | null
           minimum_order_quantity?: string | null
           notes?: string | null

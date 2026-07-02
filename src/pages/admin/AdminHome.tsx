@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Users, Building2, Briefcase, FlaskConical } from "lucide-react";
+import { Users, Building2, Briefcase, FlaskConical, FileUp } from "lucide-react";
 import AdminShell from "@/components/AdminShell";
 
 const CARDS = [
@@ -7,6 +7,7 @@ const CARDS = [
   { to: "/admin/organizations", label: "Organizations", desc: "Create and manage tenant organizations.", Icon: Building2 },
   { to: "/admin/crm", label: "CRM", desc: "Leads from the free guide and manually-added contacts.", Icon: Briefcase },
   { to: "/admin/master-specs", label: "Master Specs", desc: "Canonical aerospace material spec catalog.", Icon: FlaskConical },
+  { to: "/admin/tds-upload", label: "TDS Upload", desc: "Bulk-attach TDS PDFs to master specs via the INDEX CSV.", Icon: FileUp },
 ] as const;
 
 

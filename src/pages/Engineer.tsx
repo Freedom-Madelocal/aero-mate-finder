@@ -864,7 +864,25 @@ export default function Engineer() {
                                   </span>
                                 )}
                               </span>
-                              {spec.tdsUrl && spec.tdsScrapeStatus === "success" && (
+                              {spec.tdsPdfPath && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
+                                      const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
+                                      window.open(res.url, "_blank", "noopener");
+                                    } catch (err) {
+                                      toast.error(err instanceof Error ? err.message : "Failed to open TDS");
+                                    }
+                                  }}
+                                  className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25"
+                                  title="Open TDS PDF"
+                                >
+                                  TDS PDF
+                                </button>
+                              )}
+                              {spec.tdsUrl && spec.tdsScrapeStatus === "success" && !spec.tdsPdfPath && (
                                 <a
                                   href={spec.tdsUrl}
                                   target="_blank"
