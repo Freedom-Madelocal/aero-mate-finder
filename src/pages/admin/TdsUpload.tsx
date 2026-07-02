@@ -317,6 +317,9 @@ export default function TdsUpload() {
   const [uploading, setUploading] = useState(false);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  const [currentFile, setCurrentFile] = useState<string | null>(null);
+  const [bytes, setBytes] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  const [startedAt, setStartedAt] = useState<number | null>(null);
 
   const importIndex = useServerFn(importMaterialIndex);
   const createUrl = useServerFn(createTdsUploadUrl);
@@ -328,8 +331,15 @@ export default function TdsUpload() {
     const pending = files.filter((f) => f.status === "pending").length;
     const errored = files.filter((f) => f.status === "error").length;
     const done = files.filter((f) => f.status === "done").length;
-    return { pending, errored, done };
+    const skipped = files.filter((f) => f.status === "skipped").length;
+    const uploading = files.filter((f) => f.status === "uploading").length;
+    return { pending, errored, done, skipped, uploading };
   }, [files]);
+
+  const failedFiles = useMemo(
+    () => files.filter((f) => f.status === "error" || f.status === "skipped"),
+    [files],
+  );
 
   async function onCsvSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
