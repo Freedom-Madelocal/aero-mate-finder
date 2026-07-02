@@ -1339,20 +1339,23 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Technical Data Sheet</p>
                 <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[22rem]">{spec.tdsPdfPath}</p>
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
-                    const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
-                    window.open(res.url, "_blank", "noopener");
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Failed to open TDS");
-                  }
-                }}
-                className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded shrink-0"
-              >
-                View PDF <ExternalLink className="w-3 h-3" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <AnalyzeTdsButton specId={spec.id} />
+                <button
+                  onClick={async () => {
+                    try {
+                      const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
+                      const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
+                      window.open(res.url, "_blank", "noopener");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Failed to open TDS");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded"
+                >
+                  View PDF <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           )}
           {(spec.keySpecs ?? []).length > 0 && (
