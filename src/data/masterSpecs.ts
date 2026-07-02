@@ -61,6 +61,7 @@ export interface MasterSpec {
   tdsScrapedAt: string | null;
   tdsScrapeStatus: "success" | "not_found" | "failed" | null;
   tdsScrapeError: string | null;
+  tdsAnalyzedAt: string | null;
 }
 
 export interface MasterSpecUpload {
