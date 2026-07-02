@@ -147,7 +147,7 @@ export default function MasterSpecs() {
             <Select value={form} onChange={setForm} options={forms} label="Form" />
             <Toggle active={ooaOnly} onClick={() => setOoaOnly((v) => !v)} label="OOA only" />
             <Toggle active={inStockOnly} onClick={() => setInStockOnly((v) => !v)} label="In stock" />
-            <Toggle active={missingTdsOnly} onClick={() => setMissingTdsOnly((v) => !v)} label="Missing TDS" />
+            
           </div>
           {allProfiles.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
