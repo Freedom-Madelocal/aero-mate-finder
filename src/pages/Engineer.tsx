@@ -26,6 +26,7 @@ import { Link, useSearch, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompare } from "@/contexts/CompareContext";
+import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 
 /*
  * Engineer Workspace
