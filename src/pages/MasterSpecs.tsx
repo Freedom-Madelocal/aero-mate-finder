@@ -84,7 +84,7 @@ export default function MasterSpecs() {
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, missingTdsOnly, activeProfiles]);
+  }, [specs, materials, search, vendor, category, chemistry, form, ooaOnly, inStockOnly, activeProfiles]);
 
   const inInventoryCount = useMemo(
     () => specs.filter((s) => getInventoryMatch(s, materials).status !== "none").length,
