@@ -72,7 +72,7 @@ export default function MasterSpecs() {
         const m = getInventoryMatch(s, materials);
         if (m.status !== "in-stock") return false;
       }
-      if (missingTdsOnly && s.tdsScrapedAt) return false;
+      // (TDS filter removed)
       if (!q) return true;
       const hay = [
         s.vendor, s.productName, s.productFamily, s.materialCategory,
