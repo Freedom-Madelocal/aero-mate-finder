@@ -113,12 +113,6 @@ export default function MasterSpecs() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowBulkScrape(true)}
-              className="inline-flex items-center gap-2 border border-border rounded px-4 py-2 text-sm font-medium hover:bg-secondary"
-            >
-              <Sparkles className="w-4 h-4" /> Scrape TDS/PDS
-            </button>
-            <button
               onClick={() => setShowUpload(true)}
               className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
             >
