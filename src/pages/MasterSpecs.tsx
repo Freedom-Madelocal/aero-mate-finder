@@ -285,8 +285,6 @@ export default function MasterSpecs() {
           <SpecSheetUpload isOpen={showUpload} onClose={() => setShowUpload(false)} />
         </Suspense>
       )}
-
-      {showBulkScrape && <BulkScrapeModal onClose={() => setShowBulkScrape(false)} />}
     </AdminShell>
   );
 }
