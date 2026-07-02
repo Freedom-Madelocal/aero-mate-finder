@@ -36,6 +36,7 @@ export default function MasterSpecs() {
   const [showUpload, setShowUpload] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
+  const [bulkRunning, setBulkRunning] = useState(false);
 
   const vendors = useMemo(
     () => ["All", ...Array.from(new Set(specs.map((s) => s.vendor))).sort()],
