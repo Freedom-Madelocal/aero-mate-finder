@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BUCKET = "tds-pdfs";
 
-async function assertSuperAdmin(userId: string): Promise<void> {
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+type AdminClient = Awaited<ReturnType<typeof getAdminClient>>;
+
+async function assertSuperAdmin(userId: string, supabaseAdmin: AdminClient): Promise<void> {
   const { data, error } = await supabaseAdmin
     .from("user_roles")
     .select("role")
@@ -41,7 +47,8 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertSuperAdmin(context.userId);
+    const supabaseAdmin = await getAdminClient();
+    await assertSuperAdmin(context.userId, supabaseAdmin);
 
     const { data: specs, error } = await supabaseAdmin
       .from("master_specs")
@@ -135,6 +142,42 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
   });
 
 /**
+ * Preflight selected PDF Material IDs before requesting signed upload URLs.
+ * Missing IDs are expected user/data issues, so return them instead of throwing
+ * and triggering the runtime overlay during large folder uploads.
+ */
+export const validateTdsMaterialNumbers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        materialNumbers: z.array(z.number().int().min(1).max(100000)).min(1).max(5000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getAdminClient();
+    await assertSuperAdmin(context.userId, supabaseAdmin);
+
+    const requested = [...new Set(data.materialNumbers)];
+    const { data: specs, error } = await supabaseAdmin
+      .from("master_specs")
+      .select("material_number")
+      .in("material_number", requested);
+    if (error) throw new Error(error.message);
+
+    const existingSet = new Set(
+      (specs ?? [])
+        .map((s) => s.material_number)
+        .filter((n): n is number => typeof n === "number"),
+    );
+    return {
+      existing: requested.filter((n) => existingSet.has(n)),
+      missing: requested.filter((n) => !existingSet.has(n)),
+    };
+  });
+
+/**
  * Request a signed upload URL for a PDF file scoped to a specific material.
  * The client then does a PUT directly to Supabase Storage.
  */
@@ -150,7 +193,8 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertSuperAdmin(context.userId);
+    const supabaseAdmin = await getAdminClient();
+    await assertSuperAdmin(context.userId, supabaseAdmin);
 
     // Confirm the material_number exists.
     const { data: spec, error: specErr } = await supabaseAdmin
@@ -159,7 +203,14 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
       .eq("material_number", data.materialNumber)
       .maybeSingle();
     if (specErr) throw new Error(specErr.message);
-    if (!spec) throw new Error(`No master spec with material_number ${data.materialNumber}`);
+    if (!spec) {
+      return {
+        ok: false as const,
+        code: "MISSING_MATERIAL",
+        message: `Material ID ${data.materialNumber} is not assigned to any master spec. Run Assign Material IDs first or resolve this CSV row before uploading.`,
+        materialNumber: data.materialNumber,
+      };
+    }
 
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const paddedNum = String(data.materialNumber).padStart(4, "0");
@@ -171,7 +222,12 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
 
     if (hasExisting && !data.replaceExisting) {
       // Signal "already exists — skipped" without failing the whole batch.
-      throw new Error("EXISTS: A PDF is already attached to this Material ID.");
+      return {
+        ok: false as const,
+        code: "EXISTS",
+        message: "Already has a PDF — enable Replace to overwrite",
+        materialNumber: data.materialNumber,
+      };
     }
 
     if (existing && existing.length > 0) {
@@ -186,6 +242,7 @@ export const createTdsUploadUrl = createServerFn({ method: "POST" })
     if (signErr || !signed) throw new Error(signErr?.message ?? "Failed to sign upload URL");
 
     return {
+      ok: true as const,
       specId: spec.id,
       path,
       token: signed.token,
@@ -209,7 +266,8 @@ export const finalizeTdsUpload = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertSuperAdmin(context.userId);
+    const supabaseAdmin = await getAdminClient();
+    await assertSuperAdmin(context.userId, supabaseAdmin);
     const { error } = await supabaseAdmin
       .from("master_specs")
       .update({
@@ -230,6 +288,7 @@ export const getTdsDownloadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ path: z.string().min(1) }).parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     const { data: signed, error } = await supabaseAdmin.storage
       .from(BUCKET)
       .createSignedUrl(data.path, 60 * 10);
