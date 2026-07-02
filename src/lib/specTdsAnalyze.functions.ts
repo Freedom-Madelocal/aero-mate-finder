@@ -292,9 +292,8 @@ export const analyzeSpecTds = createServerFn({ method: "POST" })
       updatedLabels.push("customers");
     }
 
-    if (Object.keys(patch).length === 0) {
-      return { updatedCount: 0, fields: [] as string[] };
-    }
+    const analyzedAt = new Date().toISOString();
+    patch.tds_analyzed_at = analyzedAt;
 
     const { error: upErr } = await supabaseAdmin
       .from("master_specs")
@@ -302,5 +301,5 @@ export const analyzeSpecTds = createServerFn({ method: "POST" })
       .eq("id", spec.id);
     if (upErr) throw new Error(upErr.message);
 
-    return { updatedCount: updatedLabels.length, fields: updatedLabels };
+    return { updatedCount: updatedLabels.length, fields: updatedLabels, analyzedAt };
   });
