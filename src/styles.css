@@ -186,3 +186,277 @@ input[type="checkbox"] {
     background-color: var(--status-critical);
   }
 }
+
+/* ============================================================
+ * Royal Charcoal — dark neumorphism + glassmorphism theme.
+ * Activated by <html data-ui-theme="royal"> via UiThemeProvider,
+ * driven by the `new_ui_theme` feature flag. All styles here are
+ * fully scoped so the default theme is untouched when off.
+ * ============================================================ */
+
+:root[data-ui-theme="royal"] {
+  /* Palette */
+  --royal-bg: #1e1f22;
+  --royal-surface: #292d32;
+  --royal-surface-2: #24272b;
+  --royal-shadow-dark: #101316;
+  --royal-shadow-light: #383b40;
+  --royal-navy-deep: #141e30;
+  --royal-navy: #35577d;
+  --royal-navy-soft: rgba(53, 87, 125, 0.14);
+  --royal-navy-border: rgba(53, 87, 125, 0.45);
+  --royal-text: rgba(245, 245, 245, 1);
+  --royal-text-muted: rgba(245, 245, 245, 0.62);
+
+  /* Remap shadcn semantic tokens so every component picks up the palette */
+  --background: var(--royal-bg);
+  --foreground: var(--royal-text);
+  --card: var(--royal-surface);
+  --card-foreground: var(--royal-text);
+  --popover: var(--royal-surface);
+  --popover-foreground: var(--royal-text);
+  --primary: var(--royal-navy);
+  --primary-foreground: #ffffff;
+  --secondary: var(--royal-surface-2);
+  --secondary-foreground: var(--royal-text);
+  --muted: var(--royal-surface-2);
+  --muted-foreground: var(--royal-text-muted);
+  --accent: var(--royal-navy);
+  --accent-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: var(--royal-navy);
+  --sidebar: var(--royal-bg);
+  --sidebar-foreground: var(--royal-text);
+  --sidebar-primary: var(--royal-navy);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--royal-surface);
+  --sidebar-accent-foreground: var(--royal-text);
+  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --sidebar-ring: var(--royal-navy);
+
+  /* Retint the app's mockup accent tokens so blue highlights match Navy Mirage */
+  --accent-blue: #6a92c4;
+  --accent-blue-soft: rgba(53, 87, 125, 0.18);
+  --accent-blue-border: rgba(53, 87, 125, 0.5);
+
+  /* Fonts */
+  --font-display: "Clash Display", "Geist", system-ui, sans-serif;
+  --font-body: "Satoshi", "Geist", system-ui, sans-serif;
+  --font-sans: var(--font-body);
+}
+
+[data-ui-theme="royal"] body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  background: var(--royal-bg);
+  color: var(--royal-text);
+  letter-spacing: 0.005em;
+}
+
+[data-ui-theme="royal"] h1,
+[data-ui-theme="royal"] h2,
+[data-ui-theme="royal"] h3,
+[data-ui-theme="royal"] h4,
+[data-ui-theme="royal"] h5,
+[data-ui-theme="royal"] h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Uppercase micro-labels get premium tracking */
+[data-ui-theme="royal"] .uppercase,
+[data-ui-theme="royal"] [class*="text-xs"].uppercase,
+[data-ui-theme="royal"] label {
+  letter-spacing: 0.05em;
+}
+
+/* ---------- Neumorphism utilities ---------- */
+
+@utility neu-raised {
+  background: var(--royal-surface);
+  border-radius: 14px;
+  box-shadow:
+    -8px -8px 20px rgba(56, 59, 64, 0.38),
+    8px 8px 22px rgba(16, 19, 22, 1);
+}
+
+@utility neu-raised-sm {
+  background: var(--royal-surface);
+  border-radius: 10px;
+  box-shadow:
+    -4px -4px 10px rgba(56, 59, 64, 0.32),
+    4px 4px 12px rgba(16, 19, 22, 0.9);
+}
+
+@utility neu-inset {
+  background: var(--royal-surface-2);
+  border-radius: 12px;
+  box-shadow:
+    inset 6px 6px 14px rgba(16, 19, 22, 0.85),
+    inset -6px -6px 14px rgba(56, 59, 64, 0.28);
+}
+
+@utility neu-emboss-text {
+  color: var(--royal-text);
+  text-shadow:
+    1px 1px 1px rgba(255, 255, 255, 0.05),
+    -1px -1px 2px rgba(0, 0, 0, 0.65);
+}
+
+/* ---------- Glassmorphism utilities ---------- */
+
+@utility glass-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(53, 87, 125, 0.18) 0%,
+    rgba(20, 30, 48, 0.12) 100%
+  );
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+@utility glass-button {
+  background: linear-gradient(
+    135deg,
+    rgba(106, 146, 196, 0.28) 0%,
+    rgba(53, 87, 125, 0.18) 100%
+  );
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 4px 14px rgba(20, 30, 48, 0.55);
+  letter-spacing: 0.02em;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+[data-ui-theme="royal"] .glass-button:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 6px 18px rgba(20, 30, 48, 0.65);
+}
+[data-ui-theme="royal"] .glass-button:active {
+  transform: translateY(1px);
+}
+
+/* ---------- Auto-applied polish (no component edits required) ---------- */
+
+/* App shell surfaces get glass. Header & sidebars use frosted navy tint. */
+[data-ui-theme="royal"] header.sticky,
+[data-ui-theme="royal"] [data-sidebar] {
+  background: linear-gradient(
+    180deg,
+    rgba(41, 45, 50, 0.72) 0%,
+    rgba(30, 31, 34, 0.72) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(150%);
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Nav labels: embossed Clash Display feel */
+[data-ui-theme="royal"] header nav a,
+[data-ui-theme="royal"] [data-sidebar] a {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-shadow:
+    1px 1px 1px rgba(255, 255, 255, 0.04),
+    -1px -1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Cards adopt neumorphic raised surface */
+[data-ui-theme="royal"] .bg-card,
+[data-ui-theme="royal"] [data-slot="card"],
+[data-ui-theme="royal"] article.bg-card {
+  background: var(--royal-surface);
+  border-color: transparent;
+  box-shadow:
+    -6px -6px 16px rgba(56, 59, 64, 0.28),
+    6px 6px 18px rgba(16, 19, 22, 0.9);
+}
+
+/* Inputs & search get inset well */
+[data-ui-theme="royal"] input:not([type="checkbox"]):not([type="radio"]),
+[data-ui-theme="royal"] textarea,
+[data-ui-theme="royal"] select,
+[data-ui-theme="royal"] [role="combobox"] {
+  background: var(--royal-surface-2) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 3px 3px 8px rgba(16, 19, 22, 0.85),
+    inset -3px -3px 8px rgba(56, 59, 64, 0.28);
+  color: var(--royal-text);
+}
+[data-ui-theme="royal"] input::placeholder,
+[data-ui-theme="royal"] textarea::placeholder {
+  color: var(--royal-text-muted);
+}
+
+/* Primary buttons become glass; text stays crisp at 500 weight */
+[data-ui-theme="royal"] button[data-slot="button"].bg-primary,
+[data-ui-theme="royal"] .bg-primary {
+  background: linear-gradient(
+    135deg,
+    rgba(106, 146, 196, 0.32) 0%,
+    rgba(53, 87, 125, 0.22) 100%
+  ) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff !important;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 4px 14px rgba(20, 30, 48, 0.55);
+}
+
+/* Secondary/outline buttons become subtle neumorphic pills */
+[data-ui-theme="royal"] button[data-slot="button"].bg-secondary,
+[data-ui-theme="royal"] button[data-slot="button"][class*="variant-outline"],
+[data-ui-theme="royal"] .bg-secondary {
+  background: var(--royal-surface) !important;
+  border-color: transparent !important;
+  box-shadow:
+    -3px -3px 8px rgba(56, 59, 64, 0.3),
+    3px 3px 10px rgba(16, 19, 22, 0.85);
+  color: var(--royal-text) !important;
+}
+
+/* Count/TID pills: raised embossed Clash */
+[data-ui-theme="royal"] [class*="badge"],
+[data-ui-theme="royal"] .rounded-full[class*="bg-secondary"] {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-shadow:
+    1px 1px 1px rgba(255, 255, 255, 0.05),
+    -1px -1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Dialog & drawer surfaces switch to glass */
+[data-ui-theme="royal"] [role="dialog"] > [data-state],
+[data-ui-theme="royal"] [data-slot="dialog-content"],
+[data-ui-theme="royal"] [data-slot="sheet-content"],
+[data-ui-theme="royal"] [data-slot="drawer-content"] {
+  background: linear-gradient(
+    135deg,
+    rgba(41, 45, 50, 0.86) 0%,
+    rgba(20, 30, 48, 0.82) 100%
+  ) !important;
+  backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Body text over glass surfaces should be weight 500 to survive the blur */
+[data-ui-theme="royal"] [data-slot="dialog-content"] p,
+[data-ui-theme="royal"] [data-slot="sheet-content"] p,
+[data-ui-theme="royal"] header p,
+[data-ui-theme="royal"] .glass-panel p {
+  font-weight: 500;
+}
+
