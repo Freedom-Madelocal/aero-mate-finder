@@ -26,14 +26,12 @@ export default function MasterSpecs() {
   const [form, setForm] = useState("All");
   const [ooaOnly, setOoaOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [missingTdsOnly, setMissingTdsOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = useMemo(
     () => (selectedId ? specs.find((s) => s.id === selectedId) ?? null : null),
     [selectedId, specs],
   );
   const [showUpload, setShowUpload] = useState(false);
-  const [showBulkScrape, setShowBulkScrape] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
 
