@@ -828,13 +828,27 @@ export default function TdsUpload() {
                   <XCircle className="w-4 h-4" />
                   Error log ({failedFiles.length} file{failedFiles.length === 1 ? "" : "s"})
                 </div>
-                <button
-                  type="button"
-                  onClick={downloadErrorLog}
-                  className="text-[11px] px-2 py-1 border border-border rounded hover:bg-secondary/40"
-                >
-                  Download CSV
-                </button>
+                <div className="flex items-center gap-2">
+                  {failedFiles.some((f) => f.materialNumber != null) && (
+                    <button
+                      type="button"
+                      onClick={() => runUpload("retry")}
+                      disabled={uploading}
+                      className="text-[11px] px-2 py-1 rounded bg-[var(--accent-blue)] text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-1"
+                      title="Retry only the files that failed or were skipped"
+                    >
+                      <Loader2 className={`w-3 h-3 ${uploading ? "animate-spin" : "hidden"}`} />
+                      Retry {failedFiles.filter((f) => f.materialNumber != null).length} failed
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={downloadErrorLog}
+                    className="text-[11px] px-2 py-1 border border-border rounded hover:bg-secondary/40"
+                  >
+                    Download CSV
+                  </button>
+                </div>
               </div>
               <div className="max-h-64 overflow-y-auto border border-border rounded bg-background">
                 <table className="w-full text-[11px]">
