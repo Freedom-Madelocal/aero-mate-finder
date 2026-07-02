@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompare } from "@/contexts/CompareContext";
 import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
+import { useFeatureFlag } from "@/data/featureFlags";
 
 /*
  * Engineer Workspace
@@ -268,6 +269,7 @@ export default function Engineer() {
   const { materials } = useMaterialStore();
   const { requests } = useProcurementStore();
   const { profile, user } = useAuth();
+  const procureEnabled = useFeatureFlag("procure", true);
   const search = useSearch({ from: "/_app/engineer" }) as { spec?: string; q?: string };
   const navigate = useNavigate();
   const compare = useCompare();
@@ -967,20 +969,22 @@ export default function Engineer() {
                                   <StarOutline className="w-4 h-4" />
                                 )}
                               </button>
-                              <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
-                                <input
-                                  type="checkbox"
-                                  checked={isPending}
-                                  disabled={picking === spec.id}
-                                  onChange={() => handleProcure(spec)}
-                                  className="w-3.5 h-3.5 accent-foreground cursor-pointer"
-                                  aria-label="Add to procurement pick list"
-                                />
-                                <span className="inline-flex items-center gap-1">
-                                  <CheckSquare className="w-3 h-3" />
-                                  {isPending ? "On pick list" : "Procure"}
-                                </span>
-                              </label>
+                              {procureEnabled && (
+                                <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={isPending}
+                                    disabled={picking === spec.id}
+                                    onChange={() => handleProcure(spec)}
+                                    className="w-3.5 h-3.5 accent-foreground cursor-pointer"
+                                    aria-label="Add to procurement pick list"
+                                  />
+                                  <span className="inline-flex items-center gap-1">
+                                    <CheckSquare className="w-3 h-3" />
+                                    {isPending ? "On pick list" : "Procure"}
+                                  </span>
+                                </label>
+                              )}
                             </div>
                           </div>
 

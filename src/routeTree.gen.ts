@@ -25,6 +25,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTdsUploadRouteImport } from './routes/admin.tds-upload'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
+import { Route as AdminFeatureFlagsRouteImport } from './routes/admin.feature-flags'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
 import { Route as AppSuppliersRouteImport } from './routes/_app.suppliers'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -118,6 +119,11 @@ const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
 const AdminMasterSpecsRoute = AdminMasterSpecsRouteImport.update({
   id: '/admin/master-specs',
   path: '/admin/master-specs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFeatureFlagsRoute = AdminFeatureFlagsRouteImport.update({
+  id: '/admin/feature-flags',
+  path: '/admin/feature-flags',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCrmRoute = AdminCrmRouteImport.update({
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/feature-flags': typeof AdminFeatureFlagsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/feature-flags': typeof AdminFeatureFlagsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/suppliers': typeof AppSuppliersRoute
   '/admin/crm': typeof AdminCrmRoute
+  '/admin/feature-flags': typeof AdminFeatureFlagsRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/feature-flags'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/tds-upload'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/admin/crm'
+    | '/admin/feature-flags'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/tds-upload'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/suppliers'
     | '/admin/crm'
+    | '/admin/feature-flags'
     | '/admin/master-specs'
     | '/admin/organizations'
     | '/admin/tds-upload'
@@ -406,6 +418,7 @@ export interface RootRouteChildren {
   PiRoute: typeof PiRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminCrmRoute: typeof AdminCrmRoute
+  AdminFeatureFlagsRoute: typeof AdminFeatureFlagsRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminTdsUploadRoute: typeof AdminTdsUploadRoute
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/master-specs'
       fullPath: '/admin/master-specs'
       preLoaderRoute: typeof AdminMasterSpecsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/feature-flags': {
+      id: '/admin/feature-flags'
+      path: '/admin/feature-flags'
+      fullPath: '/admin/feature-flags'
+      preLoaderRoute: typeof AdminFeatureFlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/crm': {
@@ -694,6 +714,7 @@ const rootRouteChildren: RootRouteChildren = {
   PiRoute: PiRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminCrmRoute: AdminCrmRoute,
+  AdminFeatureFlagsRoute: AdminFeatureFlagsRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminTdsUploadRoute: AdminTdsUploadRoute,
