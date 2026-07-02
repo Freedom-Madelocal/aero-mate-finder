@@ -896,7 +896,7 @@ export default function Engineer() {
                                   target="_blank"
                                   rel="noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25"
+                                  className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary text-muted-foreground hover:text-foreground"
                                   title={spec.tdsSourceTitle ?? spec.tdsUrl}
                                 >
                                   TDS ↗
