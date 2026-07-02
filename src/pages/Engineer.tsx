@@ -850,6 +850,14 @@ export default function Engineer() {
                               <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary text-foreground">
                                 {spec.vendor}
                               </span>
+                              {spec.materialNumber !== null && (
+                                <span
+                                  className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground"
+                                  title="Traceium ID"
+                                >
+                                  TID {spec.materialNumber}
+                                </span>
+                              )}
                               {spec.resinChemistry && (
                                 <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground">
                                   {spec.resinChemistry}
