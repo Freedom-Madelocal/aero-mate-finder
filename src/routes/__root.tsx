@@ -16,6 +16,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
+import { UiThemeProvider } from "@/contexts/UiThemeContext";
 
 function NotFoundComponent() {
   return (
@@ -97,7 +98,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/1S9s3HU9Tqacr1tSi3abu0E43Ep1/social-images/social-1778386448089-Screenshot_2026-05-09_at_9.13.55_PM.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/1S9s3HU9Tqacr1tSi3abu0E43Ep1/social-images/social-1778386448089-Screenshot_2026-05-09_at_9.13.55_PM.webp" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://api.fontshare.com" },
+      { rel: "preconnect", href: "https://cdn.fontshare.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=satoshi@400,500,700&display=swap",
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -126,12 +135,14 @@ function RootComponent() {
       <ErrorBoundary>
         <ThemeProvider defaultTheme="dark">
           <AuthProvider>
-            <CompareProvider>
-              <TooltipProvider delayDuration={200}>
-                <Toaster position="top-right" />
-                <Outlet />
-              </TooltipProvider>
-            </CompareProvider>
+            <UiThemeProvider>
+              <CompareProvider>
+                <TooltipProvider delayDuration={200}>
+                  <Toaster position="top-right" />
+                  <Outlet />
+                </TooltipProvider>
+              </CompareProvider>
+            </UiThemeProvider>
           </AuthProvider>
         </ThemeProvider>
       </ErrorBoundary>
