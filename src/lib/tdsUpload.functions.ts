@@ -48,13 +48,37 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
       .select("id, vendor, product_name, material_number");
     if (error) throw new Error(error.message);
 
-    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-    const byKey = new Map<string, { id: string; existing: number | null }>();
+    // Aggressive normalization: strip ®™©, unicode-fold, drop punctuation,
+    // collapse whitespace. Handles "HexForce®" vs "hexforce", "5H Satin"
+    // vs "5h-satin", curly vs straight quotes, etc.
+    const norm = (s: string) =>
+      s
+        .normalize("NFKD")
+        .replace(/[®™©]/g, "")
+        .replace(/[\u2018\u2019\u201C\u201D]/g, "'")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+
+    // Some DB product names embed the vendor as a prefix
+    // ("HexForce® 43596 ..."). Strip it so CSVs without the prefix match.
+    const stripVendorPrefix = (vendor: string, product: string) => {
+      const v = norm(vendor);
+      const p = norm(product);
+      if (v && p.startsWith(v + " ")) return p.slice(v.length + 1);
+      return p;
+    };
+
+    type SpecRef = { id: string; existing: number | null };
+    const byVendorProduct = new Map<string, SpecRef>();
+    const byProductOnly = new Map<string, SpecRef[]>();
     for (const s of specs ?? []) {
-      byKey.set(`${norm(s.vendor)}|${norm(s.product_name)}`, {
-        id: s.id,
-        existing: s.material_number,
-      });
+      const ref: SpecRef = { id: s.id, existing: s.material_number };
+      const prodKey = stripVendorPrefix(s.vendor, s.product_name);
+      byVendorProduct.set(`${norm(s.vendor)}|${prodKey}`, ref);
+      const list = byProductOnly.get(prodKey) ?? [];
+      list.push(ref);
+      byProductOnly.set(prodKey, list);
     }
 
     let matched = 0;
@@ -64,7 +88,14 @@ export const importMaterialIndex = createServerFn({ method: "POST" })
     const updates: { id: string; material_number: number }[] = [];
 
     for (const row of data.rows) {
-      const hit = byKey.get(`${norm(row.vendor)}|${norm(row.product)}`);
+      const rowProdKey = stripVendorPrefix(row.vendor, row.product);
+      let hit = byVendorProduct.get(`${norm(row.vendor)}|${rowProdKey}`);
+      // Fallback: vendor names differ (CSV "Hexcel" vs DB "HexForce")
+      // but the product name uniquely identifies the spec.
+      if (!hit) {
+        const candidates = byProductOnly.get(rowProdKey);
+        if (candidates && candidates.length === 1) hit = candidates[0];
+      }
       if (!hit) {
         unmatched.push({
           materialNumber: row.materialNumber,
