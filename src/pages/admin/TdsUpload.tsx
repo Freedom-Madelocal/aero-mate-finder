@@ -317,6 +317,9 @@ export default function TdsUpload() {
   const [uploading, setUploading] = useState(false);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  const [currentFile, setCurrentFile] = useState<string | null>(null);
+  const [bytes, setBytes] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  const [startedAt, setStartedAt] = useState<number | null>(null);
 
   const importIndex = useServerFn(importMaterialIndex);
   const createUrl = useServerFn(createTdsUploadUrl);
@@ -328,8 +331,15 @@ export default function TdsUpload() {
     const pending = files.filter((f) => f.status === "pending").length;
     const errored = files.filter((f) => f.status === "error").length;
     const done = files.filter((f) => f.status === "done").length;
-    return { pending, errored, done };
+    const skipped = files.filter((f) => f.status === "skipped").length;
+    const uploading = files.filter((f) => f.status === "uploading").length;
+    return { pending, errored, done, skipped, uploading };
   }, [files]);
+
+  const failedFiles = useMemo(
+    () => files.filter((f) => f.status === "error" || f.status === "skipped"),
+    [files],
+  );
 
   async function onCsvSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -425,11 +435,20 @@ export default function TdsUpload() {
     }
     setUploading(true);
     let done = 0;
-    const total = files.filter((f) => f.status === "pending").length;
+    let bytesDone = 0;
+    const pendingFiles = files.filter((f) => f.status === "pending");
+    const total = pendingFiles.length;
+    const bytesTotal = pendingFiles.reduce((s, f) => s + f.file.size, 0);
     setProgress({ done, total });
+    setBytes({ done: 0, total: bytesTotal });
+    setStartedAt(Date.now());
+    let succeeded = 0;
+    let failed = 0;
+    let skipped = 0;
     for (let i = 0; i < files.length; i++) {
       const item = files[i];
       if (item.status !== "pending" || item.materialNumber == null) continue;
+      setCurrentFile(item.file.name);
       setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f)));
       try {
         const signed = await createUrl({
@@ -444,11 +463,12 @@ export default function TdsUpload() {
           headers: { "Content-Type": "application/pdf" },
           body: item.file,
         });
-        if (!putRes.ok) throw new Error(`Storage PUT ${putRes.status}`);
+        if (!putRes.ok) throw new Error(`Storage PUT ${putRes.status} ${putRes.statusText}`);
         await finalize({
           data: { specId: signed.specId, path: signed.path, size: item.file.size },
         });
         setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "done" } : f)));
+        succeeded++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         const isExists = msg.includes("EXISTS:");
@@ -465,13 +485,48 @@ export default function TdsUpload() {
               : f,
           ),
         );
+        if (isExists) skipped++;
+        else failed++;
       }
       done++;
+      bytesDone += item.file.size;
       setProgress({ done, total });
+      setBytes({ done: bytesDone, total: bytesTotal });
     }
+    setCurrentFile(null);
     setUploading(false);
     await refreshMasterSpecStore();
-    toast.success(`Upload complete: ${done}/${total}`);
+    if (failed > 0) {
+      toast.error(`Upload finished: ${succeeded} uploaded · ${failed} failed · ${skipped} skipped`);
+    } else {
+      toast.success(`Upload finished: ${succeeded} uploaded · ${skipped} skipped`);
+    }
+  }
+
+  function downloadErrorLog() {
+    const rows = [
+      ["material_number", "file", "status", "error"],
+      ...failedFiles.map((f) => [
+        f.materialNumber != null ? String(f.materialNumber).padStart(4, "0") : "",
+        f.file.name,
+        f.status,
+        (f.error ?? "").replace(/"/g, '""'),
+      ]),
+    ];
+    const csvText = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csvText], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tds-upload-errors-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function fmtBytes(n: number): string {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
   }
 
   return (
@@ -677,16 +732,113 @@ export default function TdsUpload() {
             </div>
           )}
 
-          {(uploading || folderStats.done > 0) && (
-            <div className="text-xs text-muted-foreground">
-              {progress.done} / {progress.total} uploaded
-              <div className="mt-1 h-1.5 w-full bg-secondary/40 rounded overflow-hidden">
+          {(uploading || folderStats.done > 0 || folderStats.errored > 0 || folderStats.skipped > 0) && (
+            <div className="border border-border rounded-md p-3 space-y-2 bg-secondary/10">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 font-medium">
+                  {uploading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-blue)]" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[var(--status-compliant)]" />
+                  )}
+                  <span>
+                    {progress.done} / {progress.total} files
+                    {progress.total > 0 && (
+                      <span className="text-muted-foreground ml-1">
+                        ({Math.round((progress.done / progress.total) * 100)}%)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span className="text-[var(--status-compliant)]">✓ {folderStats.done} uploaded</span>
+                  {folderStats.skipped > 0 && <span>⤼ {folderStats.skipped} skipped</span>}
+                  {folderStats.errored > 0 && (
+                    <span className="text-destructive">✗ {folderStats.errored} failed</span>
+                  )}
+                </div>
+              </div>
+              <div className="h-2 w-full bg-secondary/40 rounded overflow-hidden flex">
                 <div
-                  className="h-full bg-[var(--accent-blue)] transition-all"
-                  style={{
-                    width: progress.total ? `${(progress.done / progress.total) * 100}%` : "0%",
-                  }}
+                  className="h-full bg-[var(--status-compliant)] transition-all"
+                  style={{ width: progress.total ? `${(folderStats.done / progress.total) * 100}%` : "0%" }}
                 />
+                <div
+                  className="h-full bg-muted-foreground/50 transition-all"
+                  style={{ width: progress.total ? `${(folderStats.skipped / progress.total) * 100}%` : "0%" }}
+                />
+                <div
+                  className="h-full bg-destructive transition-all"
+                  style={{ width: progress.total ? `${(folderStats.errored / progress.total) * 100}%` : "0%" }}
+                />
+              </div>
+              {bytes.total > 0 && (
+                <div className="text-[11px] text-muted-foreground">
+                  {fmtBytes(bytes.done)} of {fmtBytes(bytes.total)}
+                  {uploading && startedAt && bytes.done > 0 && (
+                    <>
+                      {" · "}
+                      {(bytes.done / ((Date.now() - startedAt) / 1000) / 1024 / 1024).toFixed(2)} MB/s
+                    </>
+                  )}
+                </div>
+              )}
+              {currentFile && uploading && (
+                <div className="text-[11px] text-muted-foreground truncate" title={currentFile}>
+                  Uploading: <span className="font-mono">{currentFile}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {failedFiles.length > 0 && !uploading && (
+            <div className="border border-destructive/40 bg-destructive/5 rounded-md p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-destructive text-xs font-medium">
+                  <XCircle className="w-4 h-4" />
+                  Error log ({failedFiles.length} file{failedFiles.length === 1 ? "" : "s"})
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadErrorLog}
+                  className="text-[11px] px-2 py-1 border border-border rounded hover:bg-secondary/40"
+                >
+                  Download CSV
+                </button>
+              </div>
+              <div className="max-h-64 overflow-y-auto border border-border rounded bg-background">
+                <table className="w-full text-[11px]">
+                  <thead className="bg-secondary/30 sticky top-0">
+                    <tr>
+                      <th className="text-left px-2 py-1 font-medium w-16">ID</th>
+                      <th className="text-left px-2 py-1 font-medium">File</th>
+                      <th className="text-left px-2 py-1 font-medium w-20">Status</th>
+                      <th className="text-left px-2 py-1 font-medium">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {failedFiles.map((f, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-2 py-1 font-mono">
+                          {f.materialNumber != null ? String(f.materialNumber).padStart(4, "0") : "—"}
+                        </td>
+                        <td className="px-2 py-1 truncate max-w-[16rem]" title={f.file.name}>
+                          {f.file.name}
+                        </td>
+                        <td className="px-2 py-1">
+                          {f.status === "error" ? (
+                            <span className="text-destructive">Failed</span>
+                          ) : (
+                            <span className="text-muted-foreground">Skipped</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1 text-muted-foreground" title={f.error}>
+                          {f.error ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -714,14 +866,22 @@ export default function TdsUpload() {
                         {f.status === "done" && (
                           <span className="text-[var(--status-compliant)]">Uploaded</span>
                         )}
-                        {f.status === "uploading" && <span>Uploading…</span>}
+                        {f.status === "uploading" && (
+                          <span className="text-[var(--accent-blue)] inline-flex items-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Uploading…
+                          </span>
+                        )}
                         {f.status === "pending" && <span className="text-muted-foreground">Queued</span>}
                         {f.status === "error" && (
                           <span className="text-destructive" title={f.error}>
                             {f.error ?? "Error"}
                           </span>
                         )}
-                        {f.status === "skipped" && <span className="text-muted-foreground">Skipped</span>}
+                        {f.status === "skipped" && (
+                          <span className="text-muted-foreground" title={f.error}>
+                            Skipped
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
