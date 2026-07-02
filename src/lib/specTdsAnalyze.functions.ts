@@ -298,7 +298,7 @@ export const analyzeSpecTds = createServerFn({ method: "POST" })
 
     const { error: upErr } = await supabaseAdmin
       .from("master_specs")
-      .update(patch)
+      .update(patch as never)
       .eq("id", spec.id);
     if (upErr) throw new Error(upErr.message);
 
