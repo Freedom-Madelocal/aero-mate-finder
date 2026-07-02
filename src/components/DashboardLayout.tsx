@@ -20,6 +20,7 @@ import { preloadMasterSpecStore, useMasterSpecStore } from "@/data/masterSpecs";
 import { preloadMaterialStore } from "@/data/materials";
 import { preloadProcurementStore } from "@/data/procurement";
 import { useCompare } from "@/contexts/CompareContext";
+import { useFeatureFlags } from "@/data/featureFlags";
 
 // Non-critical UI: only needed after the shell paints, on user interaction,
 // or once auth state settles. Lazy-loading keeps them out of the initial bundle.
@@ -122,6 +123,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ...onlineMembers.filter((m) => !unreadMap.has(m.user_id)),
   ];
   const { isSuperAdmin, profile, user } = useAuth();
+  const { flags: featureFlags } = useFeatureFlags();
+  const flagOn = (key: string): boolean => {
+    const f = featureFlags.find((x) => x.key === key);
+    return f ? f.enabled : true;
+  };
 
   useEffect(() => {
     if (user?.id && location) {
@@ -129,7 +135,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user?.id, location]);
 
-  const navItems: NavItem[] = baseNavItems;
+  const navItems: NavItem[] = baseNavItems.filter((item) => {
+    if (item.path === "/learn") return flagOn("learn");
+    if (item.path === "/inventory") return flagOn("inventory");
+    if (item.path === "/procurement") return flagOn("procure");
+    return true;
+  });
 
   const initials = (profile?.full_name || profile?.email || user?.email || "?")
     .split(/\s+/)
