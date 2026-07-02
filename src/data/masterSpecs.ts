@@ -128,6 +128,8 @@ const num = (v: number | string | null): number | null =>
 function rowToSpec(r: SpecRow): MasterSpec {
   return {
     id: r.id,
+    materialNumber: r.material_number ?? null,
+    tdsPdfPath: r.tds_pdf_path ?? null,
     vendor: r.vendor,
     productName: r.product_name,
     productFamily: r.product_family,
