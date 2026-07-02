@@ -428,40 +428,57 @@ export default function TdsUpload() {
 
   async function runUpload(mode: "all" | "retry" = "all") {
     if (files.length === 0) return;
+
+    // Compute target indices for this run.
+    let targets: number[];
     if (mode === "retry") {
-      // Reset only prior failures/skips that have a resolvable Material ID.
-      // Pre-flight validation errors (no materialNumber) are left alone.
+      targets = files
+        .map((f, i) => ({ f, i }))
+        .filter(
+          ({ f }) =>
+            (f.status === "error" || f.status === "skipped") && f.materialNumber != null,
+        )
+        .map(({ i }) => i);
+      if (targets.length === 0) {
+        toast.info("Nothing to retry.");
+        return;
+      }
+      // Flip retry targets back to pending so the UI shows them as queued.
       setFiles((prev) =>
-        prev.map((f) =>
-          (f.status === "error" || f.status === "skipped") && f.materialNumber != null
-            ? { ...f, status: "pending", error: undefined }
-            : f,
+        prev.map((f, idx) =>
+          targets.includes(idx) ? { ...f, status: "pending", error: undefined } : f,
         ),
       );
-      // Let React commit the state before we re-read `files` below.
-      await new Promise((r) => setTimeout(r, 0));
-    } else if (files.some((f) => f.status === "error")) {
-      // Full run: refuse if there are any error rows staged.
-      toast.error("Fix or remove file errors before uploading.");
-      return;
+    } else {
+      if (files.some((f) => f.status === "error")) {
+        toast.error("Fix or remove file errors before uploading.");
+        return;
+      }
+      targets = files
+        .map((f, i) => ({ f, i }))
+        .filter(({ f }) => f.status === "pending" && f.materialNumber != null)
+        .map(({ i }) => i);
     }
+
     setUploading(true);
     let done = 0;
     let bytesDone = 0;
-    const pendingFiles = files.filter((f) => f.status === "pending");
-    const total = pendingFiles.length;
-    const bytesTotal = pendingFiles.reduce((s, f) => s + f.file.size, 0);
+    const total = targets.length;
+    const bytesTotal = targets.reduce((s, i) => s + files[i].file.size, 0);
     setProgress({ done, total });
     setBytes({ done: 0, total: bytesTotal });
     setStartedAt(Date.now());
     let succeeded = 0;
     let failed = 0;
     let skipped = 0;
-    for (let i = 0; i < files.length; i++) {
+
+    for (const i of targets) {
       const item = files[i];
-      if (item.status !== "pending" || item.materialNumber == null) continue;
+      if (item.materialNumber == null) continue;
       setCurrentFile(item.file.name);
-      setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f)));
+      setFiles((prev) =>
+        prev.map((f, idx) => (idx === i ? { ...f, status: "uploading", error: undefined } : f)),
+      );
       try {
         const signed = await createUrl({
           data: {
@@ -508,10 +525,11 @@ export default function TdsUpload() {
     setCurrentFile(null);
     setUploading(false);
     await refreshMasterSpecStore();
+    const label = mode === "retry" ? "Retry finished" : "Upload finished";
     if (failed > 0) {
-      toast.error(`Upload finished: ${succeeded} uploaded · ${failed} failed · ${skipped} skipped`);
+      toast.error(`${label}: ${succeeded} uploaded · ${failed} failed · ${skipped} skipped`);
     } else {
-      toast.success(`Upload finished: ${succeeded} uploaded · ${skipped} skipped`);
+      toast.success(`${label}: ${succeeded} uploaded · ${skipped} skipped`);
     }
   }
 
