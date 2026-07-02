@@ -391,7 +391,7 @@ export default function TdsUpload() {
     }
   }
 
-  function onFolderSelected(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFolderSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const list = Array.from(e.target.files ?? []);
     if (!csv || !csv.ok) {
       toast.error("Import a valid CSV first — filenames are cross-checked against it.");
@@ -399,10 +399,34 @@ export default function TdsUpload() {
       return;
     }
     const res = validateFolderAgainstCsv(list, csv);
-    setFiles(res.matched);
+    let matched = res.matched;
+    const pendingMaterialNumbers = matched
+      .filter((m) => m.status === "pending" && m.materialNumber != null)
+      .map((m) => m.materialNumber as number);
+    if (pendingMaterialNumbers.length > 0) {
+      try {
+        const check = await validateMaterialNumbers({ data: { materialNumbers: pendingMaterialNumbers } });
+        const missing = new Set(check.missing);
+        if (missing.size > 0) {
+          matched = matched.map((m) =>
+            m.status === "pending" && m.materialNumber != null && missing.has(m.materialNumber)
+              ? {
+                  ...m,
+                  status: "error",
+                  error:
+                    "Material ID is not assigned to any master spec. Run Assign Material IDs first, then re-select the folder.",
+                }
+              : m,
+          );
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err));
+      }
+    }
+    setFiles(matched);
     setFolderWarnings(res.warnings);
-    const pending = res.matched.filter((m) => m.status === "pending").length;
-    const errored = res.matched.filter((m) => m.status === "error").length;
+    const pending = matched.filter((m) => m.status === "pending").length;
+    const errored = matched.filter((m) => m.status === "error").length;
     setProgress({ done: 0, total: pending });
     if (errored > 0) {
       toast.error(`${errored} file(s) failed validation and will be skipped.`);
