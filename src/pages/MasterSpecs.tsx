@@ -6,6 +6,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
+import { BulkAnalyzeTdsButton } from "@/components/BulkAnalyzeTdsButton";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
@@ -35,6 +36,7 @@ export default function MasterSpecs() {
   const [showUpload, setShowUpload] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState<string[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
+  const [bulkRunning, setBulkRunning] = useState(false);
 
   const vendors = useMemo(
     () => ["All", ...Array.from(new Set(specs.map((s) => s.vendor))).sort()],
@@ -113,9 +115,11 @@ export default function MasterSpecs() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <BulkAnalyzeTdsButton specs={specs} onRunningChange={setBulkRunning} />
             <button
+              disabled={bulkRunning}
               onClick={() => setShowUpload(true)}
-              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90"
+              className="inline-flex items-center gap-2 bg-foreground text-background rounded px-4 py-2 text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Upload className="w-4 h-4" /> Upload Spec Sheet
             </button>
@@ -433,7 +437,7 @@ function SpecDrawer({
                 <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[24rem]">{spec.tdsPdfPath}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <AnalyzeTdsButton specId={spec.id} />
+                <AnalyzeTdsButton specId={spec.id} analyzedAt={spec.tdsAnalyzedAt} />
                 <button
                   onClick={async () => {
                     try {

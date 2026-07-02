@@ -61,6 +61,7 @@ export interface MasterSpec {
   tdsScrapedAt: string | null;
   tdsScrapeStatus: "success" | "not_found" | "failed" | null;
   tdsScrapeError: string | null;
+  tdsAnalyzedAt: string | null;
 }
 
 export interface MasterSpecUpload {
@@ -120,6 +121,7 @@ interface SpecRow {
   tds_scraped_at: string | null;
   tds_scrape_status: string | null;
   tds_scrape_error: string | null;
+  tds_analyzed_at: string | null;
 }
 
 const num = (v: number | string | null): number | null =>
@@ -177,6 +179,7 @@ function rowToSpec(r: SpecRow): MasterSpec {
     tdsScrapedAt: r.tds_scraped_at ?? null,
     tdsScrapeStatus: (r.tds_scrape_status as MasterSpec["tdsScrapeStatus"]) ?? null,
     tdsScrapeError: r.tds_scrape_error ?? null,
+    tdsAnalyzedAt: r.tds_analyzed_at ?? null,
   };
 }
 

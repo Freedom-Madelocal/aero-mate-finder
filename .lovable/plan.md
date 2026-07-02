@@ -1,40 +1,51 @@
 ## Goal
-On every master spec that has a TDS PDF attached, add an "Analyze TDS" button that uses AI to read the PDF and fill in the spec's technical detail fields (the ones the platform already shows). No new fields are added — only existing ones on the master_specs row are updated, and only where the AI finds a value.
+Add a "Analyze All TDS PDFs" button to `/master-specs` that runs the existing per-spec AI analysis over every spec with an attached PDF, and skips specs that have already been analyzed unless the user opts to re-analyze.
 
-## New server function — `src/lib/specTdsAnalyze.functions.ts`
+## Tracking analyzed state
 
-`analyzeSpecTds({ specId })` — auth-gated (`requireSupabaseAuth`):
+There is no reliable way to infer "already analyzed" from existing columns. Add a single timestamp column:
 
-1. Load the master spec row by id; require `tds_pdf_path`.
-2. Download the PDF from the `tds-pdfs` storage bucket via `supabaseAdmin` (dynamic import inside the handler, per server-side-modern rules).
-3. Base64-encode the bytes and POST to Lovable AI Gateway (`google/gemini-2.5-pro`) with a single-row tool-calling schema — reuse the field list and system-prompt style from `specPdfExtract.functions.ts`, but instruct the model to return exactly one row for the named vendor + product.
-4. Merge into the existing row using the same "keep existing when new value is missing" rules already used by `addMasterSpecs`:
-   - Text: overwrite when AI returns a non-empty, non-"none given" string.
-   - Number: overwrite when AI returns a finite number.
-   - Boolean: overwrite only when AI explicitly returns `true` (avoid flipping true → false on a silent PDF).
-   - Arrays (`key_specs`, `profiles`, `customers`, `qualifications_standards` string): union with existing.
-5. `UPDATE public.master_specs` for that id and return the updated field list + count.
+- Migration: `ALTER TABLE public.master_specs ADD COLUMN tds_analyzed_at timestamptz;`
+- Existing `analyzeSpecTds` server fn sets `tds_analyzed_at = now()` in its patch on every successful run (even when 0 fields changed — the PDF has still been analyzed).
+- `MasterSpec` type + `rowToSpec` in `src/data/masterSpecs.ts` expose the new field as `tdsAnalyzedAt: string | null`.
 
-Vendor / productName / material_number / tds_pdf_path / crossover / notes / frequent_reorder / engineer_default_name are **not** touched.
+## Server fn — `src/lib/specTdsAnalyze.functions.ts`
+- Always include `tds_analyzed_at: new Date().toISOString()` in the patch on success (so the update runs even when nothing else changed).
+- Return `{ updatedCount, fields, analyzedAt }` so the client can show timestamps.
 
-## UI — button placement
+## UI — `src/pages/MasterSpecs.tsx`
 
-Both drawers already show a "Technical Data Sheet" card with a "View PDF" button:
+Add a "Analyze All TDS" button in the admin header (super-admin only, matches existing gate). Clicking it:
 
-- `src/pages/MasterSpecs.tsx` around line 428
-- `src/pages/Engineer.tsx` around line 1336
+1. Compute queue = specs where `tdsPdfPath` is set.
+2. Split into `pending` (no `tdsAnalyzedAt`) and `alreadyAnalyzed`.
+3. Open a small dialog:
+   - "N materials have PDFs. M were already analyzed."
+   - Options:
+     - **Analyze N-M new** (skip already analyzed) — default.
+     - **Re-analyze all N** — reruns everything.
+     - **Cancel**.
+4. Run the chosen queue sequentially through the shared helper `runAnalyzeSpecTds(specId)` (extracted from `AnalyzeTdsButton` — no duplicated logic). Show live progress: `Analyzing 12 / 87 — Toray TC275…` with running tally of updated / unchanged / failed.
+5. On 429 wait ~30s then retry once; on any other error record + continue.
+6. Cancel button stops after the current item.
+7. On finish: summary with a collapsible failures list, then one `refreshMasterSpecStore()` call.
 
-Add an "Analyze TDS" button next to "View PDF" in the same card. On click:
-- Show inline spinner state ("Analyzing…"), disable the button.
-- Call `analyzeSpecTds({ data: { specId: spec.id } })`.
-- Toast success with count of fields updated; toast error with server message.
-- Call `refreshMasterSpecStore()` so the drawer re-reads the fresh row.
+## Single-row button — `src/components/AnalyzeTdsButton.tsx`
 
-Only shown when `spec.tdsPdfPath` is present (matches existing View PDF gating). On `/engineer`, the button appears for admins/engineers exactly where View PDF appears today — no separate permission gate is added.
+- Extract the per-spec call into `runAnalyzeSpecTds(specId)` so bulk + single share code.
+- Add a subtle "Analyzed <relative time>" hint under the button when `spec.tdsAnalyzedAt` is set (in the drawer where the button lives).
+- Single-row button still always runs; it doesn't need a re-analyze prompt (user explicitly clicked it).
+
+## Guardrails
+- Bulk button visible only to super admins.
+- Confirmation before starting when the chosen queue is >5 items.
+- Disable Upload / Import controls while a bulk run is active.
 
 ## Files touched
-- Create `src/lib/specTdsAnalyze.functions.ts` (new server fn).
-- Edit `src/pages/MasterSpecs.tsx` (add button + handler in the TDS card).
-- Edit `src/pages/Engineer.tsx` (add button + handler in the TDS card).
+- New migration adding `tds_analyzed_at` to `master_specs`.
+- `src/lib/specTdsAnalyze.functions.ts` — stamp `tds_analyzed_at` on success, return it.
+- `src/data/masterSpecs.ts` — expose `tdsAnalyzedAt` on `MasterSpec`.
+- `src/components/AnalyzeTdsButton.tsx` — extract shared runner, show analyzed timestamp hint.
+- `src/pages/MasterSpecs.tsx` — bulk button, choice dialog, progress modal, cancel + summary.
 
-No DB migrations, no schema changes, no new columns.
+No RLS/policy changes (existing policies already govern `master_specs`).
