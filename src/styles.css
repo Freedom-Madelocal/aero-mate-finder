@@ -305,6 +305,14 @@ input[type="checkbox"] {
     -1px -1px 2px rgba(0, 0, 0, 0.65);
 }
 
+@utility login-panel {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+  border-radius: 1.5rem;
+  box-shadow:
+    -8px -8px 20px rgba(255, 255, 255, 0.05),
+    8px 8px 22px rgba(0, 0, 0, 0.55);
+}
+
 /* ---------- Glassmorphism utilities ---------- */
 
 @utility glass-panel {
