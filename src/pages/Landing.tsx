@@ -23,6 +23,10 @@ import traceumWordmark from "@/assets/traceium-wordmark.webp";
 export default function Landing() {
   const [submitting, setSubmitting] = useState(false);
   const { content: c, heroVideoUrl } = useSiteSettings();
+  const bannerSuppliers = (c.landing_suppliers || "Hexcel, Toray, Syensqo, 3M, Henkel")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   async function handleDemo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -177,9 +181,9 @@ export default function Landing() {
       {/* MANUFACTURER MARQUEE */}
       <section className="border-b border-border/60 bg-secondary/20 py-5 overflow-hidden">
         <div className="flex animate-marquee">
-          {[...Array(2)].map((_, i) => (
+          {[...Array(2)].map((_: number, i: number) => (
             <div key={i} className="flex shrink-0 items-center gap-12 px-6">
-              {["Hexcel", "Toray", "Syensqo", "3M", "Henkel", "Solvay", "Cytec", "Gurit", "Park Aerospace", "Mitsubishi Chemical"].map((m) => (
+              {bannerSuppliers.map((m) => (
                 <span key={m} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
               ))}
             </div>
