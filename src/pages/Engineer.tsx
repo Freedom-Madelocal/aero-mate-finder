@@ -1252,13 +1252,13 @@ function FixedChipGroup({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
+            className={`text-[11px] px-2 py-1 rounded-lg transition-colors ${
               isOn(opt)
                 ? "neu-chip-active"
                 : "neu-chip"
