@@ -84,7 +84,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center bg-black/60 p-4 sm:p-8">
+      <div className="flex-1 flex items-center justify-center bg-background p-4 sm:p-8">
         <div className="w-full max-w-sm login-panel p-8 sm:p-10">
           <Link to="/" className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-8 h-8 rounded bg-black/40 border border-white/10 flex items-center justify-center">
