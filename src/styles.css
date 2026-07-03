@@ -497,16 +497,24 @@ input[type="checkbox"] {
    Hover: swap to Inner Shadow 4 (tight, deep) and run a liquid-metal ripple.
    ========================================================================= */
 .tds-glass-badge {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, #ffffff 8%, transparent) 0%,
-    color-mix(in srgb, #ffffff 2%, transparent) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #ffffff 8%, transparent) 0%,
+      color-mix(in srgb, #ffffff 2%, transparent) 100%
+    ),
+    /* strong blue at the bottom that fades quickly upward */
+    linear-gradient(
+      180deg,
+      transparent 45%,
+      color-mix(in srgb, #144CCD 42%, transparent) 100%
+    );
   backdrop-filter: blur(10px) saturate(140%);
   border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
-  /* Inner Shadow 1 — soft blue glow at the bottom of the glass */
+  /* Inner Shadow 1 — tight blue glow anchored at the bottom edge */
   box-shadow:
-    inset 0 -14px 22px -8px color-mix(in srgb, #144CCD 55%, transparent),
+    inset 0 -4px 7px -2px color-mix(in srgb, #144CCD 80%, transparent),
+    inset 0 -8px 14px -6px color-mix(in srgb, #2365FF 35%, transparent),
     inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
     0 1px 2px rgba(0, 0, 0, 0.25);
   isolation: isolate;
@@ -520,8 +528,9 @@ input[type="checkbox"] {
   border-color: color-mix(in srgb, #6694ff 55%, transparent);
   /* Inner Shadow 4 — tight deep blue on press/hover */
   box-shadow:
-    inset 0 6px 6px 2px color-mix(in srgb, #2365FF 60%, transparent),
-    inset 0 -18px 26px -8px color-mix(in srgb, #6694FF 55%, transparent),
+    inset 0 4px 6px 1px color-mix(in srgb, #2365FF 60%, transparent),
+    inset 0 -4px 7px -2px color-mix(in srgb, #6694FF 75%, transparent),
+    inset 0 -8px 14px -6px color-mix(in srgb, #2365FF 40%, transparent),
     inset 0 1px 0 color-mix(in srgb, #ffffff 22%, transparent),
     0 2px 8px color-mix(in srgb, #2365FF 35%, transparent);
   transform: translateY(-0.5px);
