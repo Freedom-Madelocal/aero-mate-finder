@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useIdleTimer } from "@/hooks/useIdleTimer";
+import { IdleWarningDialog } from "@/components/IdleWarningDialog";
 
 export type AppRole = "super_admin" | "org_admin" | "engineer" | "procurement" | "dev" | "integrator";
 
@@ -100,6 +102,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, [loadUserData]);
 
+  // Refresh session when tab becomes visible after being hidden a while,
+  // so avatars / signed URLs / tokens don't go stale in background tabs.
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === "visible") {
+        if (hiddenAt && Date.now() - hiddenAt > 5 * 60 * 1000) {
+          supabase.auth.refreshSession();
+        }
+        hiddenAt = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   const isSuperAdmin = roles.includes("super_admin");
   const isDemoExpired =
     !!demo &&
@@ -111,6 +131,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
+
+  const idle = useIdleTimer(!!session, () => {
+    void supabase.auth.signOut();
+  });
+
+  const handleStay = useCallback(() => {
+    idle.stayActive();
+    void supabase.auth.refreshSession();
+  }, [idle]);
 
   const value = useMemo<AuthCtx>(
     () => ({
@@ -129,7 +158,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     [session, profile, roles, demo, loading, isSuperAdmin, isDemoExpired, signOut, refresh],
   );
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+      <IdleWarningDialog
+        open={idle.showWarning}
+        secondsLeft={idle.secondsLeft}
+        onStay={handleStay}
+        onSignOut={signOut}
+      />
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {
