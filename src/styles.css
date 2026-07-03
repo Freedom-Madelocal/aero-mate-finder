@@ -475,3 +475,9 @@ input[type="checkbox"] {
   font-weight: 500;
 }
 
+/* Landing page headings: consistent Helvetica Light weight */
+.landing-heading {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 300;
+}
+

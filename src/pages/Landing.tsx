@@ -113,8 +113,7 @@ export default function Landing() {
 
           {/* Heading */}
           <h1
-            className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl md:text-6xl"
-            style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+            className="landing-heading mt-3 text-4xl tracking-tight text-foreground sm:text-5xl md:text-6xl"
           >
             {c.hero_title_top}
             <br />
@@ -200,7 +199,7 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.problem_eyebrow}</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+            <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
               {c.problem_title}
             </h2>
             <p className="mt-5 text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
@@ -224,7 +223,7 @@ export default function Landing() {
               },
             ].map((x) => (
               <div key={x.t} className="rounded-xl border border-border/70 bg-card/60 p-6">
-                <h3 className="text-base font-semibold text-foreground">{x.t}</h3>
+                <h3 className="landing-heading text-base text-foreground">{x.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{x.d}</p>
               </div>
             ))}
@@ -238,7 +237,7 @@ export default function Landing() {
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-5">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.platform_eyebrow}</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
                 {c.platform_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
@@ -270,7 +269,7 @@ export default function Landing() {
                 ].map(({ i: Icon, t, d }) => (
                   <div key={t} className="rounded-xl border border-border/70 bg-card p-5">
                     <Icon className="h-5 w-5 text-[var(--status-info)]" />
-                    <h3 className="mt-3 text-sm font-semibold text-foreground">{t}</h3>
+                    <h3 className="landing-heading mt-3 text-sm text-foreground">{t}</h3>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{d}</p>
                   </div>
                 ))}
@@ -286,7 +285,7 @@ export default function Landing() {
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-6">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.features_eyebrow}</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
                 {c.features_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
@@ -380,7 +379,7 @@ export default function Landing() {
             </div>
             <div className="order-1 md:order-2 md:col-span-6">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.procurement_eyebrow}</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
                 {c.procurement_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
@@ -431,7 +430,7 @@ export default function Landing() {
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
                 <Zap className="h-3.5 w-3.5 text-[var(--status-info)]" /> {c.demo_eyebrow}
               </div>
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-5 text-3xl tracking-tight md:text-4xl">
                 {c.demo_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
