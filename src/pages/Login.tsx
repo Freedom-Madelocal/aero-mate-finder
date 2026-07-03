@@ -68,7 +68,7 @@ export default function Login() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden">
         <img src="/manus-storage/traceium-hero-abstract_3930df95.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+        <div className="absolute inset-0 login-hero-gradient" />
         <div className="relative z-10 flex flex-col justify-between p-12">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded bg-white flex items-center justify-center">
