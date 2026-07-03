@@ -1195,7 +1195,7 @@ function ChipFilter({
       ) : (
         <div className="space-y-2">
           {singles.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {singles.map((opt) => <Pill key={opt} opt={opt} />)}
             </div>
           )}
