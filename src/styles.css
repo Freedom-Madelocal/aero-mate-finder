@@ -481,3 +481,11 @@ input[type="checkbox"] {
   font-weight: 300;
 }
 
+
+@keyframes engineer-search-cursor-blink {
+  0%, 55% { opacity: 1; }
+  60%, 100% { opacity: 0.25; }
+}
+.engineer-search-cursor {
+  animation: engineer-search-cursor-blink 1.1s ease-in-out infinite;
+}
