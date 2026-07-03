@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
+import { TheInfiniteGrid } from "@/components/ui/the-infinite-grid";
 
 export default function Landing() {
   const [submitting, setSubmitting] = useState(false);
