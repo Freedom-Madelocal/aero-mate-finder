@@ -679,12 +679,12 @@ export default function Engineer() {
                     </FilterSection>
 
                     <FilterSection title="NASA E595" defaultOpen>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-3 gap-2">
                         {(["any", "pass", "fail"] as const).map((v) => (
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, e595: v })}
-                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
+                            className={`text-xs px-2 py-1.5 rounded-lg transition-colors ${
                               filters.e595 === v
                                 ? "neu-chip-active"
                                 : "neu-chip"
