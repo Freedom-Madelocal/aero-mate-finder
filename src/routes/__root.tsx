@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { UiThemeProvider } from "@/contexts/UiThemeContext";
+import { TdsPdfViewer } from "@/components/TdsPdfViewer";
 
 function NotFoundComponent() {
   return (
