@@ -7,7 +7,6 @@ import {
   Package,
   Star as StarOutline,
   Info,
-  CheckSquare,
   ChevronDown,
 } from "lucide-react";
 import { useMemo, useState, useEffect, useDeferredValue } from "react";
