@@ -1346,13 +1346,8 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={async () => {
-                    try {
-                      const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
-                      const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
-                      window.open(res.url, "_blank", "noopener");
-                    } catch (err) {
-                      toast.error(err instanceof Error ? err.message : "Failed to open TDS");
-                    }
+                    const { openTdsPdf } = await import("@/components/TdsPdfViewer");
+                    openTdsPdf(spec.tdsPdfPath!);
                   }}
                   className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded"
                 >
