@@ -364,6 +364,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
       </header>
+      </div>
+
 
       <main className="flex-1 overflow-auto">{children}</main>
 
