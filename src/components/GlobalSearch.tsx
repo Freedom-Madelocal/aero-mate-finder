@@ -169,23 +169,55 @@ export default function GlobalSearch() {
 
   return (
     <div ref={wrapRef} className="relative hidden md:block">
-      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-      <input
-        ref={inputRef}
-        type="text"
-        value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
+      <div
+        className="relative rounded-lg overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(180deg, #1c2230 0%, #0f131b 55%, #0a0d13 100%)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.5)",
         }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={onKeyDown}
-        placeholder="Search specs or key spec #…"
-        className="bg-secondary border border-border rounded-md pl-9 pr-10 py-1.5 text-sm text-foreground placeholder:text-muted-foreground w-56 lg:w-72 focus:outline-none focus:ring-1 focus:ring-ring"
-      />
-      <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-accent px-1.5 py-0.5 rounded hidden lg:block pointer-events-none">
-        ⌘K
-      </kbd>
+      >
+        {/* Bright vertical light streak on left edge */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-0 bottom-0 left-0 w-[14px]"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(200,222,255,0.85) 0%, rgba(180,210,255,0.45) 25%, rgba(160,195,240,0.15) 55%, transparent 100%)",
+            filter: "blur(1px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* Subtle top gloss */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)",
+          }}
+        />
+        <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          placeholder="Search specs or key spec #…"
+          className="relative z-10 bg-transparent border-0 pl-10 pr-10 py-1.5 text-sm text-foreground placeholder:text-muted-foreground w-56 lg:w-72 focus:outline-none"
+        />
+        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-white/5 border border-white/10 px-1.5 py-0.5 rounded hidden lg:block pointer-events-none z-10">
+          ⌘K
+        </kbd>
+      </div>
+
 
       {open && q.trim() && (
         <div className="absolute left-0 right-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg overflow-hidden">
