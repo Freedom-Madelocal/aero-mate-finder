@@ -63,6 +63,12 @@ export const LANDING_SECTIONS: Array<{
     ],
   },
   {
+    label: "Manufacturer banner",
+    fields: [
+      { key: "landing_suppliers", label: "Suppliers (comma-separated)", multiline: false },
+    ],
+  },
+  {
     label: "Problem",
     fields: [
       { key: "problem_eyebrow", label: "Eyebrow" },
