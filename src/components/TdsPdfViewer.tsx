@@ -136,8 +136,8 @@ export function TdsPdfViewer() {
     <Sheet open={open} onOpenChange={(v) => { if (!v) closeTdsPdf(); }}>
       <SheetContent
         side="left"
-        style={{ width: `${widthVw}vw` }}
-        className="p-0 max-w-none flex flex-col gap-0"
+        style={{ width: `${widthVw}vw`, maxWidth: "100vw" }}
+        className="p-0 max-w-none sm:max-w-none flex flex-col gap-0"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="min-w-0">

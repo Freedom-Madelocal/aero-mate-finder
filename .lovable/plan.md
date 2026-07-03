@@ -1,18 +1,7 @@
-## Goal
-Let the user resize the TDS PDF drawer by dragging a small grab handle on its right edge.
+The PDF drawer is capped by the shared Sheet component’s built-in responsive class: `sm:max-w-sm`. Even though `TdsPdfViewer` sets `width: 60vw` to `100vw`, the component still applies a max-width of about 24rem on larger screens, so dragging appears to stop early and the PDF gets cut off.
 
-## Changes
-- **`src/components/TdsPdfViewer.tsx`**
-  - Replace the fixed responsive width classes on `<SheetContent side="left">` with a controlled inline `width` (in `vw`), starting at ~60vw (clamped 30–95vw), persisted to `localStorage` (`tds-drawer-width`) so it survives close/reopen.
-  - Add a thin (4px) vertical grab handle absolutely positioned on the drawer's right edge:
-    - Cursor `col-resize`, subtle divider color, a small centered "grip" dot pattern that brightens on hover/drag.
-    - `onPointerDown` starts a drag; `pointermove` updates width from `e.clientX` (as `vw`); `pointerup` ends it. Uses pointer capture so drags outside the handle keep working.
-    - Double-click resets to the default width.
-    - `aria-label="Resize PDF drawer"`, `role="separator"`, `aria-orientation="vertical"`, keyboard support: Left/Right arrows nudge ±2vw, Shift+Arrow ±8vw.
-  - While dragging: disable text selection (`user-select: none` on body) and add `pointer-events-none` to the iframe so the drag isn't swallowed by the PDF viewer.
-
-## Notes
-- No changes to call sites, storage, or the PDF fetching logic.
-- No new dependencies — plain pointer events.
-
-Approve to implement.
+Plan:
+1. Override the Sheet max-width in `TdsPdfViewer` so the drawer can actually honor its dynamic `widthVw` value up to full viewport width.
+2. Keep the current default width at 60vw and keep the existing minimum width so it does not collapse smaller than intended.
+3. Keep the resize handle and maximize/restore button behavior, but ensure both use the real drawer width instead of being constrained by the underlying Sheet styles.
+4. Verify in the preview that the drawer expands past the screenshot width and can reach near/full screen without cutting off the PDF.
