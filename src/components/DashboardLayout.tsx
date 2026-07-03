@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Settings, Menu, Search as SearchIcon, ShieldCheck, Cog } from "lucide-react";
+import { Settings, Menu, ShieldCheck, Cog } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { logPageView } from "@/lib/userActivity";
 import traceumIcon from "@/assets/traceium-icon.webp";
@@ -26,7 +26,7 @@ import { useFeatureFlags } from "@/data/featureFlags";
 // or once auth state settles. Lazy-loading keeps them out of the initial bundle.
 const ProfileDrawer = lazy(() => import("@/components/ProfileDrawer"));
 const MessageDialog = lazy(() => import("@/components/MessageDialog"));
-const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
+
 const GuidedTour = lazy(() => import("@/components/GuidedTour"));
 
 type NavItem = { path: string; label: string };
@@ -256,24 +256,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="flex items-center gap-3">
 
-          <div className="hidden md:block">
-            <Suspense fallback={<div style={{ width: 220, height: 32 }} />}>
-              <GlobalSearch />
-            </Suspense>
-          </div>
 
-
-          {/* Mobile search trigger fallback */}
-          <button
-            className="md:hidden p-2 text-muted-foreground hover:text-foreground"
-            aria-label="Search"
-            onClick={() => {
-              const ev = new KeyboardEvent("keydown", { key: "k", metaKey: true });
-              window.dispatchEvent(ev);
-            }}
-          >
-            <SearchIcon className="w-4 h-4" />
-          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

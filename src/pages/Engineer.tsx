@@ -537,16 +537,49 @@ export default function Engineer() {
     <>
       <div className="px-5 py-5 space-y-4">
         {/* Top full-width search bar */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <div
+          className="relative rounded-[10px] overflow-hidden"
+          style={{ border: "0.5px solid var(--accent-blue-border)" }}
+        >
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+          {/* Cursor light beaming toward the placeholder text */}
+          {!filters.q && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
+              style={{ left: 36 }}
+            >
+              <span
+                className="block engineer-search-cursor"
+                style={{
+                  width: 2,
+                  height: 16,
+                  background:
+                    "linear-gradient(180deg, rgba(210,230,255,0.95), rgba(150,190,255,0.85))",
+                  boxShadow:
+                    "0 0 6px rgba(190,220,255,0.9), 0 0 14px rgba(140,185,255,0.55)",
+                  borderRadius: 1,
+                }}
+              />
+              <span
+                className="absolute top-1/2 -translate-y-1/2 left-2 h-[14px] w-[90px]"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(190,220,255,0.55) 0%, rgba(160,200,255,0.25) 40%, rgba(140,185,255,0.08) 70%, transparent 100%)",
+                  filter: "blur(4px)",
+                  mixBlendMode: "screen",
+                }}
+              />
+            </div>
+          )}
           <input
             value={filters.q}
             onChange={(e) => setFilters({ ...filters, q: e.target.value })}
             placeholder="Search by name, chemistry, application, keyword…"
-            className="w-full pl-10 pr-3 py-2.5 bg-card rounded-[10px] text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1"
-            style={{ border: "0.5px solid var(--accent-blue-border)" }}
+            className="relative w-full pl-10 pr-3 py-2.5 bg-card rounded-[10px] text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1"
           />
         </div>
+
 
         {isEmpty ? (
           <div className="bg-card border border-border rounded-[10px] p-16 text-center">
@@ -586,15 +619,8 @@ export default function Engineer() {
                   )}
                 </div>
 
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    value={filters.q}
-                    onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-                    placeholder="Search any text…"
-                    className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded text-sm"
-                  />
-                </div>
+
+
 
                 {/* Tier-1 primary chip filters */}
                 <FixedChipGroup
