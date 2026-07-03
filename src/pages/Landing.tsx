@@ -181,7 +181,7 @@ export default function Landing() {
       {/* MANUFACTURER MARQUEE */}
       <section className="border-b border-border/60 bg-secondary/20 py-5 overflow-hidden">
         <div className="flex animate-marquee">
-          {[...Array(2)].map((_, i) => (
+          {[...Array(2)].map((_: number, i: number) => (
             <div key={i} className="flex shrink-0 items-center gap-12 px-6">
               {bannerSuppliers.map((m) => (
                 <span key={m} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
