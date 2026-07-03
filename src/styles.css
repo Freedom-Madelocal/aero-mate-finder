@@ -482,13 +482,6 @@ input[type="checkbox"] {
 }
 
 
-@keyframes engineer-search-cursor-blink {
-  0%, 55% { opacity: 1; }
-  60%, 100% { opacity: 0.25; }
-}
-.engineer-search-cursor {
-  animation: engineer-search-cursor-blink 1.1s ease-in-out infinite;
-}
 
 /* ==== TDS PDF glass badge ==================================================
    Clear glassmorphic badge with soft blue inner glow at the bottom
@@ -593,5 +586,81 @@ input[type="checkbox"] {
     inset -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
   transform: translateY(0);
 }
+
+/* ==== Neumorphic search input ================================================= */
+.neu-input {
+  background: var(--card);
+  color: var(--foreground);
+  border: none;
+  box-shadow:
+    3px 3px 6px color-mix(in srgb, #000000 45%, transparent),
+    -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transition:
+    box-shadow 160ms ease,
+    color 160ms ease,
+    background 160ms ease;
+}
+.neu-input::placeholder {
+  color: var(--muted-foreground);
+  text-shadow:
+    1px 1px 1px rgba(255, 255, 255, 0.04),
+    -1px -1px 2px rgba(0, 0, 0, 0.55);
+}
+.neu-input:focus {
+  box-shadow:
+    inset 2px 2px 5px color-mix(in srgb, #000000 45%, transparent),
+    inset -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+}
+
+.neu-input-text {
+  text-shadow:
+    1px 1px 1px rgba(255, 255, 255, 0.05),
+    -1px -1px 2px rgba(0, 0, 0, 0.65);
+}
+
+/* ==== Neumorphic action buttons =============================================== */
+.neu-btn-primary {
+  background: linear-gradient(180deg, #141E30 0%, #35577D 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  box-shadow:
+    3px 3px 6px color-mix(in srgb, #000000 45%, transparent),
+    -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+.neu-btn-primary:hover {
+  box-shadow:
+    inset 2px 2px 5px color-mix(in srgb, #000000 45%, transparent),
+    inset -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transform: translateY(0);
+}
+
+.neu-btn-secondary {
+  background: var(--card);
+  color: var(--foreground);
+  border: none;
+  border-radius: 6px;
+  box-shadow:
+    3px 3px 6px color-mix(in srgb, #000000 45%, transparent),
+    -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    color 160ms ease,
+    background 160ms ease;
+}
+.neu-btn-secondary:hover {
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow:
+    inset 2px 2px 5px color-mix(in srgb, #000000 45%, transparent),
+    inset -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transform: translateY(0);
+}
+
 
 
