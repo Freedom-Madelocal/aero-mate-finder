@@ -275,6 +275,30 @@ export async function refreshMasterSpecStore(): Promise<void> {
   await hydrate();
 }
 
+/** Fetch the distinct list of vendors present in the master spec catalog. */
+export async function fetchSuppliers(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("master_specs" as never)
+    .select("vendor");
+  if (error || !Array.isArray(data)) return [];
+  return dedupeStrings((data as unknown as SpecRow[]).map((r) => r.vendor)).sort();
+}
+
+/** Subscribe to the live supplier list from the master spec catalog. */
+export function useSuppliers(): string[] {
+  const [suppliers, setSuppliers] = useState<string[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    void fetchSuppliers().then((list) => {
+      if (mounted) setSuppliers(list);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return suppliers;
+}
+
 /**
  * Upsert a batch of specs (keyed on vendor + product_name) and log the upload.
  *
