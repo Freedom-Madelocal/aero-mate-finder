@@ -199,7 +199,7 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.problem_eyebrow}</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+            <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
               {c.problem_title}
             </h2>
             <p className="mt-5 text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
