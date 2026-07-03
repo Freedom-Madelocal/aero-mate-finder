@@ -1,28 +1,18 @@
-Two changes, both in landing surface files.
+## Goal
+Let the user resize the TDS PDF drawer by dragging a small grab handle on its right edge.
 
-## 1. Seamless supplier marquee (`src/pages/Landing.tsx`)
-Current: two halves of the list, animated `translateX(0 → -50%)`. On wide viewports one half is narrower than the screen, so a gap appears at the tail and the reset back to `0%` reads as a jump.
+## Changes
+- **`src/components/TdsPdfViewer.tsx`**
+  - Replace the fixed responsive width classes on `<SheetContent side="left">` with a controlled inline `width` (in `vw`), starting at ~60vw (clamped 30–95vw), persisted to `localStorage` (`tds-drawer-width`) so it survives close/reopen.
+  - Add a thin (4px) vertical grab handle absolutely positioned on the drawer's right edge:
+    - Cursor `col-resize`, subtle divider color, a small centered "grip" dot pattern that brightens on hover/drag.
+    - `onPointerDown` starts a drag; `pointermove` updates width from `e.clientX` (as `vw`); `pointerup` ends it. Uses pointer capture so drags outside the handle keep working.
+    - Double-click resets to the default width.
+    - `aria-label="Resize PDF drawer"`, `role="separator"`, `aria-orientation="vertical"`, keyboard support: Left/Right arrows nudge ±2vw, Shift+Arrow ±8vw.
+  - While dragging: disable text selection (`user-select: none` on body) and add `pointer-events-none` to the iframe so the drag isn't swallowed by the PDF viewer.
 
-Fix:
-- Inside each of the two halves, repeat `bannerSuppliers` 6× (so each half is comfortably wider than any realistic viewport). The two halves stay identical, keeping the `-50%` reset seamless.
-- Remove `pr-20` on the trailing edge of each half and use `gap-20` only, so spacing between the last item of one half and the first item of the next matches the intra-half spacing exactly.
-- Key: `` `${copyIndex}-${repeatIndex}-${supplier}` ``.
+## Notes
+- No changes to call sites, storage, or the PDF fetching logic.
+- No new dependencies — plain pointer events.
 
-Keyframes in `src/styles.css` stay unchanged (`0% → -50%`).
-
-## 2. Replace infinite grid with the 21st.dev version (`src/components/ui/the-infinite-grid.tsx`)
-The pasted code was stripped of most of its JSX by the chat renderer, but the essential algorithm is intact and public:
-- `mouseX` / `mouseY` motion values, updated on `onMouseMove` via `getBoundingClientRect`.
-- Two motion values `gridOffsetX` / `gridOffsetY` driven by `useAnimationFrame`, incremented `0.5px` per frame modulo `40` (grid cell size 40px).
-- Radial mask via `useMotionTemplate`: `radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`.
-
-Rewrite the component to match, dropping the accent-blue/corner-glow customization:
-- Container: `relative overflow-hidden bg-background` with `onMouseMove` handler; sizes to parent (`className` passthrough).
-- Layer 1 (base, always visible): drifting 40×40 grid drawn via two `linear-gradient` backgrounds using a subtle line color (`oklch(1 0 0 / 0.06)`), with `motion.div`'s `style={{ backgroundPosition: useMotionTemplate\`${gridOffsetX}px ${gridOffsetY}px\` }}` for the infinite scroll.
-- Layer 2 (revealed on hover): same drifting grid at higher opacity/brightness (`oklch(1 0 0 / 0.35)`), with `style={{ maskImage, WebkitMaskImage: maskImage }}` so only the 300px circle under the cursor is visible.
-- Remove props `accent`, `lineColor`, `cellSize`, corner-glow highlight cell, and framer-motion spring — no per-cell snap, no border, no boxShadow.
-- Keep the file exporting `TheInfiniteGrid` (named + default) so `src/pages/Landing.tsx` keeps working without an import change.
-
-## Not doing
-- No other content edits.
-- Not embedding the pasted demo's `<button>`, heading, or "Interact (N)" counter — the component is a background layer inside the existing hero, not a standalone demo.
+Approve to implement.

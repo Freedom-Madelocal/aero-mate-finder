@@ -1,6 +1,21 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Download, ExternalLink, FileText, Loader2, RefreshCw, X } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+
+const DRAWER_WIDTH_KEY = "tds-drawer-width";
+const DEFAULT_WIDTH_VW = 60;
+const MIN_WIDTH_VW = 30;
+const MAX_WIDTH_VW = 95;
+
+function clampWidth(v: number) {
+  return Math.min(MAX_WIDTH_VW, Math.max(MIN_WIDTH_VW, v));
+}
+function loadInitialWidth() {
+  if (typeof window === "undefined") return DEFAULT_WIDTH_VW;
+  const raw = window.localStorage.getItem(DRAWER_WIDTH_KEY);
+  const n = raw ? Number(raw) : NaN;
+  return Number.isFinite(n) ? clampWidth(n) : DEFAULT_WIDTH_VW;
+}
 
 type State = { path: string | null };
 let _state: State = { path: null };
@@ -80,11 +95,45 @@ export function TdsPdfViewer() {
   const fileName = state.path ? state.path.split("/").pop() ?? "TDS PDF" : "TDS PDF";
   const canAct = !!url && status !== "error";
 
+  const [widthVw, setWidthVw] = useState<number>(() => loadInitialWidth());
+  const [dragging, setDragging] = useState(false);
+  const handleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DRAWER_WIDTH_KEY, String(widthVw));
+    }
+  }, [widthVw]);
+
+  const onHandlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    setDragging(true);
+  }, []);
+  const onHandlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const vw = (e.clientX / window.innerWidth) * 100;
+    setWidthVw(clampWidth(vw));
+  }, [dragging]);
+  const endDrag = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    try { (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    setDragging(false);
+  }, [dragging]);
+  const onHandleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 8 : 2;
+    if (e.key === "ArrowLeft") { e.preventDefault(); setWidthVw((w) => clampWidth(w - step)); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setWidthVw((w) => clampWidth(w + step)); }
+    else if (e.key === "Home") { e.preventDefault(); setWidthVw(MIN_WIDTH_VW); }
+    else if (e.key === "End") { e.preventDefault(); setWidthVw(MAX_WIDTH_VW); }
+  }, []);
+
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) closeTdsPdf(); }}>
       <SheetContent
         side="left"
-        className="p-0 w-[92vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[55vw] max-w-none flex flex-col gap-0"
+        style={{ width: `${widthVw}vw` }}
+        className="p-0 max-w-none flex flex-col gap-0"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="min-w-0">
@@ -162,7 +211,7 @@ export function TdsPdfViewer() {
                 key={`${url}-${attempt}`}
                 src={url}
                 title={fileName}
-                className="w-full h-full border-0 relative"
+                className={`w-full h-full border-0 relative ${dragging ? "pointer-events-none" : ""}`}
                 onLoad={() => setStatus("ready")}
                 onError={() => {
                   setStatus("error");
@@ -171,6 +220,40 @@ export function TdsPdfViewer() {
               />
             </>
           )}
+        </div>
+        {/* Resize grab handle */}
+        <div
+          ref={handleRef}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize PDF drawer"
+          aria-valuemin={MIN_WIDTH_VW}
+          aria-valuemax={MAX_WIDTH_VW}
+          aria-valuenow={Math.round(widthVw)}
+          tabIndex={0}
+          onPointerDown={onHandlePointerDown}
+          onPointerMove={onHandlePointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onDoubleClick={() => setWidthVw(DEFAULT_WIDTH_VW)}
+          onKeyDown={onHandleKeyDown}
+          title="Drag to resize · double-click to reset"
+          className={`group absolute top-0 right-0 h-full w-1.5 -mr-[3px] cursor-col-resize z-50 flex items-center justify-center ${
+            dragging ? "bg-[var(--accent-blue)]/40" : "bg-transparent hover:bg-[var(--accent-blue)]/25"
+          } transition-colors select-none touch-none`}
+          style={{ userSelect: "none" }}
+        >
+          <span
+            aria-hidden
+            className={`flex flex-col gap-0.5 rounded-full py-1.5 px-[3px] border border-border/60 bg-background/80 shadow-sm opacity-70 group-hover:opacity-100 ${
+              dragging ? "opacity-100 border-[var(--accent-blue)]/60" : ""
+            }`}
+          >
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+          </span>
         </div>
       </SheetContent>
     </Sheet>
