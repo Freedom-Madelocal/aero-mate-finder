@@ -87,8 +87,8 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center bg-background p-4 sm:p-8">
         <div className="w-full max-w-sm login-panel p-8 sm:p-10">
           <Link to="/" className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded bg-white flex items-center justify-center">
-              <span className="text-black font-bold text-base tracking-tight">T</span>
+            <div className="w-8 h-8 rounded bg-black/40 border border-white/10 flex items-center justify-center">
+              <span className="text-white font-bold text-base tracking-tight">T</span>
             </div>
             <span className="text-foreground font-semibold text-lg tracking-tight">Traceium</span>
           </Link>
@@ -113,7 +113,7 @@ export default function Login() {
                 className="w-full bg-secondary border border-border rounded-md px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
             </div>
             <button type="submit" disabled={submitting}
-              className="w-full bg-white text-black font-medium py-2.5 rounded-md text-sm hover:bg-white/90 transition-colors mt-2 disabled:opacity-50">
+              className="w-full bg-gradient-to-r from-black/80 to-black/40 border border-white/10 text-white font-medium py-2.5 rounded-md text-sm hover:from-black/70 hover:to-black/30 transition-all mt-2 disabled:opacity-50">
               {submitting ? "Signing in…" : "Sign in"}
             </button>
           </form>
