@@ -87,7 +87,7 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border/60">
-        <TheInfiniteGrid className="absolute inset-0" cellSize={96} accent="#2365FF" />
+        <TheInfiniteGrid className="absolute inset-0" />
         <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pt-10 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-24 md:pt-16">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
