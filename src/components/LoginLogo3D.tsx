@@ -44,7 +44,7 @@ function LogoModel() {
   });
 
   return (
-    <group ref={modelRef} scale={2.2} position={[0, 0, 0]}>
+    <group ref={modelRef} scale={1.54} position={[0, 0, 0]}>
       <primitive object={cloned} />
     </group>
   );
