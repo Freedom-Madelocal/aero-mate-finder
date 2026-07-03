@@ -674,10 +674,10 @@ export default function Engineer() {
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, inventory: v })}
-                            className={`text-xs px-2 py-1.5 rounded border ${
+                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
                               filters.inventory === v
-                                ? "border-foreground bg-foreground text-background"
-                                : "border-border text-muted-foreground hover:text-foreground"
+                                ? "neu-chip-active"
+                                : "neu-chip"
                             }`}
                           >
                             {v === "any" ? "Any" : v === "in-stock" ? "In Stock" : v === "tracked" ? "Tracked" : "Not Stocked"}
