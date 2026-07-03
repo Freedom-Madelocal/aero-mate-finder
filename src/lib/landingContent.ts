@@ -13,6 +13,7 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
   hero_cta_primary: "Book a demo",
   hero_cta_secondary: "See how it works",
   hero_video_caption: "Live walkthrough — 200+ qualified specs narrowed to 3 in under 10 seconds.",
+  landing_suppliers: "Hexcel, Toray, Syensqo, 3M, Henkel",
 
   // Problem
   problem_eyebrow: "Does this sound familiar?",
