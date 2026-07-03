@@ -18,8 +18,10 @@ export function UiThemeProvider({ children }: { children: React.ReactNode }) {
       root.setAttribute("data-ui-theme", "royal");
       // Royal theme is dark-only for now.
       root.classList.add("dark");
+      try { localStorage.setItem("ui-theme-royal", "1"); } catch {}
     } else {
       root.removeAttribute("data-ui-theme");
+      try { localStorage.setItem("ui-theme-royal", "0"); } catch {}
     }
   }, [royal]);
 
