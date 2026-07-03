@@ -612,7 +612,7 @@ export default function Engineer() {
                       : `${matched.length} match${matched.length === 1 ? "" : "es"}`}
                   </span>
                 </summary>
-                <div className="p-4 pt-0 lg:pt-4 space-y-4">
+                <div className="p-4 pt-0 lg:pt-4 space-y-6">
                 <div className="hidden lg:flex items-center justify-between">
                   <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Filter className="w-4 h-4" /> Filters
@@ -686,7 +686,7 @@ export default function Engineer() {
                     <span>Advanced filtering</span>
                     <ChevronDown className="w-3.5 h-3.5 transition-transform group-open/adv:rotate-0 -rotate-90" />
                   </summary>
-                  <div className="pt-3 space-y-4">
+                  <div className="pt-4 space-y-6">
                     <FilterSection title="Inventory" defaultOpen>
                       <div className="grid grid-cols-2 gap-2">
                         {(["any", "in-stock", "tracked", "not-stocked"] as const).map((v) => (
@@ -1118,7 +1118,7 @@ function FilterSection({
     } catch {}
   }, [open, storageKey]);
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -1239,7 +1239,7 @@ function FixedChipGroup({
     onChange(isOn(opt) ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt]);
   const activeCount = options.filter(isOn).length;
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
           {title}
