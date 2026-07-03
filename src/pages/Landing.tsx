@@ -24,6 +24,8 @@ import traceumWordmark from "@/assets/traceium-wordmark.webp";
 export default function Landing() {
   const [submitting, setSubmitting] = useState(false);
   const { content: c, heroVideoUrl } = useSiteSettings();
+  const suppliers = useSuppliers();
+  const bannerSuppliers = suppliers.length > 0 ? suppliers : ["Hexcel", "Toray", "Syensqo", "3M", "Henkel"];
 
   async function handleDemo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
