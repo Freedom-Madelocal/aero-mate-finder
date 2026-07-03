@@ -89,22 +89,8 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border/60">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-60"
-          style={{
-            background:
-              "radial-gradient(900px 500px at 50% -10%, oklch(0.55 0.15 250 / 0.18), transparent 60%), radial-gradient(700px 400px at 50% 30%, oklch(0.7 0.12 250 / 0.10), transparent 60%)",
-          }}
-        />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, oklch(1 0 0) 1px, transparent 1px), linear-gradient(to bottom, oklch(1 0 0) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-        <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pt-10 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-24 md:pt-16">
+        <TheInfiniteGrid className="absolute inset-0" cellSize={96} accent="#2365FF" />
+        <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pt-10 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-24 md:pt-16">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
