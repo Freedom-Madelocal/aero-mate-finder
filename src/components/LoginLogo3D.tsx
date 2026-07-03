@@ -10,23 +10,28 @@ function LogoModel() {
 
   const cloned = useMemo(() => {
     const clone = scene.clone();
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = box.getCenter(new THREE.Vector3());
+    clone.position.sub(center); // center the model at origin
     clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        mesh.material = materials.map((mat) => {
+        const mapped = materials.map((mat) => {
           const m = mat.clone();
           m.transparent = true;
           m.opacity = 0.9;
           if ("emissive" in m && "emissiveIntensity" in m) {
-            (m as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial).emissive = new THREE.Color("#223344");
-            (m as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial).emissiveIntensity = 0.25;
+            const std = m as THREE.MeshStandardMaterial;
+            std.emissive = new THREE.Color("#8fb3ff");
+            std.emissiveIntensity = 0.8;
+            std.metalness = 0.4;
+            std.roughness = 0.35;
+            std.color = new THREE.Color("#eaf1ff");
           }
           return m;
         });
-        if (!Array.isArray(mesh.material)) {
-          mesh.material = mesh.material[0];
-        }
+        mesh.material = Array.isArray(mesh.material) ? mapped : mapped[0];
       }
     });
     return clone;
@@ -34,13 +39,12 @@ function LogoModel() {
 
   useFrame(({ clock }) => {
     if (modelRef.current) {
-      modelRef.current.rotation.y = clock.getElapsedTime() * 0.15;
-      modelRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.05) * 0.05;
+      modelRef.current.rotation.y = clock.getElapsedTime() * 0.25;
     }
   });
 
   return (
-    <group ref={modelRef} scale={1.6} position={[0.4, 0, 0]}>
+    <group ref={modelRef} scale={2.2} position={[0, 0, 0]}>
       <primitive object={cloned} />
     </group>
   );
