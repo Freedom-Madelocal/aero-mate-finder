@@ -692,10 +692,10 @@ export default function Engineer() {
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, e595: v })}
-                            className={`text-xs px-2 py-1.5 rounded border ${
+                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
                               filters.e595 === v
-                                ? "border-foreground bg-foreground text-background"
-                                : "border-border text-muted-foreground hover:text-foreground"
+                                ? "neu-chip-active"
+                                : "neu-chip"
                             }`}
                           >
                             {v === "any" ? "Any" : v === "pass" ? "Pass" : "Fail"}
