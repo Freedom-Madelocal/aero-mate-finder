@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, Environment } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import logoAsset from "@/assets/logo-orbit.glb.asset.json";
 
@@ -42,13 +42,27 @@ function LogoModel() {
   );
 }
 
+function Lighting() {
+  const { scene } = useThree();
+
+  useEffect(() => {
+    scene.background = null;
+  }, [scene]);
+
+  return (
+    <>
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[4, 4, 6]} intensity={2} color="#ffffff" />
+      <directionalLight position={[-4, 2, -4]} intensity={1} color="#aaccff" />
+      <pointLight position={[0, 0, 3]} intensity={1.5} color="#ffffff" />
+    </>
+  );
+}
+
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[5, 5, 5]} intensity={1.5} />
-      <directionalLight position={[-5, -5, -5]} intensity={0.4} color="#ffffff" />
-      <Environment preset="city" />
+      <Lighting />
       <LogoModel />
     </>
   );
@@ -69,3 +83,4 @@ export default function LoginLogo3D() {
 }
 
 useGLTF.preload(logoAsset.url);
+
