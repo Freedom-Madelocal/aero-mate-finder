@@ -155,13 +155,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Top header - floating */}
-      <div className="sticky top-0 z-30 shrink-0 px-4 pt-3 pb-10 relative">
+      <div className="sticky top-0 z-30 shrink-0 px-4 pt-3 bg-transparent relative">
         <header
           className="relative flex items-center justify-between px-5 z-10"
           style={{
             height: 52,
-            background: "var(--card)",
-            border: "0.5px solid var(--border)",
+            background: "transparent",
+            backdropFilter: "blur(20px) saturate(150%)",
             borderRadius: 16,
             boxShadow: "0 6px 14px -8px rgba(0,0,0,0.55)",
           }}
