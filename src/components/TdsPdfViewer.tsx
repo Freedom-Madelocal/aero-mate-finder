@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Download, ExternalLink, FileText, Loader2, Minus, Plus, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Download, ExternalLink, FileText, Loader2, Minus, Plus, RefreshCw } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const DRAWER_WIDTH_KEY = "tds-drawer-width";
@@ -164,13 +164,6 @@ export function TdsPdfViewer() {
             >
               <ExternalLink className="w-3.5 h-3.5" /> New tab
             </a>
-            <button
-              onClick={closeTdsPdf}
-              title="Close"
-              className="inline-flex items-center justify-center h-7 w-7 rounded hover:bg-muted/50 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </div>
         <div className="flex-1 bg-secondary/20 relative">
