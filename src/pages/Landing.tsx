@@ -430,7 +430,7 @@ export default function Landing() {
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
                 <Zap className="h-3.5 w-3.5 text-[var(--status-info)]" /> {c.demo_eyebrow}
               </div>
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-5 text-3xl tracking-tight md:text-4xl">
                 {c.demo_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
