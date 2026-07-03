@@ -87,7 +87,7 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border/60">
-        <TheInfiniteGrid className="absolute inset-0" cellSize={96} accent="#2365FF" />
+        <TheInfiniteGrid className="absolute inset-0" />
         <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pt-10 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-24 md:pt-16">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
@@ -167,12 +167,19 @@ export default function Landing() {
 
       {/* MANUFACTURER MARQUEE */}
       <section className="border-b border-border/60 bg-secondary/20 py-5 overflow-hidden">
-        <div className="flex animate-marquee">
-          {[...Array(2)].map((_: number, i: number) => (
-            <div key={i} className="flex shrink-0 items-center gap-20 pr-20">
-              {bannerSuppliers.map((m) => (
-                <span key={`${i}-${m}`} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
-              ))}
+        <div className="flex w-max animate-marquee">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex shrink-0 items-center gap-20 pl-20">
+              {Array.from({ length: 6 }).flatMap((_, rep) =>
+                bannerSuppliers.map((m) => (
+                  <span
+                    key={`${copy}-${rep}-${m}`}
+                    className="whitespace-nowrap text-sm font-medium text-muted-foreground"
+                  >
+                    {m}
+                  </span>
+                )),
+              )}
             </div>
           ))}
         </div>
