@@ -559,3 +559,39 @@ input[type="checkbox"] {
   100% { transform: translate3d(-8%, 4%, 0) rotate(0deg); }
 }
 
+/* ==== Neumorphic filter chips =================================================
+   Raised drop-shadow when inactive, inset shadow when pressed/active.
+   Background matches the card surface so the chip appears to emerge from it.
+   ============================================================================= */
+.neu-chip {
+  background: var(--card);
+  color: var(--muted-foreground);
+  border: none;
+  box-shadow:
+    3px 3px 6px color-mix(in srgb, #000000 45%, transparent),
+    -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transition:
+    box-shadow 160ms ease,
+    color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+.neu-chip:hover {
+  color: var(--foreground);
+  transform: translateY(-0.5px);
+}
+.neu-chip:active,
+.neu-chip-active {
+  color: var(--foreground);
+  background: linear-gradient(
+    180deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--accent-blue) 8%, var(--card)) 100%
+  );
+  box-shadow:
+    inset 2px 2px 5px color-mix(in srgb, #000000 45%, transparent),
+    inset -2px -2px 5px color-mix(in srgb, #ffffff 7%, transparent);
+  transform: translateY(0);
+}
+
+
