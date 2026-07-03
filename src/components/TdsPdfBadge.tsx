@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import { FileText } from "lucide-react";
+import { openTdsPdf } from "@/components/TdsPdfViewer";
 
 /**
  * Glassmorphic TDS PDF badge with a soft blue inner glow at the bottom
@@ -21,15 +21,9 @@ export function TdsPdfBadge({ path, className = "" }: { path: string; className?
         </filter>
       </svg>
       <button
-        onClick={async (e) => {
+        onClick={(e) => {
           e.stopPropagation();
-          try {
-            const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
-            const res = await getTdsDownloadUrl({ data: { path } });
-            window.open(res.url, "_blank", "noopener");
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to open TDS");
-          }
+          openTdsPdf(path);
         }}
         title="Open TDS PDF"
         className={`tds-glass-badge group relative inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded-md ${className}`}

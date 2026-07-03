@@ -443,13 +443,8 @@ function SpecDrawer({
                 <AnalyzeTdsButton specId={spec.id} analyzedAt={spec.tdsAnalyzedAt} />
                 <button
                   onClick={async () => {
-                    try {
-                      const { getTdsDownloadUrl } = await import("@/lib/tdsUpload.functions");
-                      const res = await getTdsDownloadUrl({ data: { path: spec.tdsPdfPath! } });
-                      window.open(res.url, "_blank", "noopener");
-                    } catch (err) {
-                      alert(err instanceof Error ? err.message : "Failed to open TDS");
-                    }
+                    const { openTdsPdf } = await import("@/components/TdsPdfViewer");
+                    openTdsPdf(spec.tdsPdfPath!);
                   }}
                   className="inline-flex items-center gap-1 text-xs bg-[var(--accent-blue)]/15 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/25 px-2 py-1 rounded"
                 >
