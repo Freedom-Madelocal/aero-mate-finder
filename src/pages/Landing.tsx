@@ -285,7 +285,7 @@ export default function Landing() {
           <div className="grid gap-12 md:grid-cols-12">
             <div className="md:col-span-6">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.features_eyebrow}</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
                 {c.features_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
