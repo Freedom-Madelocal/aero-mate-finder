@@ -824,30 +824,6 @@ export default function Engineer() {
             {/* Results */}
             <section className="space-y-3">
 
-              <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-                <label htmlFor="eng-sort">Sort by</label>
-                <select
-                  id="eng-sort"
-                  value={`${sort.key}:${sort.dir}`}
-                  onChange={(e) => {
-                    const [key, dir] = e.target.value.split(":") as [SortKey, "asc" | "desc"];
-                    setSort({ key, dir });
-                  }}
-                  className="bg-card border border-border rounded px-2 py-1 text-foreground"
-                >
-                  <option value="product:asc">Product (A–Z)</option>
-                  <option value="product:desc">Product (Z–A)</option>
-                  <option value="vendor:asc">Vendor (A–Z)</option>
-                  <option value="cure:asc">Cure °F ↑</option>
-                  <option value="cure:desc">Cure °F ↓</option>
-                  <option value="service:desc">Service °F ↓</option>
-                  <option value="e595:desc">E595 pass first</option>
-                  <option value="inventory:asc">Inventory (stocked first)</option>
-                  <option value="star:desc">Starred first</option>
-                  <option value="procure:desc">On pick list first</option>
-                </select>
-              </div>
-
               {sorted.length === 0 ? (
                 <div className="bg-card border border-border rounded-lg py-12 text-center text-muted-foreground text-sm">
                   No specs match these filters.
