@@ -4,6 +4,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, landingForRoles, type AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import LoginBackgroundLogo from "@/components/LoginBackgroundLogo";
 
 const schema = z.object({
   email: z.string().trim().email("Invalid email").max(255),
@@ -67,6 +68,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-gradient-to-r from-black/60 to-background">
       <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden">
+        <LoginBackgroundLogo />
         <div className="relative z-10 flex flex-col justify-between p-12">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded bg-white flex items-center justify-center">
