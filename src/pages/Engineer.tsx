@@ -674,10 +674,10 @@ export default function Engineer() {
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, inventory: v })}
-                            className={`text-xs px-2 py-1.5 rounded border ${
+                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
                               filters.inventory === v
-                                ? "border-foreground bg-foreground text-background"
-                                : "border-border text-muted-foreground hover:text-foreground"
+                                ? "neu-chip-active"
+                                : "neu-chip"
                             }`}
                           >
                             {v === "any" ? "Any" : v === "in-stock" ? "In Stock" : v === "tracked" ? "Tracked" : "Not Stocked"}
@@ -692,10 +692,10 @@ export default function Engineer() {
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, e595: v })}
-                            className={`text-xs px-2 py-1.5 rounded border ${
+                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
                               filters.e595 === v
-                                ? "border-foreground bg-foreground text-background"
-                                : "border-border text-muted-foreground hover:text-foreground"
+                                ? "neu-chip-active"
+                                : "neu-chip"
                             }`}
                           >
                             {v === "any" ? "Any" : v === "pass" ? "Pass" : "Fail"}
@@ -1196,10 +1196,10 @@ function ChipFilter({
         onClick={() =>
           onChange(on ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt])
         }
-        className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+        className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
           on
-            ? "border-foreground bg-foreground text-background"
-            : "border-border text-muted-foreground hover:text-foreground"
+            ? "neu-chip-active"
+            : "neu-chip"
         }`}
       >
         {opt}
@@ -1277,10 +1277,10 @@ function FixedChipGroup({
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+            className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
               isOn(opt)
-                ? "border-foreground bg-foreground text-background"
-                : "border-border text-muted-foreground hover:text-foreground"
+                ? "neu-chip-active"
+                : "neu-chip"
             }`}
           >
             {opt}
