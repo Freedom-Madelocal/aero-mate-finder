@@ -240,9 +240,9 @@ input[type="checkbox"] {
   --accent-blue-soft: rgba(53, 87, 125, 0.18);
   --accent-blue-border: rgba(53, 87, 125, 0.5);
 
-  /* Fonts */
-  --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-body: "Geist Sans", "Geist", system-ui, sans-serif;
+  /* Fonts — same as default theme */
+  --font-display: "Geist", system-ui, -apple-system, sans-serif;
+  --font-body: "Geist", system-ui, -apple-system, sans-serif;
   --font-sans: var(--font-body);
 }
 
