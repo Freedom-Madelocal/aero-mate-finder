@@ -65,10 +65,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gradient-to-r from-black/60 to-background">
       <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden">
-        <img src="/manus-storage/traceum-hero-abstract_3930df95.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
         <div className="relative z-10 flex flex-col justify-between p-12">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded bg-white flex items-center justify-center">
@@ -84,7 +82,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center bg-background p-4 sm:p-8">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-sm login-panel p-8 sm:p-10">
           <Link to="/" className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-8 h-8 rounded bg-black/40 border border-white/10 flex items-center justify-center">
