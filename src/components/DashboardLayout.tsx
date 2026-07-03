@@ -154,18 +154,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* Top header - floating */}
-      <div className="sticky top-0 z-30 shrink-0 px-4 pt-3 bg-transparent relative">
-        <header
-          className="relative flex items-center justify-between px-5 z-10"
-          style={{
-            height: 52,
-            background: "transparent",
-            backdropFilter: "blur(20px) saturate(150%)",
-            borderRadius: 16,
-            boxShadow: "0 6px 14px -8px rgba(0,0,0,0.55)",
-          }}
-        >
+      {/* Top header */}
+      <header className="sticky top-0 z-30 shrink-0 h-[52px] flex items-center justify-between px-5 bg-background">
 
         <div className="flex items-center gap-4 min-w-0">
           {/* Mobile menu */}
@@ -338,31 +328,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
       </header>
-        {/* Under-shelf light: thin glow only at the bottom edge of the header */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-4 right-4 top-[64px] h-10 overflow-hidden opacity-90"
-        >
-          {/* Hot line right at the header edge */}
-          <div
-            className="absolute left-[10%] right-[10%] top-0 h-[1px]"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent 0%, transparent 12%, rgba(210,228,255,0.85) 18%, rgba(220,235,255,0.95) 50%, rgba(210,228,255,0.85) 82%, transparent 88%, transparent 100%)",
-              filter: "blur(1px)",
-            }}
-          />
-          {/* Downward glow that fades quickly so it doesn't create a backdrop */}
-          <div
-            className="absolute left-[5%] right-[5%] top-0 h-10"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(207,228,255,0.45) 0%, transparent 55%)",
-              filter: "blur(4px)",
-            }}
-          />
-        </div>
-      </div>
 
 
 
