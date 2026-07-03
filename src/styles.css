@@ -242,7 +242,7 @@ input[type="checkbox"] {
 
   /* Fonts */
   --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-body: "Satoshi", "Geist", system-ui, sans-serif;
+  --font-body: "Geist Sans", "Geist", system-ui, sans-serif;
   --font-sans: var(--font-body);
 }
 
