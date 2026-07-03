@@ -132,6 +132,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }, []);
 
+  const idle = useIdleTimer(!!session, () => {
+    void supabase.auth.signOut();
+  });
+
+  const handleStay = useCallback(() => {
+    idle.stayActive();
+    void supabase.auth.refreshSession();
+  }, [idle]);
+
   const value = useMemo<AuthCtx>(
     () => ({
       session,
@@ -149,7 +158,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     [session, profile, roles, demo, loading, isSuperAdmin, isDemoExpired, signOut, refresh],
   );
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+      <IdleWarningDialog
+        open={idle.showWarning}
+        secondsLeft={idle.secondsLeft}
+        onStay={handleStay}
+        onSignOut={signOut}
+      />
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {
