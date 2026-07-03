@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompare } from "@/contexts/CompareContext";
 import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
+import { TdsPdfBadge } from "@/components/TdsPdfBadge";
 import { useFeatureFlag } from "@/data/featureFlags";
 
 /*
