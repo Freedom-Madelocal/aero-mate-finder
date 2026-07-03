@@ -620,7 +620,7 @@ input[type="checkbox"] {
 
 /* ==== Neumorphic action buttons =============================================== */
 .neu-btn-primary {
-  background: linear-gradient(180deg, #141E30 0%, #35577D 100%);
+  background: linear-gradient(90deg, #141E30 0%, #35577D 100%);
   color: #ffffff;
   border: none;
   border-radius: 6px;
