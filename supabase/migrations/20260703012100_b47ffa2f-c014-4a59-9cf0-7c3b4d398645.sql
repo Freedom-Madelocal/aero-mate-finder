@@ -1,0 +1,1 @@
+UPDATE public.feature_flags SET enabled = true WHERE key = 'new_ui_theme';
