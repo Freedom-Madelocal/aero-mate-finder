@@ -223,7 +223,7 @@ export default function Landing() {
               },
             ].map((x) => (
               <div key={x.t} className="rounded-xl border border-border/70 bg-card/60 p-6">
-                <h3 className="text-base font-semibold text-foreground">{x.t}</h3>
+                <h3 className="landing-heading text-base text-foreground">{x.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{x.d}</p>
               </div>
             ))}
