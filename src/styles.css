@@ -313,8 +313,6 @@ input[type="checkbox"] {
     8px 8px 22px rgba(0, 0, 0, 0.55);
 }
 
-/* ---------- Login page gradient utilities ---------- */
-
 /* ---------- Glassmorphism utilities ---------- */
 
 @utility glass-panel {
