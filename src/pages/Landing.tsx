@@ -170,7 +170,7 @@ export default function Landing() {
         <div className="flex animate-marquee">
           {[...Array(2)].map((_: number, i: number) => (
             <div key={i} className="flex shrink-0 items-center gap-20 pr-20">
-              {doubledSuppliers.map((m) => (
+              {bannerSuppliers.map((m) => (
                 <span key={`${i}-${m}`} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
               ))}
             </div>
