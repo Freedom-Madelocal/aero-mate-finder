@@ -28,9 +28,6 @@ export default function Landing() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  // Repeat each supplier twice inside the scrolling strip so the content is wide enough
-  // to cover the viewport and the loop stays seamless.
-  const doubledSuppliers = bannerSuppliers.flatMap((m) => [m, m]);
 
   async function handleDemo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
