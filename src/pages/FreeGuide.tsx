@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DEFAULT_LEAD_MAGNET,
@@ -7,11 +7,13 @@ import {
   validateWorkEmail,
   type LeadMagnetContent,
 } from "@/lib/leadMagnet";
+import { useFeatureFlag } from "@/data/featureFlags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, ArrowRight, ShieldCheck, ArrowLeft, FileText } from "lucide-react";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
+
 
 export default function FreeGuide() {
   const [content, setContent] = useState<LeadMagnetContent>(DEFAULT_LEAD_MAGNET);
