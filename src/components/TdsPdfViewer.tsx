@@ -164,6 +164,7 @@ export function TdsPdfViewer() {
             >
               <ExternalLink className="w-3.5 h-3.5" /> New tab
             </a>
+          </div>
         </div>
         <div className="flex-1 bg-secondary/20 relative">
           {status === "error" ? (
