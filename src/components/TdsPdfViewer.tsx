@@ -144,27 +144,6 @@ export function TdsPdfViewer() {
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Technical Data Sheet</p>
             <p className="text-xs font-mono truncate text-foreground">{fileName}</p>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={download}
-              disabled={!canAct}
-              title="Download PDF"
-              className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-border hover:bg-muted/50 transition-colors ${!canAct ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              <Download className="w-3.5 h-3.5" /> Download
-            </button>
-            <a
-              href={url ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { if (!canAct) e.preventDefault(); }}
-              aria-disabled={!canAct}
-              title="Open in new tab"
-              className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-border hover:bg-muted/50 transition-colors ${!canAct ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> New tab
-            </a>
-          </div>
         </div>
         <div className="flex-1 bg-secondary/20 relative">
           {status === "error" ? (
