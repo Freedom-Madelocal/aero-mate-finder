@@ -167,12 +167,19 @@ export default function Landing() {
 
       {/* MANUFACTURER MARQUEE */}
       <section className="border-b border-border/60 bg-secondary/20 py-5 overflow-hidden">
-        <div className="flex animate-marquee">
-          {[...Array(2)].map((_: number, i: number) => (
-            <div key={i} className="flex shrink-0 items-center gap-20 pr-20">
-              {bannerSuppliers.map((m) => (
-                <span key={`${i}-${m}`} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
-              ))}
+        <div className="flex w-max animate-marquee">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex shrink-0 items-center gap-20 pl-20">
+              {Array.from({ length: 6 }).flatMap((_, rep) =>
+                bannerSuppliers.map((m) => (
+                  <span
+                    key={`${copy}-${rep}-${m}`}
+                    className="whitespace-nowrap text-sm font-medium text-muted-foreground"
+                  >
+                    {m}
+                  </span>
+                )),
+              )}
             </div>
           ))}
         </div>
