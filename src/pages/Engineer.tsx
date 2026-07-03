@@ -771,14 +771,6 @@ export default function Engineer() {
 
             {/* Results */}
             <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-foreground">
-                  {matched.length} match{matched.length === 1 ? "" : "es"} of {specs.length}
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {inStockCount} in stock
-                </span>
-              </div>
 
               <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
                 <label htmlFor="eng-sort">Sort by</label>
