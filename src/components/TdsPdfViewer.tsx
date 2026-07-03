@@ -39,6 +39,10 @@ export function TdsPdfViewer() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [zoom, setZoom] = useState(100); // percent, 50–200
+  const ZOOM_STEPS = [50, 75, 100, 125, 150, 175, 200];
+  const zoomIn = () => setZoom((z) => ZOOM_STEPS.find((s) => s > z) ?? 200);
+  const zoomOut = () => setZoom((z) => [...ZOOM_STEPS].reverse().find((s) => s < z) ?? 50);
 
   useEffect(() => {
     const l = () => setState({ ..._state });
