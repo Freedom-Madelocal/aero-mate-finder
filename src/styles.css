@@ -313,13 +313,7 @@ input[type="checkbox"] {
     8px 8px 22px rgba(0, 0, 0, 0.55);
 }
 
-@utility login-hero-gradient {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, var(--background) 60%);
-}
-
-@utility login-right-gradient {
-  background: linear-gradient(90deg, var(--background) 0%, var(--background) 100%);
-}
+/* ---------- Login page gradient utilities ---------- */
 
 /* ---------- Glassmorphism utilities ---------- */
 
