@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
 import logoAsset from "@/assets/logo-orbit.glb.asset.json";
 
@@ -18,6 +18,9 @@ function LogoModel() {
           const m = mat.clone();
           m.transparent = true;
           m.opacity = 0.9;
+          // Add a faint emissive rim so the logo remains visible against the dark gradient.
+          m.emissive = new THREE.Color("#223344");
+          m.emissiveIntensity = 0.25;
           return m;
         });
         if (!Array.isArray(mesh.material)) {
@@ -36,7 +39,7 @@ function LogoModel() {
   });
 
   return (
-    <group ref={modelRef} scale={1.8} position={[0.2, 0, 0]}>
+    <group ref={modelRef} scale={1.6} position={[0.4, 0, 0]}>
       <primitive object={cloned} />
     </group>
   );
@@ -51,10 +54,10 @@ function Lighting() {
 
   return (
     <>
-      <ambientLight intensity={1.2} />
+      <ambientLight intensity={1} />
       <directionalLight position={[4, 4, 6]} intensity={2} color="#ffffff" />
-      <directionalLight position={[-4, 2, -4]} intensity={1} color="#aaccff" />
-      <pointLight position={[0, 0, 3]} intensity={1.5} color="#ffffff" />
+      <directionalLight position={[-4, 2, -4]} intensity={1.2} color="#c8d8ff" />
+      <pointLight position={[0, 0, 3]} intensity={1.2} color="#ffffff" />
     </>
   );
 }
@@ -63,6 +66,7 @@ function Scene() {
   return (
     <>
       <Lighting />
+      <Environment preset="city" />
       <LogoModel />
     </>
   );
@@ -83,4 +87,5 @@ export default function LoginLogo3D() {
 }
 
 useGLTF.preload(logoAsset.url);
+
 
