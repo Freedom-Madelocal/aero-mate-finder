@@ -4,6 +4,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, landingForRoles, type AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import LoginBackgroundLogo from "@/components/LoginBackgroundLogo";
 
 const schema = z.object({
   email: z.string().trim().email("Invalid email").max(255),
