@@ -182,7 +182,7 @@ export default function Landing() {
         <div className="flex animate-marquee">
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex shrink-0 items-center gap-12 px-6">
-              {["Hexcel", "Toray", "Syensqo", "3M", "Henkel", "Solvay", "Cytec", "Gurit", "Park Aerospace", "Mitsubishi Chemical"].map((m) => (
+              {bannerSuppliers.map((m) => (
                 <span key={m} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
               ))}
             </div>
