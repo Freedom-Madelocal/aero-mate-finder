@@ -1277,10 +1277,10 @@ function FixedChipGroup({
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+            className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
               isOn(opt)
-                ? "border-foreground bg-foreground text-background"
-                : "border-border text-muted-foreground hover:text-foreground"
+                ? "neu-chip-active"
+                : "neu-chip"
             }`}
           >
             {opt}
