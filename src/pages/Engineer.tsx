@@ -661,12 +661,12 @@ export default function Engineer() {
                   </summary>
                   <div className="pt-3 space-y-4">
                     <FilterSection title="Inventory" defaultOpen>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-2 gap-2">
                         {(["any", "in-stock", "tracked", "not-stocked"] as const).map((v) => (
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, inventory: v })}
-                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
+                            className={`text-xs px-2 py-1.5 rounded-lg transition-colors ${
                               filters.inventory === v
                                 ? "neu-chip-active"
                                 : "neu-chip"
@@ -679,12 +679,12 @@ export default function Engineer() {
                     </FilterSection>
 
                     <FilterSection title="NASA E595" defaultOpen>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-3 gap-2">
                         {(["any", "pass", "fail"] as const).map((v) => (
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, e595: v })}
-                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
+                            className={`text-xs px-2 py-1.5 rounded-lg transition-colors ${
                               filters.e595 === v
                                 ? "neu-chip-active"
                                 : "neu-chip"
@@ -1177,7 +1177,7 @@ function ChipFilter({
         onClick={() =>
           onChange(on ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt])
         }
-        className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
+        className={`text-[11px] px-2 py-1 rounded-lg transition-colors ${
           on
             ? "neu-chip-active"
             : "neu-chip"
@@ -1195,7 +1195,7 @@ function ChipFilter({
       ) : (
         <div className="space-y-2">
           {singles.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {singles.map((opt) => <Pill key={opt} opt={opt} />)}
             </div>
           )}
@@ -1217,7 +1217,7 @@ function ChipFilter({
                     )}
                   </span>
                 </summary>
-                <div className="flex flex-wrap gap-1 pl-4 pt-1.5">
+                <div className="flex flex-wrap gap-2 pl-4 pt-1.5">
                   {g.options.map((opt) => <Pill key={opt} opt={opt} />)}
                 </div>
               </details>
@@ -1252,13 +1252,13 @@ function FixedChipGroup({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
+            className={`text-[11px] px-2 py-1 rounded-lg transition-colors ${
               isOn(opt)
                 ? "neu-chip-active"
                 : "neu-chip"
