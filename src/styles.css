@@ -348,7 +348,7 @@ input[type="checkbox"] {
 /* ---------- Marquee animation for landing page manufacturer banner ---------- */
 
 @utility animate-marquee {
-  animation: marquee 35s linear infinite;
+  animation: marquee 33s linear infinite;
 }
 
 @keyframes marquee {
