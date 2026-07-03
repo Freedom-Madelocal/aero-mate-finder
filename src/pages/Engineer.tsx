@@ -1217,7 +1217,7 @@ function ChipFilter({
                     )}
                   </span>
                 </summary>
-                <div className="flex flex-wrap gap-1 pl-4 pt-1.5">
+                <div className="flex flex-wrap gap-2 pl-4 pt-1.5">
                   {g.options.map((opt) => <Pill key={opt} opt={opt} />)}
                 </div>
               </details>
