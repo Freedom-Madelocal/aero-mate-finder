@@ -1,6 +1,21 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Download, ExternalLink, FileText, Loader2, RefreshCw, X } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+
+const DRAWER_WIDTH_KEY = "tds-drawer-width";
+const DEFAULT_WIDTH_VW = 60;
+const MIN_WIDTH_VW = 30;
+const MAX_WIDTH_VW = 95;
+
+function clampWidth(v: number) {
+  return Math.min(MAX_WIDTH_VW, Math.max(MIN_WIDTH_VW, v));
+}
+function loadInitialWidth() {
+  if (typeof window === "undefined") return DEFAULT_WIDTH_VW;
+  const raw = window.localStorage.getItem(DRAWER_WIDTH_KEY);
+  const n = raw ? Number(raw) : NaN;
+  return Number.isFinite(n) ? clampWidth(n) : DEFAULT_WIDTH_VW;
+}
 
 type State = { path: string | null };
 let _state: State = { path: null };
