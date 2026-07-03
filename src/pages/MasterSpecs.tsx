@@ -351,6 +351,8 @@ function Toggle({ active, onClick, label }: { active: boolean; onClick: () => vo
 }
 
 function InventoryBadge({ status }: { status: "in-stock" | "tracked" | "none" }) {
+  const inventoryEnabled = useFeatureFlag("inventory", true);
+  if (status === "none" && !inventoryEnabled) return null;
   if (status === "in-stock")
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--status-compliant)]/15 text-[var(--status-compliant)]">
