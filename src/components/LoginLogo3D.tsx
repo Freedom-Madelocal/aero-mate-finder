@@ -19,8 +19,8 @@ function LogoModel() {
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         const mapped = materials.map((mat) => {
           const m = mat.clone();
-        m.transparent = true;
-        m.opacity = 1.0;
+          m.transparent = true;
+          m.opacity = 0.9;
           if ("emissive" in m && "emissiveIntensity" in m) {
             const std = m as THREE.MeshStandardMaterial;
             std.emissive = new THREE.Color("#8fb3ff");
