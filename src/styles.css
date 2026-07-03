@@ -240,8 +240,8 @@ input[type="checkbox"] {
   --accent-blue-soft: rgba(53, 87, 125, 0.18);
   --accent-blue-border: rgba(53, 87, 125, 0.5);
 
-  /* Fonts — same as default theme */
-  --font-display: "Geist", system-ui, -apple-system, sans-serif;
+  /* Fonts — body same as default theme, headings now Helvetica */
+  --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-body: "Geist", system-ui, -apple-system, sans-serif;
   --font-sans: var(--font-body);
 }
@@ -260,8 +260,8 @@ input[type="checkbox"] {
 [data-ui-theme="royal"] h4,
 [data-ui-theme="royal"] h5,
 [data-ui-theme="royal"] h6 {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 300;
   letter-spacing: 0.02em;
 }
 
