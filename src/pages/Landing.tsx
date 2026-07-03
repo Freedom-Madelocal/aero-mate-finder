@@ -77,13 +77,19 @@ export default function Landing() {
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
             {freeGuideEnabled && <Link to="/free-guide" className="hover:text-foreground">Free guide</Link>}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <a
               href="#demo"
               className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Book a demo <ArrowRight className="h-3.5 w-3.5" />
             </a>
+            <Link
+              to="/login"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Login
+            </Link>
           </div>
         </div>
       </header>
