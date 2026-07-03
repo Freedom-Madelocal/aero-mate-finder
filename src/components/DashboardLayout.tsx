@@ -155,27 +155,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Top header - floating */}
-      <div className="sticky top-0 z-30 shrink-0 px-4 pt-3 pb-6 relative">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-1 h-10 w-[85%] rounded-[50%]"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, color-mix(in srgb, #cfe4ff 60%, transparent) 0%, color-mix(in srgb, #cfe4ff 22%, transparent) 45%, transparent 75%)",
-            filter: "blur(16px)",
-          }}
-        />
+      <div className="sticky top-0 z-30 shrink-0 px-4 pt-3 pb-10 relative">
         <header
-          className="relative flex items-center justify-between px-5"
+          className="relative flex items-center justify-between px-5 z-10"
           style={{
             height: 52,
             background: "var(--card)",
             border: "0.5px solid var(--border)",
             borderRadius: 16,
-            boxShadow:
-              "0 10px 30px -12px rgba(0,0,0,0.55), 0 0 42px -6px color-mix(in srgb, #bcd8ff 40%, transparent)",
+            boxShadow: "0 6px 14px -8px rgba(0,0,0,0.55)",
           }}
         >
+
         <div className="flex items-center gap-4 min-w-0">
           {/* Mobile menu */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
