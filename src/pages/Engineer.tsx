@@ -484,10 +484,32 @@ export default function Engineer() {
       profile?.email ||
       user?.email ||
       "Unknown Engineer";
-    if (pendingForMe.has(spec.id)) {
-      toast("Already on your pick list.");
+
+    const existing = requests.find(
+      (r) =>
+        r.masterSpecId === spec.id &&
+        r.status === "pending" &&
+        (!name || r.engineerName === name),
+    );
+
+    if (existing) {
+      setPicking(spec.id);
+      try {
+        await deleteProcurementRequest(existing.id);
+        toast.success(`Removed ${spec.productName} from procurement pick list.`);
+      } catch (e) {
+        console.error("deleteProcurementRequest failed", e);
+        toast.error(
+          e instanceof Error
+            ? `Failed to remove: ${e.message}`
+            : "Failed to remove from pick list.",
+        );
+      } finally {
+        setPicking(null);
+      }
       return;
     }
+
     setPicking(spec.id);
     try {
       await addProcurementRequest({
