@@ -661,12 +661,12 @@ export default function Engineer() {
                   </summary>
                   <div className="pt-3 space-y-4">
                     <FilterSection title="Inventory" defaultOpen>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-2 gap-2">
                         {(["any", "in-stock", "tracked", "not-stocked"] as const).map((v) => (
                           <button
                             key={v}
                             onClick={() => setFilters({ ...filters, inventory: v })}
-                            className={`text-xs px-2 py-1.5 rounded transition-colors ${
+                            className={`text-xs px-2 py-1.5 rounded-lg transition-colors ${
                               filters.inventory === v
                                 ? "neu-chip-active"
                                 : "neu-chip"
