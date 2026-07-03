@@ -256,24 +256,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="flex items-center gap-3">
 
-          <div className="hidden md:block">
-            <Suspense fallback={<div style={{ width: 220, height: 32 }} />}>
-              <GlobalSearch />
-            </Suspense>
-          </div>
 
-
-          {/* Mobile search trigger fallback */}
-          <button
-            className="md:hidden p-2 text-muted-foreground hover:text-foreground"
-            aria-label="Search"
-            onClick={() => {
-              const ev = new KeyboardEvent("keydown", { key: "k", metaKey: true });
-              window.dispatchEvent(ev);
-            }}
-          >
-            <SearchIcon className="w-4 h-4" />
-          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
