@@ -269,7 +269,7 @@ export default function Landing() {
                 ].map(({ i: Icon, t, d }) => (
                   <div key={t} className="rounded-xl border border-border/70 bg-card p-5">
                     <Icon className="h-5 w-5 text-[var(--status-info)]" />
-                    <h3 className="mt-3 text-sm font-semibold text-foreground">{t}</h3>
+                    <h3 className="landing-heading mt-3 text-sm text-foreground">{t}</h3>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{d}</p>
                   </div>
                 ))}
