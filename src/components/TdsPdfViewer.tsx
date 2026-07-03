@@ -241,6 +241,15 @@ export function TdsPdfViewer() {
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
+                <span className="mx-1 h-4 w-px bg-white/20" />
+                <button
+                  onClick={() => setWidthVw(widthVw >= MAX_WIDTH_VW - 0.5 ? DEFAULT_WIDTH_VW : MAX_WIDTH_VW)}
+                  title={widthVw >= MAX_WIDTH_VW - 0.5 ? "Restore default size" : "Expand to full width"}
+                  aria-label={widthVw >= MAX_WIDTH_VW - 0.5 ? "Restore default size" : "Expand to full width"}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors"
+                >
+                  {widthVw >= MAX_WIDTH_VW - 0.5 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                </button>
               </div>
             </>
           )}
