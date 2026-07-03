@@ -973,8 +973,7 @@ export default function Engineer() {
                           <div className="flex flex-col gap-1.5 shrink-0 self-start min-w-[112px]">
                             <button
                               onClick={() => setSelected(spec)}
-                              className="text-[12px] font-medium text-white rounded-md px-3 py-1.5 transition-opacity hover:opacity-90"
-                              style={{ background: "#3B8AFF" }}
+                              className="text-[12px] font-medium px-3 py-1.5 neu-btn-primary"
                             >
                               Details
                             </button>
@@ -986,8 +985,7 @@ export default function Engineer() {
                                 }
                                 compare.toggle(spec.id);
                               }}
-                              className="text-[12px] rounded-md px-3 py-1.5 bg-transparent text-foreground hover:bg-secondary/50 transition-colors"
-                              style={{ border: "0.5px solid oklch(24% 0 0)" }}
+                              className="text-[12px] px-3 py-1.5 neu-btn-secondary"
                             >
                               {inCompare ? "✓ Compare" : "+ Compare"}
                             </button>
@@ -998,8 +996,7 @@ export default function Engineer() {
                                   search: { q: spec.productName } as never,
                                 })
                               }
-                              className="text-[12px] rounded-md px-3 py-1.5 bg-transparent text-foreground hover:bg-secondary/50 transition-colors"
-                              style={{ border: "0.5px solid oklch(24% 0 0)" }}
+                              className="text-[12px] px-3 py-1.5 neu-btn-secondary"
                             >
                               Crossover
                             </button>
