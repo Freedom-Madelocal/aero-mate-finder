@@ -466,10 +466,6 @@ export default function Engineer() {
     return result;
   }, [matched, sort, pendingForMe, materials, deferredFilters]);
 
-  const inStockCount = useMemo(
-    () => matched.filter((s) => getInventoryMatch(s, materials).status === "in-stock").length,
-    [matched, materials],
-  );
 
   // Reset pagination whenever the filtered result set changes.
   useEffect(() => {
