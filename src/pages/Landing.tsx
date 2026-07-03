@@ -112,12 +112,13 @@ export default function Landing() {
           </div>
 
           {/* Heading */}
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+          <h1
+            className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl md:text-6xl"
+            style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+          >
             {c.hero_title_top}
             <br />
-            <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-              {c.hero_title_bottom}
-            </span>
+            {c.hero_title_bottom}
           </h1>
 
           {/* Check marks between heading and subheader */}
