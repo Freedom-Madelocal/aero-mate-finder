@@ -194,8 +194,27 @@ export function TdsPdfViewer() {
                   setError("The PDF failed to render in the drawer.");
                 }}
               />
-              {/* Floating glassmorphic zoom controls */}
+              {/* Floating glassmorphic controls */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full border border-white/15 bg-background/40 px-1.5 py-1 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+                <button
+                  onClick={download}
+                  disabled={!canAct}
+                  title="Download PDF"
+                  aria-label="Download PDF"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => { if (url) window.open(url, "_blank", "noopener"); }}
+                  disabled={!canAct}
+                  title="Open in new tab"
+                  aria-label="Open in new tab"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+                <span className="mx-1 h-4 w-px bg-white/20" />
                 <button
                   onClick={zoomOut}
                   disabled={zoom <= ZOOM_STEPS[0]}
