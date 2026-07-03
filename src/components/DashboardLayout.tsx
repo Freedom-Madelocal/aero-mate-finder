@@ -26,7 +26,7 @@ import { useFeatureFlags } from "@/data/featureFlags";
 // or once auth state settles. Lazy-loading keeps them out of the initial bundle.
 const ProfileDrawer = lazy(() => import("@/components/ProfileDrawer"));
 const MessageDialog = lazy(() => import("@/components/MessageDialog"));
-const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
+
 const GuidedTour = lazy(() => import("@/components/GuidedTour"));
 
 type NavItem = { path: string; label: string };
