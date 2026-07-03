@@ -113,8 +113,7 @@ export default function Landing() {
 
           {/* Heading */}
           <h1
-            className="mt-3 text-4xl font-light tracking-tight text-foreground sm:text-5xl md:text-6xl"
-            style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+            className="landing-heading mt-3 text-4xl tracking-tight text-foreground sm:text-5xl md:text-6xl"
           >
             {c.hero_title_top}
             <br />
