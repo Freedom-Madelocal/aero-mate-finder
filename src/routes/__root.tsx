@@ -115,10 +115,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  // Apply the cached royal UI theme + dark class synchronously before the
+  // app renders so there's no flash between the default theme and the
+  // async-hydrated feature flag on the landing page.
+  const themeBootstrap = `(function(){try{var r=document.documentElement;r.classList.add('dark');if(localStorage.getItem('ui-theme-royal')==='1'){r.setAttribute('data-ui-theme','royal');}}catch(e){}})();`;
   return (
     <html lang="en" className="dark">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body>
         {children}
