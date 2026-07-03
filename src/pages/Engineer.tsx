@@ -270,6 +270,7 @@ export default function Engineer() {
   const { requests } = useProcurementStore();
   const { profile, user } = useAuth();
   const procureEnabled = useFeatureFlag("procure", true);
+  const inventoryEnabled = useFeatureFlag("inventory", true);
   const search = useSearch({ from: "/_app/engineer" }) as { spec?: string; q?: string };
   const navigate = useNavigate();
   const compare = useCompare();
