@@ -379,7 +379,7 @@ export default function Landing() {
             </div>
             <div className="order-1 md:order-2 md:col-span-6">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{c.procurement_eyebrow}</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              <h2 className="landing-heading mt-3 text-3xl tracking-tight md:text-4xl">
                 {c.procurement_title}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
