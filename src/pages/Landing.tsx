@@ -147,16 +147,10 @@ export default function Landing() {
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
               style={{ boxShadow: "0 30px 80px -30px oklch(0.55 0.15 250 / 0.35)" }}
             >
-              <div className="flex items-center gap-1.5 border-b border-border/60 bg-secondary/50 px-3 py-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-muted" />
-                <span className="h-2.5 w-2.5 rounded-full bg-muted" />
-                <span className="h-2.5 w-2.5 rounded-full bg-muted" />
-                <span className="ml-3 text-[11px] text-muted-foreground">app.traceium.com / engineer</span>
-              </div>
               <div className="aspect-video w-full bg-black">
                 <video
                   key={heroVideoUrl ?? "default"}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                   autoPlay
                   loop
                   muted
