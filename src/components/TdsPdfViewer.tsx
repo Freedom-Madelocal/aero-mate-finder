@@ -211,7 +211,7 @@ export function TdsPdfViewer() {
                 key={`${url}-${attempt}`}
                 src={url}
                 title={fileName}
-                className="w-full h-full border-0 relative"
+                className={`w-full h-full border-0 relative ${dragging ? "pointer-events-none" : ""}`}
                 onLoad={() => setStatus("ready")}
                 onError={() => {
                   setStatus("error");
@@ -220,6 +220,40 @@ export function TdsPdfViewer() {
               />
             </>
           )}
+        </div>
+        {/* Resize grab handle */}
+        <div
+          ref={handleRef}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize PDF drawer"
+          aria-valuemin={MIN_WIDTH_VW}
+          aria-valuemax={MAX_WIDTH_VW}
+          aria-valuenow={Math.round(widthVw)}
+          tabIndex={0}
+          onPointerDown={onHandlePointerDown}
+          onPointerMove={onHandlePointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onDoubleClick={() => setWidthVw(DEFAULT_WIDTH_VW)}
+          onKeyDown={onHandleKeyDown}
+          title="Drag to resize · double-click to reset"
+          className={`group absolute top-0 right-0 h-full w-1.5 -mr-[3px] cursor-col-resize z-50 flex items-center justify-center ${
+            dragging ? "bg-[var(--accent-blue)]/40" : "bg-transparent hover:bg-[var(--accent-blue)]/25"
+          } transition-colors select-none touch-none`}
+          style={{ userSelect: "none" }}
+        >
+          <span
+            aria-hidden
+            className={`flex flex-col gap-0.5 rounded-full py-1.5 px-[3px] border border-border/60 bg-background/80 shadow-sm opacity-70 group-hover:opacity-100 ${
+              dragging ? "opacity-100 border-[var(--accent-blue)]/60" : ""
+            }`}
+          >
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+            <span className="block h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+          </span>
         </div>
       </SheetContent>
     </Sheet>
