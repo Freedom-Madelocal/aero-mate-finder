@@ -18,9 +18,10 @@ function LogoModel() {
           const m = mat.clone();
           m.transparent = true;
           m.opacity = 0.9;
-          // Add a faint emissive rim so the logo remains visible against the dark gradient.
-          m.emissive = new THREE.Color("#223344");
-          m.emissiveIntensity = 0.25;
+          if ("emissive" in m && "emissiveIntensity" in m) {
+            (m as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial).emissive = new THREE.Color("#223344");
+            (m as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial).emissiveIntensity = 0.25;
+          }
           return m;
         });
         if (!Array.isArray(mesh.material)) {
@@ -87,5 +88,3 @@ export default function LoginLogo3D() {
 }
 
 useGLTF.preload(logoAsset.url);
-
-
