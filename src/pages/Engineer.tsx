@@ -907,11 +907,11 @@ export default function Engineer() {
                               )}
 
                               <span className="ml-auto">
-                                {inv.status === "none" ? (
+                                {inventoryEnabled && inv.status === "none" ? (
                                   <span className="text-[10px] font-mono uppercase text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
                                     Not Stocked
                                   </span>
-                                ) : (
+                                ) : inventoryEnabled && inv.status !== "none" ? (
                                   <Link
                                     to="/material/$id"
                                     params={{ id: inv.material.id }}
@@ -923,7 +923,7 @@ export default function Engineer() {
                                   >
                                     {inv.status === "in-stock" ? `In Stock (${inv.material.availableQty})` : "Tracked"}
                                   </Link>
-                                )}
+                                ) : null}
                               </span>
                             </div>
 
