@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import {
   motion,
   useMotionValue,
@@ -25,16 +25,24 @@ export function TheInfiniteGrid({ className }: Props) {
     gridOffsetY.set((gridOffsetY.get() + SPEED) % CELL);
   });
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const { left, top } = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - left);
-    mouseY.set(e.clientY - top);
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(-1000);
-    mouseY.set(-1000);
-  };
+  useEffect(() => {
+    const handleMove = (e: PointerEvent) => {
+      const el = containerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        mouseX.set(-1000);
+        mouseY.set(-1000);
+      } else {
+        mouseX.set(x);
+        mouseY.set(y);
+      }
+    };
+    window.addEventListener("pointermove", handleMove);
+    return () => window.removeEventListener("pointermove", handleMove);
+  }, [mouseX, mouseY]);
 
   const backgroundPosition = useMotionTemplate`${gridOffsetX}px ${gridOffsetY}px`;
   const maskImage = useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
@@ -45,10 +53,8 @@ export function TheInfiniteGrid({ className }: Props) {
   return (
     <div
       ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       className={className}
-      style={{ position: "absolute", inset: 0, overflow: "hidden" }}
+      style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}
     >
       <motion.div
         aria-hidden
