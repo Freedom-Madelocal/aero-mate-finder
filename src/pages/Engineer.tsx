@@ -556,15 +556,40 @@ export default function Engineer() {
   return (
     <>
       <div className="px-5 py-5 space-y-4">
-        {/* Top full-width search bar */}
-        <div className="relative rounded-[10px] overflow-hidden">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
-          <input
-            value={filters.q}
-            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-            placeholder="Search by name, chemistry, application, keyword…"
-            className="relative w-full pl-10 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none neu-input neu-input-text"
-          />
+        {/* Top search bar + sort */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 rounded-[10px] overflow-hidden">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+            <input
+              value={filters.q}
+              onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+              placeholder="Search by name, chemistry, application, keyword…"
+              className="relative w-full pl-10 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none neu-input neu-input-text"
+            />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <label htmlFor="eng-sort">Sort by</label>
+            <select
+              id="eng-sort"
+              value={`${sort.key}:${sort.dir}`}
+              onChange={(e) => {
+                const [key, dir] = e.target.value.split(":") as [SortKey, "asc" | "desc"];
+                setSort({ key, dir });
+              }}
+              className="bg-card border border-border rounded px-2 py-1 text-foreground"
+            >
+              <option value="product:asc">Product (A–Z)</option>
+              <option value="product:desc">Product (Z–A)</option>
+              <option value="vendor:asc">Vendor (A–Z)</option>
+              <option value="cure:asc">Cure °F ↑</option>
+              <option value="cure:desc">Cure °F ↓</option>
+              <option value="service:desc">Service °F ↓</option>
+              <option value="e595:desc">E595 pass first</option>
+              <option value="inventory:asc">Inventory (stocked first)</option>
+              <option value="star:desc">Starred first</option>
+              <option value="procure:desc">On pick list first</option>
+            </select>
+          </div>
         </div>
 
 
