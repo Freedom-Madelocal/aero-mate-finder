@@ -95,11 +95,45 @@ export function TdsPdfViewer() {
   const fileName = state.path ? state.path.split("/").pop() ?? "TDS PDF" : "TDS PDF";
   const canAct = !!url && status !== "error";
 
+  const [widthVw, setWidthVw] = useState<number>(() => loadInitialWidth());
+  const [dragging, setDragging] = useState(false);
+  const handleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DRAWER_WIDTH_KEY, String(widthVw));
+    }
+  }, [widthVw]);
+
+  const onHandlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    setDragging(true);
+  }, []);
+  const onHandlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const vw = (e.clientX / window.innerWidth) * 100;
+    setWidthVw(clampWidth(vw));
+  }, [dragging]);
+  const endDrag = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    try { (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    setDragging(false);
+  }, [dragging]);
+  const onHandleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 8 : 2;
+    if (e.key === "ArrowLeft") { e.preventDefault(); setWidthVw((w) => clampWidth(w - step)); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setWidthVw((w) => clampWidth(w + step)); }
+    else if (e.key === "Home") { e.preventDefault(); setWidthVw(MIN_WIDTH_VW); }
+    else if (e.key === "End") { e.preventDefault(); setWidthVw(MAX_WIDTH_VW); }
+  }, []);
+
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) closeTdsPdf(); }}>
       <SheetContent
         side="left"
-        className="p-0 w-[92vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[55vw] max-w-none flex flex-col gap-0"
+        style={{ width: `${widthVw}vw` }}
+        className="p-0 max-w-none flex flex-col gap-0"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="min-w-0">
