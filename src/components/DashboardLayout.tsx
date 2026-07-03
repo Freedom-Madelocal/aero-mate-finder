@@ -341,23 +341,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Under-shelf light: emits downward only from the bottom edge of the header */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-4 right-4 top-[64px] h-16 overflow-hidden"
+          className="pointer-events-none absolute left-4 right-4 top-[64px] h-20 overflow-hidden"
         >
-          {/* Bright hot line right under the header edge */}
+          {/* Bright hot line right under the header edge, edge-to-edge */}
           <div
-            className="absolute left-[8%] right-[8%] top-0 h-[2px]"
+            className="absolute left-[1%] right-[1%] top-0 h-[2px]"
             style={{
               background:
-                "linear-gradient(90deg, transparent 0%, rgba(210,228,255,0.85) 20%, rgba(220,235,255,0.95) 50%, rgba(210,228,255,0.85) 80%, transparent 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(210,228,255,0.85) 5%, rgba(220,235,255,0.95) 50%, rgba(210,228,255,0.85) 95%, transparent 100%)",
               filter: "blur(1px)",
             }}
           />
-          {/* Downward-fading cone of soft bluish-white light */}
+          {/* Downward-fading cone of soft bluish-white light, full width */}
           <div
-            className="absolute left-[4%] right-[4%] top-0 h-16"
+            className="absolute left-0 right-0 top-0 h-20"
             style={{
               background:
-                "radial-gradient(ellipse 60% 100% at 50% 0%, color-mix(in srgb, #cfe4ff 55%, transparent) 0%, color-mix(in srgb, #bcd8ff 18%, transparent) 45%, transparent 80%)",
+                "radial-gradient(ellipse 90% 100% at 50% 0%, color-mix(in srgb, #cfe4ff 60%, transparent) 0%, color-mix(in srgb, #bcd8ff 22%, transparent) 45%, transparent 80%)",
               filter: "blur(6px)",
             }}
           />
