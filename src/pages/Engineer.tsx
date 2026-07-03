@@ -27,7 +27,6 @@ import { Link, useSearch, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompare } from "@/contexts/CompareContext";
-import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 import { TdsPdfBadge } from "@/components/TdsPdfBadge";
 import { useFeatureFlag } from "@/data/featureFlags";
 
@@ -1345,7 +1344,6 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
                 <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[22rem]">{spec.tdsPdfPath}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <AnalyzeTdsButton specId={spec.id} analyzedAt={spec.tdsAnalyzedAt} />
                 <button
                   onClick={async () => {
                     try {
