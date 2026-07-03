@@ -7,7 +7,6 @@ import {
   Package,
   Star as StarOutline,
   Info,
-  CheckSquare,
   ChevronDown,
 } from "lucide-react";
 import { useMemo, useState, useEffect, useDeferredValue } from "react";
@@ -981,10 +980,9 @@ export default function Engineer() {
                                     className="w-3.5 h-3.5 accent-foreground cursor-pointer"
                                     aria-label="Add to procurement pick list"
                                   />
-                                  <span className="inline-flex items-center gap-1">
-                                    <CheckSquare className="w-3 h-3" />
-                                    {isPending ? "On pick list" : "Procure"}
-                                  </span>
+                                    <span>
+                                      {isPending ? "On pick list" : "Procure"}
+                                    </span>
                                 </label>
                               )}
                             </div>
