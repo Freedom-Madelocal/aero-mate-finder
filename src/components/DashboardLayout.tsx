@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Settings, Menu, Search as SearchIcon, ShieldCheck, Cog } from "lucide-react";
+import { Settings, Menu, ShieldCheck, Cog } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { logPageView } from "@/lib/userActivity";
 import traceumIcon from "@/assets/traceium-icon.webp";
