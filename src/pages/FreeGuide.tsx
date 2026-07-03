@@ -16,6 +16,7 @@ import traceumWordmark from "@/assets/traceium-wordmark.webp";
 
 
 export default function FreeGuide() {
+  const enabled = useFeatureFlag("free_guide", true);
   const [content, setContent] = useState<LeadMagnetContent>(DEFAULT_LEAD_MAGNET);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function FreeGuide() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
 
   useEffect(() => {
     loadLeadMagnet()
