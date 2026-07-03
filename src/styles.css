@@ -314,7 +314,7 @@ input[type="checkbox"] {
 }
 
 @utility login-hero-gradient {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, var(--background) 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, var(--background) 60%);
 }
 
 @utility login-right-gradient {
