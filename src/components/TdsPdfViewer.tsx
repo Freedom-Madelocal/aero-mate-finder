@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Download, ExternalLink, FileText, Loader2, Minus, Plus, RefreshCw } from "lucide-react";
+import { AlertTriangle, Download, ExternalLink, FileText, Loader2, Maximize2, Minus, Minimize2, Plus, RefreshCw } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const DRAWER_WIDTH_KEY = "tds-drawer-width";
