@@ -9,7 +9,7 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
   hero_title_top: "Find qualified materials",
   hero_title_bottom: "and prove compliance in seconds.",
   hero_body:
-    "Your engineers shouldn't lose a day to PDF archaeology.\u00a0\nYour buyers shouldn't chase the same quotes every program.\u00a0\nYour compliance team shouldn't dread the next audit.\u00a0\nTraceium turns every spec, cert, lot, and vendor into one searchable system — so the answer takes seconds, not weeks.\n",
+    "Traceium turns every spec, cert, lot, and vendor into one searchable system — so finding the right material takes seconds, not days. ",
   hero_cta_primary: "Book a demo",
   hero_cta_secondary: "See how it works",
   hero_video_caption: "Live walkthrough — 200+ qualified specs narrowed to 3 in under 10 seconds.",
