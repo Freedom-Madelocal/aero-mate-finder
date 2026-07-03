@@ -1196,10 +1196,10 @@ function ChipFilter({
         onClick={() =>
           onChange(on ? selected.filter((v) => canon(v) !== canon(opt)) : [...selected, opt])
         }
-        className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+        className={`text-[11px] px-2 py-1 rounded-full transition-colors ${
           on
-            ? "border-foreground bg-foreground text-background"
-            : "border-border text-muted-foreground hover:text-foreground"
+            ? "neu-chip-active"
+            : "neu-chip"
         }`}
       >
         {opt}
