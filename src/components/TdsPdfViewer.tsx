@@ -212,8 +212,8 @@ export function TdsPdfViewer() {
                 </div>
               )}
               <iframe
-                key={`${url}-${attempt}`}
-                src={url}
+                key={`${url}-${attempt}-${zoom}`}
+                src={`${url}#zoom=${zoom}`}
                 title={fileName}
                 className={`w-full h-full border-0 relative ${dragging ? "pointer-events-none" : ""}`}
                 onLoad={() => setStatus("ready")}
@@ -222,6 +222,35 @@ export function TdsPdfViewer() {
                   setError("The PDF failed to render in the drawer.");
                 }}
               />
+              {/* Floating glassmorphic zoom controls */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full border border-white/15 bg-background/40 px-1.5 py-1 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+                <button
+                  onClick={zoomOut}
+                  disabled={zoom <= ZOOM_STEPS[0]}
+                  title="Zoom out"
+                  aria-label="Zoom out"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setZoom(100)}
+                  title="Reset zoom"
+                  aria-label="Reset zoom"
+                  className="min-w-[3.25rem] px-2 h-7 rounded-full text-[11px] font-medium tabular-nums text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors"
+                >
+                  {zoom}%
+                </button>
+                <button
+                  onClick={zoomIn}
+                  disabled={zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+                  title="Zoom in"
+                  aria-label="Zoom in"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </>
           )}
         </div>
