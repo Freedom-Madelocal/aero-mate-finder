@@ -101,7 +101,7 @@ export default function Landing() {
             backgroundSize: "48px 48px",
           }}
         />
-        <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pt-14 pb-16 text-center sm:px-6 sm:pt-20 sm:pb-24 md:pt-28">
+        <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pt-10 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-24 md:pt-16">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
@@ -109,7 +109,7 @@ export default function Landing() {
           </div>
 
           {/* Heading */}
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
             {c.hero_title_top}
             <br />
             <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -118,19 +118,19 @@ export default function Landing() {
           </h1>
 
           {/* Check marks between heading and subheader */}
-          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+          <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> Audit-ready compliance evidence</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> AS9100-aligned lot traceability</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--status-compliant)]" /> Engineer-first search</span>
           </div>
 
           {/* Subheader */}
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
             {c.hero_body}
           </p>
 
           {/* CTA buttons */}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
               href="#demo"
               className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -146,7 +146,7 @@ export default function Landing() {
           </div>
 
           {/* Video */}
-          <div className="mt-12 w-full max-w-5xl">
+          <div className="mt-8 w-full max-w-5xl">
             <div
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
               style={{ boxShadow: "0 30px 80px -30px oklch(0.55 0.15 250 / 0.35)" }}
