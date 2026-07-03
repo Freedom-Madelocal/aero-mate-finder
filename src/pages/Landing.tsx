@@ -28,9 +28,6 @@ export default function Landing() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  // Repeat each supplier twice inside the scrolling strip so the content is wide enough
-  // to cover the viewport and the loop stays seamless.
-  const doubledSuppliers = bannerSuppliers.flatMap((m) => [m, m]);
 
   async function handleDemo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -173,7 +170,7 @@ export default function Landing() {
         <div className="flex animate-marquee">
           {[...Array(2)].map((_: number, i: number) => (
             <div key={i} className="flex shrink-0 items-center gap-20 pr-20">
-              {doubledSuppliers.map((m) => (
+              {bannerSuppliers.map((m) => (
                 <span key={`${i}-${m}`} className="whitespace-nowrap text-sm font-medium text-muted-foreground">{m}</span>
               ))}
             </div>
