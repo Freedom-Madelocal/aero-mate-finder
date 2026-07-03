@@ -584,7 +584,9 @@ export default function Engineer() {
                 <summary className="lg:hidden flex items-center justify-between p-4 cursor-pointer text-sm font-medium">
                   <span className="flex items-center gap-2"><Filter className="w-4 h-4" /> Filters {activeFilterCount > 0 && (<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-foreground text-background">{activeFilterCount}</span>)}</span>
                   <span className="text-xs text-muted-foreground">
-                    {matched.length} match{matched.length === 1 ? "" : "es"}
+                    {activeFilterCount === 0
+                      ? `${matched.length} material${matched.length === 1 ? "" : "s"} (all)`
+                      : `${matched.length} match${matched.length === 1 ? "" : "es"}`}
                   </span>
                 </summary>
                 <div className="p-4 pt-0 lg:pt-4 space-y-4">
@@ -599,7 +601,9 @@ export default function Engineer() {
                   </h2>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">
-                      {matched.length} match{matched.length === 1 ? "" : "es"}
+                      {activeFilterCount === 0
+                        ? `${matched.length} material${matched.length === 1 ? "" : "s"} (all)`
+                        : `${matched.length} match${matched.length === 1 ? "" : "es"}`}
                     </span>
                     {activeFilterCount > 0 && (
                       <button
