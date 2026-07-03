@@ -496,18 +496,18 @@ input[type="checkbox"] {
       color-mix(in srgb, #ffffff 8%, transparent) 0%,
       color-mix(in srgb, #ffffff 2%, transparent) 100%
     ),
-    /* strong blue at the bottom that fades quickly upward */
+    /* soft blue at the bottom that fades quickly upward */
     linear-gradient(
       180deg,
       transparent 45%,
-      color-mix(in srgb, #144CCD 42%, transparent) 100%
+      color-mix(in srgb, #144CCD 22%, transparent) 100%
     );
   backdrop-filter: blur(10px) saturate(140%);
   border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
-  /* Inner Shadow 1 — tight blue glow anchored at the bottom edge */
+  /* Inner Shadow 1 — subtle blue glow anchored at the bottom edge */
   box-shadow:
-    inset 0 -4px 7px -2px color-mix(in srgb, #144CCD 80%, transparent),
-    inset 0 -8px 14px -6px color-mix(in srgb, #2365FF 35%, transparent),
+    inset 0 -4px 7px -2px color-mix(in srgb, #144CCD 40%, transparent),
+    inset 0 -8px 14px -6px color-mix(in srgb, #2365FF 20%, transparent),
     inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
     0 1px 2px rgba(0, 0, 0, 0.25);
   isolation: isolate;
@@ -518,14 +518,14 @@ input[type="checkbox"] {
     transform 260ms ease;
 }
 .tds-glass-badge:hover {
-  border-color: color-mix(in srgb, #6694ff 55%, transparent);
-  /* Inner Shadow 4 — tight deep blue on press/hover */
+  border-color: color-mix(in srgb, #6694ff 30%, transparent);
+  /* Inner Shadow 4 — softer deep blue on press/hover */
   box-shadow:
-    inset 0 4px 6px 1px color-mix(in srgb, #2365FF 60%, transparent),
-    inset 0 -4px 7px -2px color-mix(in srgb, #6694FF 75%, transparent),
-    inset 0 -8px 14px -6px color-mix(in srgb, #2365FF 40%, transparent),
+    inset 0 4px 6px 1px color-mix(in srgb, #2365FF 30%, transparent),
+    inset 0 -4px 7px -2px color-mix(in srgb, #6694FF 40%, transparent),
+    inset 0 -8px 14px -6px color-mix(in srgb, #2365FF 22%, transparent),
     inset 0 1px 0 color-mix(in srgb, #ffffff 22%, transparent),
-    0 2px 8px color-mix(in srgb, #2365FF 35%, transparent);
+    0 2px 8px color-mix(in srgb, #2365FF 18%, transparent);
   transform: translateY(-0.5px);
 }
 .tds-glass-liquid {
@@ -535,8 +535,8 @@ input[type="checkbox"] {
   pointer-events: none;
   border-radius: inherit;
   background:
-    radial-gradient(60% 80% at 30% 120%, color-mix(in srgb, #2365FF 55%, transparent), transparent 60%),
-    radial-gradient(50% 70% at 70% 110%, color-mix(in srgb, #6694FF 45%, transparent), transparent 65%),
+    radial-gradient(60% 80% at 30% 120%, color-mix(in srgb, #2365FF 28%, transparent), transparent 60%),
+    radial-gradient(50% 70% at 70% 110%, color-mix(in srgb, #6694FF 22%, transparent), transparent 65%),
     linear-gradient(120deg, transparent 40%, color-mix(in srgb, #ffffff 20%, transparent) 50%, transparent 60%);
   opacity: 0;
   filter: url(#tds-liquid) blur(2px);
@@ -544,7 +544,7 @@ input[type="checkbox"] {
 }
 .tds-glass-badge:hover .tds-glass-liquid {
   opacity: 1;
-  animation: tds-liquid-drift 3.2s ease-in-out infinite;
+  animation: tds-liquid-drift 6.5s ease-in-out infinite;
 }
 @keyframes tds-liquid-drift {
   0%   { transform: translate3d(-8%, 4%, 0) rotate(0deg); }
