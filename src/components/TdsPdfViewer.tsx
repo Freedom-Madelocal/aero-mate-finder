@@ -4,7 +4,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const DRAWER_WIDTH_KEY = "tds-drawer-width";
 const DEFAULT_WIDTH_VW = 60;
-const MIN_WIDTH_VW = 15;
+const MIN_WIDTH_VW = 30;
 const MAX_WIDTH_VW = 100;
 
 function clampWidth(v: number) {
