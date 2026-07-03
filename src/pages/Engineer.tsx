@@ -619,15 +619,8 @@ export default function Engineer() {
                   )}
                 </div>
 
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    value={filters.q}
-                    onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-                    placeholder="Search any text…"
-                    className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded text-sm"
-                  />
-                </div>
+
+
 
                 {/* Tier-1 primary chip filters */}
                 <FixedChipGroup
