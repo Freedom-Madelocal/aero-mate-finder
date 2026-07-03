@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { useSuppliers } from "@/data/masterSpecs";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
 
