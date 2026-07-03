@@ -241,7 +241,7 @@ input[type="checkbox"] {
   --accent-blue-border: rgba(53, 87, 125, 0.5);
 
   /* Fonts */
-  --font-display: "Clash Display", "Geist", system-ui, sans-serif;
+  --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-body: "Satoshi", "Geist", system-ui, sans-serif;
   --font-sans: var(--font-body);
 }
