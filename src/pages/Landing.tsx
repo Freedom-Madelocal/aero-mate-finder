@@ -20,10 +20,13 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import traceumIcon from "@/assets/traceium-icon.webp";
 import traceumWordmark from "@/assets/traceium-wordmark.webp";
 import { TheInfiniteGrid } from "@/components/ui/the-infinite-grid";
+import { useFeatureFlag } from "@/data/featureFlags";
 
 export default function Landing() {
   const [submitting, setSubmitting] = useState(false);
   const { content: c, heroVideoUrl } = useSiteSettings();
+  const freeGuideEnabled = useFeatureFlag("free_guide", true);
+
   const bannerSuppliers = (c.landing_suppliers || "Hexcel, Toray, Syensqo, 3M, Henkel")
     .split(",")
     .map((s) => s.trim())
@@ -72,7 +75,7 @@ export default function Landing() {
             <a href="#features" className="hover:text-foreground">Features</a>
             <a href="#procurement" className="hover:text-foreground">Procurement</a>
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
-            <Link to="/free-guide" className="hover:text-foreground">Free guide</Link>
+            {freeGuideEnabled && <Link to="/free-guide" className="hover:text-foreground">Free guide</Link>}
           </nav>
           <div className="flex items-center gap-2">
             <a
@@ -496,7 +499,7 @@ export default function Landing() {
           </p>
           <div className="flex items-center gap-5 text-xs text-muted-foreground">
             <a href="#demo" className="hover:text-foreground">Book a demo</a>
-            <Link to="/free-guide" className="hover:text-foreground">Free guide</Link>
+            {freeGuideEnabled && <Link to="/free-guide" className="hover:text-foreground">Free guide</Link>}
             <Link to="/login" className="hover:text-foreground">Log in</Link>
           </div>
         </div>
