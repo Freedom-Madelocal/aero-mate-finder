@@ -160,7 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className="relative flex items-center justify-between px-5 z-10"
           style={{
             height: 52,
-            background: "linear-gradient(180deg, rgba(41, 45, 50, 0.72) 0%, rgba(30, 31, 34, 0.72) 100%)",
+            background: "linear-gradient(180deg, rgba(41, 45, 50, 0.45) 0%, rgba(30, 31, 34, 0.45) 100%)",
             backdropFilter: "blur(20px) saturate(150%)",
             borderRadius: 16,
             boxShadow: "0 6px 14px -8px rgba(0,0,0,0.55)",
