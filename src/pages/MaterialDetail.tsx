@@ -124,13 +124,13 @@ export default function MaterialDetail() {
             <div>
               <p className="text-xs text-muted-foreground">Max Service Temp</p>
               <p className="text-sm font-mono text-foreground mt-0.5">
-                {material.maxServiceTemp === "—" ? "N/A" : `${material.maxServiceTemp}°F`}
+                {formatTempF(material.maxServiceTemp)}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Cure Temp</p>
               <p className="text-sm font-mono text-foreground mt-0.5">
-                {material.cureTemp === "—" ? "N/A" : `${material.cureTemp}°F`}
+                {formatTempF(material.cureTemp)}
               </p>
             </div>
             <div>
