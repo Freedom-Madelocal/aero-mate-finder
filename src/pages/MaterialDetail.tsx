@@ -24,6 +24,20 @@ import type { Material, MaterialLot, COARecord, COCRecord } from "@/data/materia
  * All data comes from the shared reactive store (populated via stock report uploads).
  */
 
+function formatTempF(value: string | null | undefined): string {
+  if (!value || value === "—") return "N/A";
+  // Strip any Celsius portion (e.g. "350°F / 177°C" or "177°C (350°F)") and keep Fahrenheit.
+  const fMatch = value.match(/(-?\d+(?:\.\d+)?)\s*°?\s*F/i);
+  if (fMatch) return `${fMatch[1]}°F`;
+  const cMatch = value.match(/(-?\d+(?:\.\d+)?)\s*°?\s*C/i);
+  if (cMatch) {
+    const f = Math.round((parseFloat(cMatch[1]) * 9) / 5 + 32);
+    return `${f}°F`;
+  }
+  const num = value.match(/-?\d+(?:\.\d+)?/);
+  return num ? `${num[0]}°F` : value;
+}
+
 export default function MaterialDetail() {
   const { id } = useParams({ from: "/_app/material/$id" });
   const navigate = useNavigate();
@@ -124,13 +138,13 @@ export default function MaterialDetail() {
             <div>
               <p className="text-xs text-muted-foreground">Max Service Temp</p>
               <p className="text-sm font-mono text-foreground mt-0.5">
-                {material.maxServiceTemp === "—" ? "N/A" : `${material.maxServiceTemp}°F`}
+                {formatTempF(material.maxServiceTemp)}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Cure Temp</p>
               <p className="text-sm font-mono text-foreground mt-0.5">
-                {material.cureTemp === "—" ? "N/A" : `${material.cureTemp}°F`}
+                {formatTempF(material.cureTemp)}
               </p>
             </div>
             <div>
