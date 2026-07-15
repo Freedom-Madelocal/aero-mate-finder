@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCompare } from "@/contexts/CompareContext";
 import { TdsPdfBadge } from "@/components/TdsPdfBadge";
 import { useFeatureFlag } from "@/data/featureFlags";
+import { fmtTempF, fmtNonZero } from "@/lib/units";
 
 /*
  * Engineer Workspace
