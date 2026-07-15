@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 import { BulkAnalyzeTdsButton } from "@/components/BulkAnalyzeTdsButton";
 import { fmtTempF, fmtNonZero } from "@/lib/units";
+import { SpecValueProvenance } from "@/components/SpecValueProvenance";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
