@@ -382,7 +382,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
       document_hash: documentHash,
       model: MODEL,
       prompt_version: PROMPT_VERSION,
-      extracted: extracted as unknown as Record<string, unknown>,
+      extracted: extracted as never,
     });
   }
 
