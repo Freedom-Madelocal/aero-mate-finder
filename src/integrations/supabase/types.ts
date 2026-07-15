@@ -1034,27 +1034,45 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          done_count: number
+          failed_count: number
           id: string
           label: string | null
+          pending_count: number
+          processing_count: number
+          skipped_cache_count: number
           status: string
+          terminal_count: number
           total: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by: string
+          done_count?: number
+          failed_count?: number
           id?: string
           label?: string | null
+          pending_count?: number
+          processing_count?: number
+          skipped_cache_count?: number
           status?: string
+          terminal_count?: number
           total?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string
+          done_count?: number
+          failed_count?: number
           id?: string
           label?: string | null
+          pending_count?: number
+          processing_count?: number
+          skipped_cache_count?: number
           status?: string
+          terminal_count?: number
           total?: number
           updated_at?: string
         }
@@ -1068,11 +1086,14 @@ export type Database = {
           created_at: string
           document_hash: string | null
           error: string | null
+          error_class: string | null
           id: string
           input_tokens: number | null
           latency_ms: number | null
           lease_until: string | null
+          max_attempts: number
           model: string | null
+          next_run_at: string | null
           output_tokens: number | null
           prompt_version: string | null
           spec_id: string
@@ -1087,11 +1108,14 @@ export type Database = {
           created_at?: string
           document_hash?: string | null
           error?: string | null
+          error_class?: string | null
           id?: string
           input_tokens?: number | null
           latency_ms?: number | null
           lease_until?: string | null
+          max_attempts?: number
           model?: string | null
+          next_run_at?: string | null
           output_tokens?: number | null
           prompt_version?: string | null
           spec_id: string
@@ -1106,11 +1130,14 @@ export type Database = {
           created_at?: string
           document_hash?: string | null
           error?: string | null
+          error_class?: string | null
           id?: string
           input_tokens?: number | null
           latency_ms?: number | null
           lease_until?: string | null
+          max_attempts?: number
           model?: string | null
+          next_run_at?: string | null
           output_tokens?: number | null
           prompt_version?: string | null
           spec_id?: string
@@ -1341,11 +1368,14 @@ export type Database = {
           created_at: string
           document_hash: string | null
           error: string | null
+          error_class: string | null
           id: string
           input_tokens: number | null
           latency_ms: number | null
           lease_until: string | null
+          max_attempts: number
           model: string | null
+          next_run_at: string | null
           output_tokens: number | null
           prompt_version: string | null
           spec_id: string
@@ -1360,6 +1390,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      finalize_stuck_batches: { Args: never; Returns: undefined }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -1381,6 +1412,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      recount_tds_batch: { Args: { _batch_id: string }; Returns: undefined }
       stamp_first_login: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
