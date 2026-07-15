@@ -1,115 +1,87 @@
+# Phase 2 — Durable, Faster Batch Pipeline
 
-# Analyze TDS Remediation Plan
+Goal: bulk TDS analysis survives browser close, deduplicates unchanged PDFs, and runs with bounded concurrency on the server.
 
-Based on the CTO audit. Phase 1 addresses the two most critical items (data accuracy on detail screens + safety/performance foundations for Analyze TDS). Later phases harden the pipeline.
+## 2a. Queue schema (migration)
 
----
+New tables in `public`:
 
-## Phase 1 — Correctness & Safety (do first)
+- `tds_analysis_batches`
+  - `id uuid pk`, `created_by uuid` (super_admin), `label text`, `total int`, `status text` (`running|complete|cancelled`), `created_at`, `updated_at`
+- `tds_analysis_items`
+  - `id uuid pk`, `batch_id uuid fk`, `spec_id uuid fk master_specs`, `document_hash text`, `status text` (`pending|processing|done|failed|skipped_cache`), `attempts int default 0`, `lease_until timestamptz`, `model text`, `prompt_version text`, `latency_ms int`, `updated_fields int`, `error text`, `created_at`, `updated_at`
+  - Indexes on `(status, lease_until)`, `(batch_id)`, `(spec_id)`
+- `tds_extraction_cache`
+  - `document_hash text pk`, `model text`, `prompt_version text`, `extracted jsonb`, `created_at`
+  - Store raw AI JSON keyed by hash so unchanged PDFs skip the model.
 
-Goal: user-facing screens show truthful values, and the analyzer stops corrupting canonical data or exposing itself to abuse.
+RLS: super_admin read/write only (via `has_role`). Grants for `authenticated` + `service_role`.
 
-### 1a. Fix temperature unit display (data accuracy on detail screens)
-- All DB columns are already `_c` (Celsius). Change presentation everywhere to either:
-  - Convert C→F via a single `cToF()` helper and label `°F`, OR
-  - Label the raw value `°C`.
-- Apply consistently in `MasterSpecs.tsx`, `Engineer.tsx`, `MaterialDetail.tsx`, and the TDS drawer / compare views.
-- Add a small unit test for `cToF`.
+## 2b. Server functions (`src/lib/tdsQueue.functions.ts`)
 
-### 1b. Kill misleading zeros / false booleans on detail screens
-- Update `MasterSpecs.tsx`, `Engineer.tsx`, `MaterialDetail.tsx` renderers so numeric `0` for cure temp, out life, freezer life, Tg, TML/CVCM, mechanicals renders as `—` unless the record has explicit source evidence of a real zero (treat numeric 0 as "unknown" for these fields).
-- Booleans: render only `true` chips; do not show `false` as a negative claim.
-- One-time data repair: SQL migration to null-out `0` in the above columns where no source evidence exists (start with material 28 / the 3M sheet).
+All `.middleware([requireSupabaseAuth])` + super_admin guard:
 
-### 1c. Lock down the analyzer endpoint
-- `analyzeSpecTds` and the bulk runner: add `assertSuperAdmin(context.userId)` (same guard `tdsUpload.functions.ts` uses) before any storage or model call.
-- Return 403 for non-admins.
+- `enqueueTdsBatch({ mode: 'pending'|'all', specIds? })` — inserts batch + items for specs with a `tds_pdf_path`, returns `batchId`.
+- `getBatchProgress({ batchId })` — returns counts by status + latest failures.
+- `cancelBatch({ batchId })` — marks batch cancelled; pending items skipped by worker.
 
-### 1d. Close the public-write RLS hole on `master_specs`
-- Migration: drop the unconditional public `INSERT/UPDATE/DELETE` policies. Replace with `super_admin`-only write policies (via `has_role`). Keep read policy scoped as today.
-- Verify server functions using `supabaseAdmin` still function (they bypass RLS).
+## 2c. Worker route (`src/routes/api/public/tds-worker-tick.ts`)
 
-### 1e. Stop unsafe merge on canonical fields
-- In `specTdsAnalyze.functions.ts` merge logic:
-  - Text/numeric: write ONLY when the existing DB value is null/empty. Never overwrite curated data.
-  - Booleans: unchanged (only non-true → true), but stop writing `false`.
-  - Arrays (`profiles`, `key_specs`, `customers`): stop unioning `key_specs` blindly. For now, do not auto-append any ASTM/MIL/test-method strings to `key_specs`; those need explicit qualification evidence.
-- Only stamp `tds_analyzed_at` when at least one field actually changed OR record a separate `tds_last_attempted_at` for the timestamp side effect.
-- Invalidate `tds_analyzed_at` when the underlying TDS PDF path changes (tdsUpload path).
+Public POST endpoint, verified by `apikey` header (Supabase anon key). Body ignored.
 
-### 1f. Minimal request hardening
-- Add a 60s fetch timeout (AbortController) around the Gemini call.
-- Reject PDFs larger than a configured max byte size with a clear error.
+- Claims up to N=3 items atomically via a Postgres RPC `claim_tds_items(_limit int, _lease_seconds int)`:
+  - Selects `pending` OR (`processing` AND `lease_until < now()`) with `FOR UPDATE SKIP LOCKED`, sets `status='processing'`, `lease_until = now() + interval`, increments `attempts`.
+- For each claimed item:
+  1. Load spec, download PDF via `supabaseAdmin`.
+  2. Compute `document_hash = sha256(bytes || model || prompt_version)`.
+  3. If `tds_extraction_cache` hit → reuse `extracted`; mark `skipped_cache`.
+  4. Else call Gemini (existing prompt), 60s AbortController, store result in cache.
+  5. Apply the same safe merge from Phase 1 (`applyExtractedSpec` helper extracted from `specTdsAnalyze.functions.ts`).
+  6. Update item `status='done'` with `latency_ms`, `updated_fields`, `document_hash`.
+- On failure: if `attempts < 3` → back to `pending` with jittered `lease_until`; else `status='failed'` with `error`.
+- Returns `{ processed, remaining }`.
 
-### 1g. Prompt tightening (quick win, no schema change)
-- Update the system prompt so:
-  - `key_specs` only accepts numbers the PDF explicitly states the product is qualified/approved to (not test methods, not tested-substrate specs).
-  - Application dry time is NOT `cure_time`. Shelf life is NOT freezer life.
-  - Do not emit numeric zero for unknown properties.
+## 2d. Refactor extractor
 
-**Phase 1 acceptance:** non-admins get 403; RLS blocks non-admin writes to `master_specs`; temperatures render correctly; zero placeholders show `—`; re-running analyzer never overwrites a non-empty curated field.
+Move the merge + gateway call out of `specTdsAnalyze.functions.ts` into `src/lib/tdsExtract.server.ts` (server-only). Existing `analyzeSpecTds` becomes a thin wrapper (still available for single-row button) that also writes to the cache. This keeps Phase 1 semantics.
 
----
+## 2e. Cron
 
-## Phase 2 — Durable, faster batch pipeline
+Insert via `supabase--insert`, every minute:
 
-Goal: make the 800-doc run survive browser close and run materially faster.
+```sql
+select cron.schedule(
+  'tds-worker-tick',
+  '* * * * *',
+  $$select net.http_post(
+    url:='https://project--ca4abaac-23d6-4e8d-8183-d866b748d7da.lovable.app/api/public/tds-worker-tick',
+    headers:='{"Content-Type":"application/json","apikey":"<ANON_KEY>"}'::jsonb,
+    body:='{}'::jsonb) as request_id;$$
+);
+```
 
-### 2a. Server-side job queue
-- New tables: `tds_analysis_batches`, `tds_analysis_items` (spec_id, document_hash, status, attempts, lease_until, model/prompt version, latency, error).
-- New server functions: `enqueueTdsBatch`, `claimNextTdsItem`, `completeTdsItem`, `getBatchProgress`.
-- Bulk UI (`BulkAnalyzeTdsButton`) becomes: enqueue → poll progress. Closing the browser does not stop the run.
+## 2f. UI (`BulkAnalyzeTdsButton.tsx`)
 
-### 2b. Worker with bounded concurrency
-- A public-API route (`src/routes/api/public/tds-worker-tick.ts`, signature-verified) that pulls up to N=3 available items and processes them with per-item timeout, jittered retry, and `Retry-After` handling.
-- Trigger via pg_cron on a short interval.
+Rewrite:
+- Click → confirm → `enqueueTdsBatch` → store `batchId` in `localStorage`.
+- Poll `getBatchProgress` every 3s while dialog open; also on mount if a saved `batchId` exists and isn't complete.
+- Dialog can be closed; batch continues server-side.
+- Show pending / processing / done / failed / skipped_cache counts, progress bar, failure list.
+- Per-item completion → we don't have push, so on poll if `done` count changed we call `refreshMasterSpecStore()` (or just once at end for simplicity).
 
-### 2c. Text-first extraction with hash cache
-- Compute `sha256(pdf bytes + parser version + prompt version + model)`.
-- If a prior extraction exists for that hash → reuse, no model call.
-- Otherwise, extract PDF text server-side; only send text (with page markers) to a faster model (`google/gemini-2.5-flash`). Escalate to Pro only when text quality is low or extraction is ambiguous.
+## 2g. Acceptance
 
-### 2d. Per-record cache update
-- Completing one item invalidates that spec's query only, not the whole master-spec store.
+- Close browser mid-run → cron worker completes remaining items.
+- Re-running against unchanged PDFs → `skipped_cache` count grows, ~0 model calls.
+- Non-admins get 403 from enqueue/progress/cancel.
+- Worker endpoint rejects requests missing the anon `apikey` header.
 
-**Phase 2 acceptance:** browser can close mid-run; unchanged docs re-run with zero model calls; p95 per-doc latency drops materially; dashboard shows per-item status and errors.
+## Files created / edited
 
----
+- MIGRATION: batches, items, cache tables + `claim_tds_items` RPC + RLS/grants.
+- NEW: `src/lib/tdsExtract.server.ts`, `src/lib/tdsQueue.functions.ts`, `src/routes/api/public/tds-worker-tick.ts`.
+- EDIT: `src/lib/specTdsAnalyze.functions.ts` (delegate to extractor + cache write).
+- EDIT: `src/components/BulkAnalyzeTdsButton.tsx` (enqueue + poll).
+- INSERT (not migration): pg_cron schedule.
 
-## Phase 3 — Evidence, review, and typed taxonomy
-
-Goal: canonical data changes are auditable and never silently wrong.
-
-### 3a. Evidence-backed facts
-- New tables: `tds_extraction_runs`, `tds_extracted_facts` (field, value, source unit, normalized unit, page, quote, confidence, status).
-- Analyzer writes to facts first; canonical patch is applied only when the target field is empty AND confidence ≥ threshold AND deterministic validators pass.
-
-### 3b. Review workflow
-- Admin screen to accept/reject/edit low-confidence facts and any proposed replacement of a curated value.
-- `master_spec_change_history` (old, new, actor, run_id, reason).
-
-### 3c. Typed identifier / standard taxonomy
-- Split what today is `key_specs` into: `qualifications`, `test_methods`, `tested_substrate_specs`, `nsns`, `part_numbers`.
-- Migrate existing `key_specs` values into the correct bucket via a scripted, reviewable pass.
-
-### 3d. PDF replacement invalidates prior facts
-- On new TDS upload for a spec: new `document_hash` → mark prior facts stale, re-enqueue.
-
----
-
-## Phase 4 — Schema breadth & code hygiene (ongoing)
-
-- Hybrid property model: keep the small canonical set for filter/rank; add `material_properties` JSONB collection for category-specific fields (solids, viscosity, flash point, storage temp range, shelf life, peel matrix, composition/ingredients).
-- Split `specTdsAnalyze.functions.ts` into domain / application / infrastructure modules; single source of truth for the extraction schema (Zod → generated tool schema → DB mapping).
-- Remove import of an operation from `AnalyzeTdsButton.tsx` by the bulk runner; both call a shared hook/API.
-- Add a minimal test suite: `cToF`, merge policy, prompt-regression golden doc (the supplied 3M PDF), authorization matrix.
-
----
-
-## Notes / open questions before build
-
-1. For Phase 1b: OK to run a one-time SQL migration that nulls the specific bogus zero fields on all `master_specs` rows where value = 0? Or only material 28 for now?
-2. Preferred temperature display: convert to °F everywhere, or label as °C? (Audit recommends either; app currently shows °F labels.)
-3. Phase 2 worker cron cadence and concurrency (default: every 30s, concurrency 3) — OK to proceed with those defaults?
-
-I'll start Phase 1 as soon as you approve.
+Approve to proceed — I'll start with the migration, then code, then the cron insert.
