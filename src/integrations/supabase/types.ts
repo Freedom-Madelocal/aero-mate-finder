@@ -1168,6 +1168,7 @@ export type Database = {
           document_hash: string
           extracted: Json
           model: string
+          object_etag: string | null
           prompt_version: string
         }
         Insert: {
@@ -1175,6 +1176,7 @@ export type Database = {
           document_hash: string
           extracted: Json
           model: string
+          object_etag?: string | null
           prompt_version: string
         }
         Update: {
@@ -1182,6 +1184,7 @@ export type Database = {
           document_hash?: string
           extracted?: Json
           model?: string
+          object_etag?: string | null
           prompt_version?: string
         }
         Relationships: []
