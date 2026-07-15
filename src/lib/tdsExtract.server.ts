@@ -15,6 +15,49 @@ export const PROMPT_VERSION = "v2";
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB
 export const REQUEST_TIMEOUT_MS = 60_000;
 
+/** Classified error thrown by the extractor. Worker maps these to retry policy. */
+export type TdsErrorClass =
+  | "transient"
+  | "permanent"
+  | "plausibility"
+  | "missing_pdf"
+  | "rate_limited";
+
+export class TdsExtractError extends Error {
+  errorClass: TdsErrorClass;
+  retryAfterSec?: number;
+  constructor(message: string, errorClass: TdsErrorClass, retryAfterSec?: number) {
+    super(message);
+    this.name = "TdsExtractError";
+    this.errorClass = errorClass;
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
+export function maxAttemptsFor(cls: TdsErrorClass): number {
+  switch (cls) {
+    case "permanent":
+    case "plausibility":
+    case "missing_pdf":
+      return 1;
+    case "rate_limited":
+      return 6;
+    case "transient":
+    default:
+      return 5;
+  }
+}
+
+export function backoffSecondsFor(cls: TdsErrorClass, attempt: number, retryAfterSec?: number): number {
+  if (cls === "rate_limited" && retryAfterSec && retryAfterSec > 0) {
+    return Math.min(retryAfterSec, 600);
+  }
+  // Exponential backoff w/ jitter: 30s, 60s, 120s, 240s, 480s (capped)
+  const base = Math.min(30 * Math.pow(2, Math.max(0, attempt - 1)), 480);
+  const jitter = Math.floor(Math.random() * 15);
+  return base + jitter;
+}
+
 // Rough Gemini 2.5 Pro pricing (per 1M tokens, USD). Used for rollup only.
 const PRICE_IN_PER_MTOK = 1.25;
 const PRICE_OUT_PER_MTOK = 5.0;
