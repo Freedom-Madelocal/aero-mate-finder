@@ -608,27 +608,56 @@ export async function runExtractionForSpec(specId: string): Promise<{
     .select("*")
     .eq("id", specId)
     .maybeSingle();
-  if (specErr) throw new Error(specErr.message);
-  if (!spec) throw new Error("Spec not found.");
-  if (!spec.tds_pdf_path) throw new Error("This spec has no attached TDS PDF.");
-
-  const bytes = await downloadTdsPdf(spec.tds_pdf_path);
-  const documentHash = computeDocumentHash(bytes);
+  if (specErr) throw new TdsExtractError(specErr.message, "transient");
+  if (!spec) throw new TdsExtractError("Spec not found.", "permanent");
+  if (!spec.tds_pdf_path) throw new TdsExtractError("This spec has no attached TDS PDF.", "missing_pdf");
 
   let extracted: ExtractedRow | null = null;
   let cacheHit = false;
   let usage: UsageStats = { inputTokens: null, outputTokens: null, costUsd: null };
+  let documentHash: string | null = null;
+  let bytes: Uint8Array | null = null;
 
-  const { data: cached } = await supabaseAdmin
-    .from("tds_extraction_cache")
-    .select("extracted")
-    .eq("document_hash", documentHash)
-    .maybeSingle();
-  if (cached?.extracted) {
-    const p = RowSchema.safeParse(cached.extracted);
-    if (p.success) {
-      extracted = p.data;
-      cacheHit = true;
+  // B3: try ETag short-circuit before downloading bytes.
+  const etag = await fetchObjectEtag(spec.tds_pdf_path);
+  if (etag) {
+    const { data: cachedByEtag } = await supabaseAdmin
+      .from("tds_extraction_cache")
+      .select("document_hash, extracted")
+      .eq("object_etag", etag)
+      .maybeSingle();
+    if (cachedByEtag?.extracted && cachedByEtag.document_hash) {
+      const p = RowSchema.safeParse(cachedByEtag.extracted);
+      if (p.success) {
+        extracted = p.data;
+        documentHash = cachedByEtag.document_hash;
+        cacheHit = true;
+      }
+    }
+  }
+
+  if (!extracted) {
+    bytes = await downloadTdsPdf(spec.tds_pdf_path);
+    documentHash = computeDocumentHash(bytes);
+
+    const { data: cached } = await supabaseAdmin
+      .from("tds_extraction_cache")
+      .select("extracted")
+      .eq("document_hash", documentHash)
+      .maybeSingle();
+    if (cached?.extracted) {
+      const p = RowSchema.safeParse(cached.extracted);
+      if (p.success) {
+        extracted = p.data;
+        cacheHit = true;
+        // Backfill etag mapping so next run skips download.
+        if (etag) {
+          await supabaseAdmin
+            .from("tds_extraction_cache")
+            .update({ object_etag: etag })
+            .eq("document_hash", documentHash);
+        }
+      }
     }
   }
 
@@ -638,17 +667,17 @@ export async function runExtractionForSpec(specId: string): Promise<{
         vendor: spec.vendor ?? "",
         productName: spec.product_name ?? "",
         pdfPath: spec.tds_pdf_path,
-        bytes,
+        bytes: bytes!,
       });
       extracted = res.row;
       usage = res.usage;
       await supabaseAdmin.from("tds_extraction_cache").upsert({
-        document_hash: documentHash,
+        document_hash: documentHash!,
         model: MODEL,
         prompt_version: PROMPT_VERSION,
         extracted: extracted as never,
+        object_etag: etag,
       });
-      // Record usage rollup (success)
       await supabaseAdmin.rpc("record_ai_usage", {
         _model: MODEL,
         _input_tokens: usage.inputTokens ?? 0,
@@ -667,6 +696,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
       throw err;
     }
   }
+
 
   const { patch, updated, provenanceRows } = buildSafePatch(extracted, spec as Record<string, unknown>);
 
