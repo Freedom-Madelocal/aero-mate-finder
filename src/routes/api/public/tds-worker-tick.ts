@@ -25,6 +25,9 @@ async function processOne(itemId: string, specId: string) {
         updated_fields: res.updatedCount,
         model: MODEL,
         prompt_version: PROMPT_VERSION,
+        input_tokens: res.usage.inputTokens,
+        output_tokens: res.usage.outputTokens,
+        cost_usd: res.usage.costUsd,
         error: null,
       })
       .eq("id", itemId);
@@ -38,7 +41,6 @@ async function processOne(itemId: string, specId: string) {
       .maybeSingle();
     const attempts = item?.attempts ?? MAX_ATTEMPTS;
     if (attempts < MAX_ATTEMPTS) {
-      // Jittered retry: release lease, back to pending
       const jitterSec = 15 + Math.floor(Math.random() * 45);
       await supabaseAdmin
         .from("tds_analysis_items")
@@ -72,6 +74,14 @@ export const Route = createFileRoute("/api/public/tds-worker-tick")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        // Cap / pause check
+        const { data: allowedRows } = await supabaseAdmin.rpc("ai_worker_allowed");
+        const allowed = Array.isArray(allowedRows) ? allowedRows[0] : allowedRows;
+        if (!allowed?.allowed) {
+          return Response.json({ processed: 0, paused: true, reason: allowed?.reason ?? "paused" });
+        }
+
         const { data: claimed, error } = await supabaseAdmin.rpc("claim_tds_items", {
           _limit: WORKER_CONCURRENCY,
           _lease_seconds: LEASE_SECONDS,
@@ -84,9 +94,7 @@ export const Route = createFileRoute("/api/public/tds-worker-tick")({
           });
         }
         const items = (claimed ?? []) as Array<{ id: string; spec_id: string }>;
-        if (items.length === 0) {
-          return Response.json({ processed: 0 });
-        }
+        if (items.length === 0) return Response.json({ processed: 0 });
 
         const results = await Promise.all(items.map((it) => processOne(it.id, it.spec_id)));
         const ok = results.filter((r) => r.ok).length;
