@@ -967,6 +967,126 @@ export type Database = {
         }
         Relationships: []
       }
+      tds_analysis_batches: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          label: string | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          label?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          label?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tds_analysis_items: {
+        Row: {
+          attempts: number
+          batch_id: string
+          created_at: string
+          document_hash: string | null
+          error: string | null
+          id: string
+          latency_ms: number | null
+          lease_until: string | null
+          model: string | null
+          prompt_version: string | null
+          spec_id: string
+          status: string
+          updated_at: string
+          updated_fields: number | null
+        }
+        Insert: {
+          attempts?: number
+          batch_id: string
+          created_at?: string
+          document_hash?: string | null
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          lease_until?: string | null
+          model?: string | null
+          prompt_version?: string | null
+          spec_id: string
+          status?: string
+          updated_at?: string
+          updated_fields?: number | null
+        }
+        Update: {
+          attempts?: number
+          batch_id?: string
+          created_at?: string
+          document_hash?: string | null
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          lease_until?: string | null
+          model?: string | null
+          prompt_version?: string | null
+          spec_id?: string
+          status?: string
+          updated_at?: string
+          updated_fields?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tds_analysis_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "tds_analysis_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tds_analysis_items_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tds_extraction_cache: {
+        Row: {
+          created_at: string
+          document_hash: string
+          extracted: Json
+          model: string
+          prompt_version: string
+        }
+        Insert: {
+          created_at?: string
+          document_hash: string
+          extracted: Json
+          model: string
+          prompt_version: string
+        }
+        Update: {
+          created_at?: string
+          document_hash?: string
+          extracted?: Json
+          model?: string
+          prompt_version?: string
+        }
+        Relationships: []
+      }
       user_activity: {
         Row: {
           created_at: string
@@ -1071,6 +1191,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_tds_items: {
+        Args: { _lease_seconds: number; _limit: number }
+        Returns: {
+          attempts: number
+          batch_id: string
+          created_at: string
+          document_hash: string | null
+          error: string | null
+          id: string
+          latency_ms: number | null
+          lease_until: string | null
+          model: string | null
+          prompt_version: string | null
+          spec_id: string
+          status: string
+          updated_at: string
+          updated_fields: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "tds_analysis_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
