@@ -40,6 +40,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCrossoverRouteImport } from './routes/_app.crossover'
 import { Route as AppComplianceRouteImport } from './routes/_app.compliance'
 import { Route as AppCompareRouteImport } from './routes/_app.compare'
+import { Route as ApiPublicTdsWorkerTickRouteImport } from './routes/api/public/tds-worker-tick'
 import { Route as AppOrgTeamRouteImport } from './routes/_app.org.team'
 import { Route as AppMaterialIdRouteImport } from './routes/_app.material.$id'
 
@@ -197,6 +198,11 @@ const AppCompareRoute = AppCompareRouteImport.update({
   path: '/compare',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicTdsWorkerTickRoute = ApiPublicTdsWorkerTickRouteImport.update({
+  id: '/api/public/tds-worker-tick',
+  path: '/api/public/tds-worker-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppOrgTeamRoute = AppOrgTeamRouteImport.update({
   id: '/org/team',
   path: '/org/team',
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/material/$id': typeof AppMaterialIdRoute
   '/org/team': typeof AppOrgTeamRoute
+  '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/material/$id': typeof AppMaterialIdRoute
   '/org/team': typeof AppOrgTeamRoute
+  '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_app/material/$id': typeof AppMaterialIdRoute
   '/_app/org/team': typeof AppOrgTeamRoute
+  '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/material/$id'
     | '/org/team'
+    | '/api/public/tds-worker-tick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/material/$id'
     | '/org/team'
+    | '/api/public/tds-worker-tick'
   id:
     | '__root__'
     | '/'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_app/material/$id'
     | '/_app/org/team'
+    | '/api/public/tds-worker-tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -437,6 +449,7 @@ export interface RootRouteChildren {
   AdminTdsUploadRoute: typeof AdminTdsUploadRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiPublicTdsWorkerTickRoute: typeof ApiPublicTdsWorkerTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -658,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCompareRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/tds-worker-tick': {
+      id: '/api/public/tds-worker-tick'
+      path: '/api/public/tds-worker-tick'
+      fullPath: '/api/public/tds-worker-tick'
+      preLoaderRoute: typeof ApiPublicTdsWorkerTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/org/team': {
       id: '/_app/org/team'
       path: '/org/team'
@@ -741,6 +761,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminTdsUploadRoute: AdminTdsUploadRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ApiPublicTdsWorkerTickRoute: ApiPublicTdsWorkerTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -7,10 +7,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * All endpoints are super_admin-gated.
  */
 
-async function assertSuperAdmin(context: {
-  supabase: { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
-  userId: string;
-}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertSuperAdmin(context: any) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "super_admin",
