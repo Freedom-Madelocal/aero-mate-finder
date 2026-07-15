@@ -486,29 +486,29 @@ function SpecDrawer({
           )}
 
           <Section title="Thermal & Cure">
-            <Row label="Cure Temperature" value={fmtTempF(spec.cureTemperatureC)} />
+            <Row specId={spec.id} field="cure_temperature_c" label="Cure Temperature" value={fmtTempF(spec.cureTemperatureC)} />
             <Row label="Cure Time" value={spec.cureTime} />
-            <Row label="Dry Tg Onset" value={fmtTempF(spec.dryTgOnsetC)} />
-            <Row label="Wet Tg" value={fmtTempF(spec.wetTgC)} />
-            <Row label="Peak Tg" value={fmtTempF(spec.peakTgC)} />
-            <Row label="Max Service Temp" value={fmtTempF(spec.maxServiceTemperatureC)} />
+            <Row specId={spec.id} field="dry_tg_onset_c" label="Dry Tg Onset" value={fmtTempF(spec.dryTgOnsetC)} />
+            <Row specId={spec.id} field="wet_tg_c" label="Wet Tg" value={fmtTempF(spec.wetTgC)} />
+            <Row specId={spec.id} field="peak_tg_c" label="Peak Tg" value={fmtTempF(spec.peakTgC)} />
+            <Row specId={spec.id} field="max_service_temperature_c" label="Max Service Temp" value={fmtTempF(spec.maxServiceTemperatureC)} />
           </Section>
 
           <Section title="Storage">
-            <Row label="Out Life" value={fmt(spec.outLifeDays, " days")} />
-            <Row label="Freezer Life" value={fmt(spec.freezerLifeMonths, " months")} />
+            <Row specId={spec.id} field="out_life_days" label="Out Life" value={fmt(spec.outLifeDays, " days")} />
+            <Row specId={spec.id} field="freezer_life_months" label="Freezer Life" value={fmt(spec.freezerLifeMonths, " months")} />
           </Section>
 
           <Section title="Outgassing (NASA E595)">
-            <Row label="TML" value={fmt(spec.tmlPct, " %")} />
-            <Row label="CVCM" value={fmt(spec.cvcmPct, " %")} />
+            <Row specId={spec.id} field="tml_pct" label="TML" value={fmt(spec.tmlPct, " %")} />
+            <Row specId={spec.id} field="cvcm_pct" label="CVCM" value={fmt(spec.cvcmPct, " %")} />
           </Section>
 
           <Section title="Mechanical">
-            <Row label="Tensile Lap Shear" value={fmt(spec.tensileLapShearMpa, " MPa")} />
-            <Row label="T-Peel" value={fmt(spec.tPeelN25mm, " N/25mm")} />
-            <Row label="Flatwise Tension" value={fmt(spec.flatwiseTensionMpa, " MPa")} />
-            <Row label="Climbing Drum Peel" value={fmt(spec.climbingDrumPeelInLbIn, " in·lb/in")} />
+            <Row specId={spec.id} field="tensile_lap_shear_mpa" label="Tensile Lap Shear" value={fmt(spec.tensileLapShearMpa, " MPa")} />
+            <Row specId={spec.id} field="t_peel_n_per_25mm" label="T-Peel" value={fmt(spec.tPeelN25mm, " N/25mm")} />
+            <Row specId={spec.id} field="flatwise_tension_mpa" label="Flatwise Tension" value={fmt(spec.flatwiseTensionMpa, " MPa")} />
+            <Row specId={spec.id} field="climbing_drum_peel_in_lb_per_in" label="Climbing Drum Peel" value={fmt(spec.climbingDrumPeelInLbIn, " in·lb/in")} />
           </Section>
 
           <Section title="Process Flags">
