@@ -11,9 +11,20 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const BUCKET = "tds-pdfs";
 export const MODEL = "google/gemini-2.5-pro";
-export const PROMPT_VERSION = "v1";
+export const PROMPT_VERSION = "v2";
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB
 export const REQUEST_TIMEOUT_MS = 60_000;
+
+// Rough Gemini 2.5 Pro pricing (per 1M tokens, USD). Used for rollup only.
+const PRICE_IN_PER_MTOK = 1.25;
+const PRICE_OUT_PER_MTOK = 5.0;
+
+const ProvenanceItem = z.object({
+  field: z.string(),
+  page: z.number().nullable().optional(),
+  quote: z.string().nullable().optional(),
+  confidence: z.enum(["high", "medium", "low"]).optional(),
+});
 
 const RowSchema = z.object({
   productFamily: z.string().nullable().optional(),
@@ -49,6 +60,7 @@ const RowSchema = z.object({
   profiles: z.array(z.string()).optional(),
   keySpecs: z.array(z.string()).optional(),
   customers: z.array(z.string()).optional(),
+  provenance: z.array(ProvenanceItem).optional(),
 });
 
 export type ExtractedRow = z.infer<typeof RowSchema>;
@@ -94,6 +106,21 @@ const TOOL = {
         profiles: { type: "array", items: { type: "string" } },
         keySpecs: { type: "array", items: { type: "string" } },
         customers: { type: "array", items: { type: "string" } },
+        provenance: {
+          type: "array",
+          description:
+            "For EVERY numeric or boolean field you return, include one entry here: the field name, the page number in the PDF, an exact verbatim quote from the PDF supporting the value, and a confidence rating.",
+          items: {
+            type: "object",
+            properties: {
+              field: { type: "string" },
+              page: { type: ["number", "null"] },
+              quote: { type: ["string", "null"] },
+              confidence: { type: "string", enum: ["high", "medium", "low"] },
+            },
+            required: ["field"],
+          },
+        },
       },
       additionalProperties: false,
     },
@@ -102,15 +129,25 @@ const TOOL = {
 
 const SYSTEM = `You extract the aerospace material specs for ONE named product from its Technical Data Sheet PDF.
 
+Units (STRICT — the schema stores these units):
+- All temperatures in Celsius (°C). If the PDF gives °F, convert: C = (F - 32) * 5/9.
+- Pressures: MPa. Lap shear stress: MPa. T-peel: N per 25mm. Climbing drum peel: in-lb/in.
+- Out-life in days. Freezer life in months. TML/CVCM as percent (e.g. 0.8 not 0.008).
+- NEVER return a numeric value when the unit on the PDF is unclear — return null.
+- NEVER return 0 as a placeholder for "unknown". Use null.
+
 Rules:
 - Extract data ONLY for the specified vendor + product. Ignore other products the PDF may list.
-- For TEXT fields: if the value is not clearly stated, OMIT the field (do not guess, do not use "none given").
-- For NUMERIC fields: convert units to metric (°F→°C, psi→MPa, lb/in→N/25mm as appropriate). Omit if not stated. Do not emit 0 for unknown properties.
+- For TEXT fields: if the value is not clearly stated, OMIT the field (do not guess).
 - Application dry time is NOT cure_time. Shelf life is NOT freezer life.
-- For BOOLEAN flags: return true only when the PDF clearly states/implies the property. Omit if unknown — never return false to overwrite an existing true.
-- keySpecs: list only universal/OEM specifications the product itself is qualified/approved to (BMS, AIMS, AMS, MIL-*, etc.), verbatim. Do NOT include test methods (ASTM D-xxxx, etc.) or specs of tested substrates.
-- customers: list every OEM/customer the PDF names as qualified/approved (Boeing, Airbus, Bell, Lockheed, Northrop, Sikorsky, NASA, etc.).
-- profiles: section/category tags the product falls under in the PDF (e.g. Structural, Interiors, MRO, Repair, Tooling).`;
+- For BOOLEAN flags: return true only when the PDF clearly states/implies the property. Omit if unknown.
+- keySpecs: universal/OEM specifications the product itself is qualified/approved to (BMS, AIMS, AMS, MIL-*, etc.), verbatim. Do NOT include test methods (ASTM D-xxxx) or specs of tested substrates.
+- customers: every OEM/customer the PDF names as qualified/approved.
+- profiles: section/category tags the product falls under in the PDF.
+
+Provenance (REQUIRED):
+- For every NUMERIC or BOOLEAN value you emit, add a matching entry in "provenance" with the field name, the source page number, an exact verbatim quote from the PDF that supports the value, and a confidence rating.
+- If you cannot cite a specific quote for a numeric value, DO NOT emit it — return null and skip the provenance entry.`;
 
 const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = [
   ["productFamily", "product_family", "text"],
@@ -144,6 +181,40 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["qualificationsStandards", "qualifications_standards", "text"],
   ["minimumOrderQuantity", "minimum_order_quantity", "text"],
 ];
+
+// Plausibility gates per DB column. Values outside these ranges are dropped.
+const RANGES: Record<string, [number, number]> = {
+  cure_temperature_c: [20, 400],
+  dry_tg_onset_c: [20, 400],
+  wet_tg_c: [20, 400],
+  peak_tg_c: [20, 400],
+  max_service_temperature_c: [20, 500],
+  out_life_days: [0, 365],
+  freezer_life_months: [0, 60],
+  tml_pct: [0, 10],
+  cvcm_pct: [0, 5],
+  tensile_lap_shear_mpa: [0, 200],
+  t_peel_n_per_25mm: [0, 1000],
+  flatwise_tension_mpa: [0, 100],
+  climbing_drum_peel_in_lb_per_in: [0, 200],
+};
+
+// Canonical display unit per numeric field (used for provenance row).
+const UNIT_FOR: Record<string, string> = {
+  cure_temperature_c: "°C",
+  dry_tg_onset_c: "°C",
+  wet_tg_c: "°C",
+  peak_tg_c: "°C",
+  max_service_temperature_c: "°C",
+  out_life_days: "days",
+  freezer_life_months: "months",
+  tml_pct: "%",
+  cvcm_pct: "%",
+  tensile_lap_shear_mpa: "MPa",
+  t_peel_n_per_25mm: "N/25mm",
+  flatwise_tension_mpa: "MPa",
+  climbing_drum_peel_in_lb_per_in: "in-lb/in",
+};
 
 function isMissing(v: unknown): boolean {
   if (v === null || v === undefined) return true;
@@ -198,12 +269,18 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+export type UsageStats = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  costUsd: number | null;
+};
+
 export async function callGeminiForSpec(params: {
   vendor: string;
   productName: string;
   pdfPath: string;
   bytes: Uint8Array;
-}): Promise<ExtractedRow> {
+}): Promise<{ row: ExtractedRow; usage: UsageStats }> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured.");
 
@@ -230,7 +307,7 @@ export async function callGeminiForSpec(params: {
             content: [
               {
                 type: "text",
-                text: `Extract the technical specs for vendor "${params.vendor}" product "${params.productName}" from this TDS PDF.`,
+                text: `Extract the technical specs for vendor "${params.vendor}" product "${params.productName}" from this TDS PDF. Every numeric or boolean value MUST have a matching provenance entry with an exact verbatim quote from the PDF.`,
               },
               {
                 type: "file",
@@ -265,6 +342,7 @@ export async function callGeminiForSpec(params: {
 
   const json = (await resp.json()) as {
     choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!args) throw new Error("AI returned no structured output.");
@@ -277,36 +355,93 @@ export async function callGeminiForSpec(params: {
   }
   const parsed = RowSchema.safeParse(parsedRaw);
   if (!parsed.success) throw new Error("AI output did not match expected schema.");
-  return parsed.data;
+
+  const inTok = json.usage?.prompt_tokens ?? null;
+  const outTok = json.usage?.completion_tokens ?? null;
+  const cost =
+    inTok != null && outTok != null
+      ? (inTok / 1_000_000) * PRICE_IN_PER_MTOK + (outTok / 1_000_000) * PRICE_OUT_PER_MTOK
+      : null;
+
+  return { row: parsed.data, usage: { inputTokens: inTok, outputTokens: outTok, costUsd: cost } };
+}
+
+function provenanceFor(row: ExtractedRow, aiKey: string) {
+  const list = row.provenance ?? [];
+  return list.find((p) => p.field === aiKey);
 }
 
 /**
- * Safe merge: never overwrites a curated non-empty value. Booleans only
- * flip false→true. Arrays union (except key_specs which we no longer
- * auto-union to avoid contaminating with test methods — Phase 3).
+ * Safe merge with Phase 3 gates:
+ * - Numeric values must have provenance with a non-empty quote.
+ * - Numeric values must fall inside per-field plausibility range.
+ * - Numeric values with confidence "low" are dropped unless the target column is empty (they already require empty column, but the low-confidence check is a hard reject when no quote).
+ * - Never overwrites a curated non-empty value.
  */
-export function buildSafePatch(row: ExtractedRow, spec: Record<string, unknown>) {
+export function buildSafePatch(
+  row: ExtractedRow,
+  spec: Record<string, unknown>,
+): { patch: Record<string, unknown>; updated: string[]; provenanceRows: ProvenanceRow[] } {
   const patch: Record<string, unknown> = {};
   const updated: string[] = [];
+  const provenanceRows: ProvenanceRow[] = [];
 
   for (const [aiKey, dbCol, kind] of FIELD_MAP) {
     const v = row[aiKey];
     const existing = spec[dbCol];
+    const prov = provenanceFor(row, aiKey);
+
     if (kind === "text") {
       if (isMissing(v)) continue;
       if (!isExistingEmpty(existing)) continue;
       patch[dbCol] = String(v);
       updated.push(dbCol);
+      if (prov?.quote) {
+        provenanceRows.push({
+          field: dbCol,
+          valueText: String(v),
+          sourcePage: prov.page ?? null,
+          sourceQuote: prov.quote,
+          confidence: prov.confidence ?? "medium",
+        });
+      }
     } else if (kind === "num") {
       if (typeof v !== "number" || !Number.isFinite(v)) continue;
       if (existing !== null && existing !== undefined) continue;
+      // Provenance quote required for numeric values.
+      if (!prov?.quote || !prov.quote.trim()) {
+        console.warn(`[tdsExtract] dropping ${dbCol}=${v} — no provenance quote`);
+        continue;
+      }
+      const range = RANGES[dbCol];
+      if (range && (v < range[0] || v > range[1])) {
+        console.warn(`[tdsExtract] dropping ${dbCol}=${v} — out of range ${range.join("..")}`);
+        continue;
+      }
       patch[dbCol] = v;
       updated.push(dbCol);
+      provenanceRows.push({
+        field: dbCol,
+        valueNum: v,
+        unit: UNIT_FOR[dbCol],
+        sourcePage: prov.page ?? null,
+        sourceQuote: prov.quote,
+        confidence: prov.confidence ?? "medium",
+      });
     } else {
       if (v !== true) continue;
       if (existing === true) continue;
       patch[dbCol] = true;
       updated.push(dbCol);
+      if (prov?.quote) {
+        provenanceRows.push({
+          field: dbCol,
+          valueBool: true,
+          sourcePage: prov.page ?? null,
+          sourceQuote: prov.quote,
+          confidence: prov.confidence ?? "medium",
+        });
+      }
     }
   }
 
@@ -324,10 +459,41 @@ export function buildSafePatch(row: ExtractedRow, spec: Record<string, unknown>)
     updated.push("customers");
   }
 
-  // key_specs: intentionally NOT auto-unioned (Phase 1g) — needs typed
-  // qualification evidence before contaminating with test methods.
+  return { patch, updated, provenanceRows };
+}
 
-  return { patch, updated };
+type ProvenanceRow = {
+  field: string;
+  valueText?: string;
+  valueNum?: number;
+  valueBool?: boolean;
+  unit?: string;
+  sourcePage: number | null;
+  sourceQuote: string | null;
+  confidence: "high" | "medium" | "low";
+};
+
+async function writeProvenance(specId: string, rows: ProvenanceRow[]) {
+  if (rows.length === 0) return;
+  const now = new Date().toISOString();
+  const payload = rows.map((r) => ({
+    spec_id: specId,
+    field: r.field,
+    value_text: r.valueText ?? null,
+    value_num: r.valueNum ?? null,
+    value_bool: r.valueBool ?? null,
+    unit: r.unit ?? null,
+    source_page: r.sourcePage,
+    source_quote: r.sourceQuote,
+    confidence: r.confidence,
+    model: MODEL,
+    prompt_version: PROMPT_VERSION,
+    extracted_at: now,
+  }));
+  const { error } = await supabaseAdmin
+    .from("tds_field_provenance")
+    .upsert(payload, { onConflict: "spec_id,field" });
+  if (error) console.error("[tdsExtract] provenance write failed", error);
 }
 
 /**
@@ -340,6 +506,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
   cacheHit: boolean;
   documentHash: string;
   latencyMs: number;
+  usage: UsageStats;
 }> {
   const t0 = Date.now();
 
@@ -357,6 +524,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
 
   let extracted: ExtractedRow | null = null;
   let cacheHit = false;
+  let usage: UsageStats = { inputTokens: null, outputTokens: null, costUsd: null };
 
   const { data: cached } = await supabaseAdmin
     .from("tds_extraction_cache")
@@ -372,21 +540,42 @@ export async function runExtractionForSpec(specId: string): Promise<{
   }
 
   if (!extracted) {
-    extracted = await callGeminiForSpec({
-      vendor: spec.vendor ?? "",
-      productName: spec.product_name ?? "",
-      pdfPath: spec.tds_pdf_path,
-      bytes,
-    });
-    await supabaseAdmin.from("tds_extraction_cache").upsert({
-      document_hash: documentHash,
-      model: MODEL,
-      prompt_version: PROMPT_VERSION,
-      extracted: extracted as never,
-    });
+    try {
+      const res = await callGeminiForSpec({
+        vendor: spec.vendor ?? "",
+        productName: spec.product_name ?? "",
+        pdfPath: spec.tds_pdf_path,
+        bytes,
+      });
+      extracted = res.row;
+      usage = res.usage;
+      await supabaseAdmin.from("tds_extraction_cache").upsert({
+        document_hash: documentHash,
+        model: MODEL,
+        prompt_version: PROMPT_VERSION,
+        extracted: extracted as never,
+      });
+      // Record usage rollup (success)
+      await supabaseAdmin.rpc("record_ai_usage", {
+        _model: MODEL,
+        _input_tokens: usage.inputTokens ?? 0,
+        _output_tokens: usage.outputTokens ?? 0,
+        _cost_usd: usage.costUsd ?? 0,
+        _failed: false,
+      });
+    } catch (err) {
+      await supabaseAdmin.rpc("record_ai_usage", {
+        _model: MODEL,
+        _input_tokens: 0,
+        _output_tokens: 0,
+        _cost_usd: 0,
+        _failed: true,
+      });
+      throw err;
+    }
   }
 
-  const { patch, updated } = buildSafePatch(extracted, spec as Record<string, unknown>);
+  const { patch, updated, provenanceRows } = buildSafePatch(extracted, spec as Record<string, unknown>);
 
   if (updated.length > 0) {
     patch.tds_analyzed_at = new Date().toISOString();
@@ -396,12 +585,13 @@ export async function runExtractionForSpec(specId: string): Promise<{
       .eq("id", spec.id);
     if (upErr) throw new Error(upErr.message);
   } else {
-    // Still stamp analyzed_at so the UI reflects the attempt.
     await supabaseAdmin
       .from("master_specs")
       .update({ tds_analyzed_at: new Date().toISOString() } as never)
       .eq("id", spec.id);
   }
+
+  await writeProvenance(spec.id, provenanceRows);
 
   return {
     updatedCount: updated.length,
@@ -409,5 +599,6 @@ export async function runExtractionForSpec(specId: string): Promise<{
     cacheHit,
     documentHash,
     latencyMs: Date.now() - t0,
+    usage,
   };
 }

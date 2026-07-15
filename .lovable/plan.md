@@ -1,87 +1,82 @@
-# Phase 2 — Durable, Faster Batch Pipeline
+# Phase 3 — Extractor Accuracy, Data Quality UI, Observability
 
-Goal: bulk TDS analysis survives browser close, deduplicates unchanged PDFs, and runs with bounded concurrency on the server.
+Three tracks. Ship in order; each is independently valuable.
 
-## 2a. Queue schema (migration)
+## 3a. Extractor accuracy pass
 
-New tables in `public`:
+Goal: fewer wrong numbers, no unit confusion, every extracted value is auditable.
 
-- `tds_analysis_batches`
-  - `id uuid pk`, `created_by uuid` (super_admin), `label text`, `total int`, `status text` (`running|complete|cancelled`), `created_at`, `updated_at`
-- `tds_analysis_items`
-  - `id uuid pk`, `batch_id uuid fk`, `spec_id uuid fk master_specs`, `document_hash text`, `status text` (`pending|processing|done|failed|skipped_cache`), `attempts int default 0`, `lease_until timestamptz`, `model text`, `prompt_version text`, `latency_ms int`, `updated_fields int`, `error text`, `created_at`, `updated_at`
-  - Indexes on `(status, lease_until)`, `(batch_id)`, `(spec_id)`
-- `tds_extraction_cache`
-  - `document_hash text pk`, `model text`, `prompt_version text`, `extracted jsonb`, `created_at`
-  - Store raw AI JSON keyed by hash so unchanged PDFs skip the model.
+**Prompt + schema changes (`src/lib/tdsExtract.server.ts`)**
+- Rewrite the Gemini prompt to be explicit:
+  - All temperatures MUST be returned in Celsius. If the TDS lists °F, convert before returning. Never return a value where the unit is ambiguous.
+  - All pressures in psi, all times in minutes, all densities in g/cm³, all viscosities in cP (document the canonical unit per field).
+  - If a value is not stated on the TDS, return `null` — never guess, never return `0` as a placeholder.
+- Expand the structured-output schema so every extracted numeric field is an object, not a bare number:
+  ```
+  cure_temperature_c: { value: number|null, source_page: number|null, source_quote: string|null, confidence: "high"|"medium"|"low" }
+  ```
+- Post-processing (server, before merge):
+  - Plausibility gate per field (e.g. cure temp 20–400 °C, tg 20–400 °C, density 0.5–3.0). Values outside range → dropped + logged.
+  - Reject fields with `confidence: "low"` unless the target column is empty.
+  - Reject fields where `source_quote` is missing.
+- Persist provenance: new `tds_field_provenance` table (spec_id, field, value, unit, source_page, source_quote, confidence, model, prompt_version, extracted_at). Upsert on `(spec_id, field)`.
+- Bump `PROMPT_VERSION` so cached extractions from the old prompt are not reused.
 
-RLS: super_admin read/write only (via `has_role`). Grants for `authenticated` + `service_role`.
+**Model**
+- Keep `google/gemini-2.5-pro` for extraction (multimodal + long context). No change requested.
 
-## 2b. Server functions (`src/lib/tdsQueue.functions.ts`)
+## 3b. Detail-screen data quality UI
 
-All `.middleware([requireSupabaseAuth])` + super_admin guard:
+Goal: on `/master-specs` detail and `/engineer` material detail, users can see where a number came from and flag or refresh it.
 
-- `enqueueTdsBatch({ mode: 'pending'|'all', specIds? })` — inserts batch + items for specs with a `tds_pdf_path`, returns `batchId`.
-- `getBatchProgress({ batchId })` — returns counts by status + latest failures.
-- `cancelBatch({ batchId })` — marks batch cancelled; pending items skipped by worker.
+- Small "ⓘ" affordance next to each AI-extracted spec value. Click → popover shows:
+  - Source page + quoted text from TDS
+  - Confidence chip (high / medium / low)
+  - Model + extraction date
+  - "Open TDS at page N" (deep-links into the existing left drawer PDF viewer)
+  - "Re-analyze this field" (super_admin only) → runs single-field re-extraction
+- Values with `confidence: "low"` render in muted color with a small warning dot.
+- Values older than 90 days show a "stale" chip.
+- New server fn `getSpecProvenance({ specId })` returns the provenance rows for that spec; loaded lazily when popover opens.
+- New server fn `reanalyzeSpecField({ specId, field })` — super_admin only — re-runs the extractor and overwrites that single field + provenance row.
 
-## 2c. Worker route (`src/routes/api/public/tds-worker-tick.ts`)
+## 3c. Observability + cost controls
 
-Public POST endpoint, verified by `apikey` header (Supabase anon key). Body ignored.
+Goal: I can see what the queue is doing, what it's costing, and stop runaway spend.
 
-- Claims up to N=3 items atomically via a Postgres RPC `claim_tds_items(_limit int, _lease_seconds int)`:
-  - Selects `pending` OR (`processing` AND `lease_until < now()`) with `FOR UPDATE SKIP LOCKED`, sets `status='processing'`, `lease_until = now() + interval`, increments `attempts`.
-- For each claimed item:
-  1. Load spec, download PDF via `supabaseAdmin`.
-  2. Compute `document_hash = sha256(bytes || model || prompt_version)`.
-  3. If `tds_extraction_cache` hit → reuse `extracted`; mark `skipped_cache`.
-  4. Else call Gemini (existing prompt), 60s AbortController, store result in cache.
-  5. Apply the same safe merge from Phase 1 (`applyExtractedSpec` helper extracted from `specTdsAnalyze.functions.ts`).
-  6. Update item `status='done'` with `latency_ms`, `updated_fields`, `document_hash`.
-- On failure: if `attempts < 3` → back to `pending` with jittered `lease_until`; else `status='failed'` with `error`.
-- Returns `{ processed, remaining }`.
+**Metrics capture**
+- Extend `tds_analysis_items` with `input_tokens`, `output_tokens`, `cost_usd` (nullable). Populate from the Gateway response in `tdsExtract.server.ts`.
+- New `ai_usage_daily` rollup table (date, model, calls, input_tokens, output_tokens, cost_usd, failures). Updated by the worker on each successful/failed call via `INSERT ... ON CONFLICT (date, model) DO UPDATE`.
 
-## 2d. Refactor extractor
+**Daily cap**
+- New `ai_settings` row (single-row table): `daily_call_cap`, `daily_cost_cap_usd`, `enabled`.
+- Worker checks the current day's rollup before claiming; if over cap, it no-ops and marks batches `paused_cap`. Super_admin sees a banner and can raise the cap.
 
-Move the merge + gateway call out of `specTdsAnalyze.functions.ts` into `src/lib/tdsExtract.server.ts` (server-only). Existing `analyzeSpecTds` becomes a thin wrapper (still available for single-row button) that also writes to the cache. This keeps Phase 1 semantics.
+**Admin dashboard** — new route `/admin/ai-usage`:
+- Last 30 days chart: calls, tokens, cost, failure rate.
+- Live queue: running batches, pending count, avg latency, cache hit rate.
+- Recent failures list with error snippets.
+- "Pause worker" toggle (flips `ai_settings.enabled`).
 
-## 2e. Cron
+**Alerting**
+- On failure spike (>25% failures in last 50 calls), the dashboard shows a red banner. No email/webhook in this phase — keep it in-app.
 
-Insert via `supabase--insert`, every minute:
+## Files
 
-```sql
-select cron.schedule(
-  'tds-worker-tick',
-  '* * * * *',
-  $$select net.http_post(
-    url:='https://project--ca4abaac-23d6-4e8d-8183-d866b748d7da.lovable.app/api/public/tds-worker-tick',
-    headers:='{"Content-Type":"application/json","apikey":"<ANON_KEY>"}'::jsonb,
-    body:='{}'::jsonb) as request_id;$$
-);
-```
+- MIGRATION: `tds_field_provenance`, `ai_usage_daily`, `ai_settings`, new columns on `tds_analysis_items`, RLS + grants.
+- EDIT: `src/lib/tdsExtract.server.ts` (prompt, schema, plausibility gate, provenance write, token/cost capture, cap check).
+- NEW: `src/lib/tdsProvenance.functions.ts` (`getSpecProvenance`, `reanalyzeSpecField`).
+- NEW: `src/components/SpecValueProvenance.tsx` (popover UI).
+- EDIT: `src/pages/MasterSpecs.tsx`, `src/pages/Engineer.tsx` (mount popover next to AI-extracted values).
+- NEW: `src/pages/admin/AiUsage.tsx` + `src/routes/admin.ai-usage.tsx`.
+- NEW: `src/lib/aiUsage.functions.ts` (dashboard queries, cap toggle).
+- INSERT (not migration): seed row in `ai_settings`.
 
-## 2f. UI (`BulkAnalyzeTdsButton.tsx`)
+## Acceptance
 
-Rewrite:
-- Click → confirm → `enqueueTdsBatch` → store `batchId` in `localStorage`.
-- Poll `getBatchProgress` every 3s while dialog open; also on mount if a saved `batchId` exists and isn't complete.
-- Dialog can be closed; batch continues server-side.
-- Show pending / processing / done / failed / skipped_cache counts, progress bar, failure list.
-- Per-item completion → we don't have push, so on poll if `done` count changed we call `refreshMasterSpecStore()` (or just once at end for simplicity).
+- New extraction on a Fahrenheit TDS returns Celsius; unit-mismatch case that failed before now passes.
+- Every AI-populated field on the detail screen has a working provenance popover with a quote and page link.
+- `/admin/ai-usage` shows non-zero cost/token counts after a batch run; toggling "Pause" stops new claims within one tick.
+- Hitting the daily cap pauses the worker and surfaces a banner instead of silently failing.
 
-## 2g. Acceptance
-
-- Close browser mid-run → cron worker completes remaining items.
-- Re-running against unchanged PDFs → `skipped_cache` count grows, ~0 model calls.
-- Non-admins get 403 from enqueue/progress/cancel.
-- Worker endpoint rejects requests missing the anon `apikey` header.
-
-## Files created / edited
-
-- MIGRATION: batches, items, cache tables + `claim_tds_items` RPC + RLS/grants.
-- NEW: `src/lib/tdsExtract.server.ts`, `src/lib/tdsQueue.functions.ts`, `src/routes/api/public/tds-worker-tick.ts`.
-- EDIT: `src/lib/specTdsAnalyze.functions.ts` (delegate to extractor + cache write).
-- EDIT: `src/components/BulkAnalyzeTdsButton.tsx` (enqueue + poll).
-- INSERT (not migration): pg_cron schedule.
-
-Approve to proceed — I'll start with the migration, then code, then the cron insert.
+Approve to proceed — I'll start with 3a (migration + extractor), then 3b (UI), then 3c (dashboard).

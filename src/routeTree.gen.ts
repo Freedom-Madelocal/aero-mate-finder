@@ -28,6 +28,7 @@ import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-spec
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminFeatureFlagsRouteImport } from './routes/admin.feature-flags'
 import { Route as AdminCrmRouteImport } from './routes/admin.crm'
+import { Route as AdminAiUsageRouteImport } from './routes/admin.ai-usage'
 import { Route as AppSuppliersRouteImport } from './routes/_app.suppliers'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProcurementRouteImport } from './routes/_app.procurement'
@@ -138,6 +139,11 @@ const AdminCrmRoute = AdminCrmRouteImport.update({
   path: '/admin/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAiUsageRoute = AdminAiUsageRouteImport.update({
+  id: '/admin/ai-usage',
+  path: '/admin/ai-usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSuppliersRoute = AppSuppliersRouteImport.update({
   id: '/suppliers',
   path: '/suppliers',
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/procurement': typeof AppProcurementRoute
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
+  '/admin/ai-usage': typeof AdminAiUsageRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/feature-flags': typeof AdminFeatureFlagsRoute
   '/admin/landing': typeof AdminLandingRoute
@@ -271,6 +278,7 @@ export interface FileRoutesByTo {
   '/procurement': typeof AppProcurementRoute
   '/settings': typeof AppSettingsRoute
   '/suppliers': typeof AppSuppliersRoute
+  '/admin/ai-usage': typeof AdminAiUsageRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/feature-flags': typeof AdminFeatureFlagsRoute
   '/admin/landing': typeof AdminLandingRoute
@@ -308,6 +316,7 @@ export interface FileRoutesById {
   '/_app/procurement': typeof AppProcurementRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/suppliers': typeof AppSuppliersRoute
+  '/admin/ai-usage': typeof AdminAiUsageRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/feature-flags': typeof AdminFeatureFlagsRoute
   '/admin/landing': typeof AdminLandingRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/procurement'
     | '/settings'
     | '/suppliers'
+    | '/admin/ai-usage'
     | '/admin/crm'
     | '/admin/feature-flags'
     | '/admin/landing'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/procurement'
     | '/settings'
     | '/suppliers'
+    | '/admin/ai-usage'
     | '/admin/crm'
     | '/admin/feature-flags'
     | '/admin/landing'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/_app/procurement'
     | '/_app/settings'
     | '/_app/suppliers'
+    | '/admin/ai-usage'
     | '/admin/crm'
     | '/admin/feature-flags'
     | '/admin/landing'
@@ -441,6 +453,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PiRoute: typeof PiRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AdminAiUsageRoute: typeof AdminAiUsageRoute
   AdminCrmRoute: typeof AdminCrmRoute
   AdminFeatureFlagsRoute: typeof AdminFeatureFlagsRoute
   AdminLandingRoute: typeof AdminLandingRoute
@@ -585,6 +598,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/crm'
       fullPath: '/admin/crm'
       preLoaderRoute: typeof AdminCrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/ai-usage': {
+      id: '/admin/ai-usage'
+      path: '/admin/ai-usage'
+      fullPath: '/admin/ai-usage'
+      preLoaderRoute: typeof AdminAiUsageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/suppliers': {
@@ -753,6 +773,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PiRoute: PiRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AdminAiUsageRoute: AdminAiUsageRoute,
   AdminCrmRoute: AdminCrmRoute,
   AdminFeatureFlagsRoute: AdminFeatureFlagsRoute,
   AdminLandingRoute: AdminLandingRoute,
@@ -766,13 +787,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
