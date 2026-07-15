@@ -720,7 +720,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
     updatedCount: updated.length,
     fields: updated,
     cacheHit,
-    documentHash,
+    documentHash: documentHash!,
     latencyMs: Date.now() - t0,
     usage,
   };
