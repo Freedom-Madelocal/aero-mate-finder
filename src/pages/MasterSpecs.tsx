@@ -569,11 +569,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
+function Row({ label, value, specId, field }: { label: string; value: string | null | undefined; specId?: string; field?: string }) {
   return (
     <div className="flex justify-between gap-3 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className="text-foreground text-right">{value || "—"}</span>
+      <span className="text-foreground text-right flex items-center justify-end">
+        {value || "—"}
+        {specId && field && value && value !== "—" && (
+          <SpecValueProvenance specId={specId} field={field} isSuperAdmin />
+        )}
+      </span>
     </div>
   );
 }
