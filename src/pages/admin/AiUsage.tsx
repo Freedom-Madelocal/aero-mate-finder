@@ -26,7 +26,7 @@ export default function AiUsage() {
     return () => clearInterval(id);
   }, []);
 
-  async function save(partial: Parameters<typeof updateAiSettings>[0]["data"]) {
+  async function save(partial: { daily_call_cap?: number; daily_cost_cap_usd?: number; enabled?: boolean }) {
     setSaving(true);
     try {
       await updateAiSettings({ data: partial });
