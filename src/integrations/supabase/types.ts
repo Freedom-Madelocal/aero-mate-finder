@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          daily_call_cap: number
+          daily_cost_cap_usd: number
+          enabled: boolean
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          daily_call_cap?: number
+          daily_cost_cap_usd?: number
+          enabled?: boolean
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          daily_call_cap?: number
+          daily_cost_cap_usd?: number
+          enabled?: boolean
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_usage_daily: {
+        Row: {
+          calls: number
+          cost_usd: number
+          created_at: string
+          day: string
+          failures: number
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          updated_at: string
+        }
+        Insert: {
+          calls?: number
+          cost_usd?: number
+          created_at?: string
+          day: string
+          failures?: number
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          updated_at?: string
+        }
+        Update: {
+          calls?: number
+          cost_usd?: number
+          created_at?: string
+          day?: string
+          failures?: number
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_contacts: {
         Row: {
           company: string | null
@@ -1001,13 +1064,16 @@ export type Database = {
         Row: {
           attempts: number
           batch_id: string
+          cost_usd: number | null
           created_at: string
           document_hash: string | null
           error: string | null
           id: string
+          input_tokens: number | null
           latency_ms: number | null
           lease_until: string | null
           model: string | null
+          output_tokens: number | null
           prompt_version: string | null
           spec_id: string
           status: string
@@ -1017,13 +1083,16 @@ export type Database = {
         Insert: {
           attempts?: number
           batch_id: string
+          cost_usd?: number | null
           created_at?: string
           document_hash?: string | null
           error?: string | null
           id?: string
+          input_tokens?: number | null
           latency_ms?: number | null
           lease_until?: string | null
           model?: string | null
+          output_tokens?: number | null
           prompt_version?: string | null
           spec_id: string
           status?: string
@@ -1033,13 +1102,16 @@ export type Database = {
         Update: {
           attempts?: number
           batch_id?: string
+          cost_usd?: number | null
           created_at?: string
           document_hash?: string | null
           error?: string | null
           id?: string
+          input_tokens?: number | null
           latency_ms?: number | null
           lease_until?: string | null
           model?: string | null
+          output_tokens?: number | null
           prompt_version?: string | null
           spec_id?: string
           status?: string
@@ -1086,6 +1158,68 @@ export type Database = {
           prompt_version?: string
         }
         Relationships: []
+      }
+      tds_field_provenance: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          extracted_at: string
+          field: string
+          id: string
+          model: string | null
+          prompt_version: string | null
+          source_page: number | null
+          source_quote: string | null
+          spec_id: string
+          unit: string | null
+          updated_at: string
+          value_bool: boolean | null
+          value_num: number | null
+          value_text: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          extracted_at?: string
+          field: string
+          id?: string
+          model?: string | null
+          prompt_version?: string | null
+          source_page?: number | null
+          source_quote?: string | null
+          spec_id: string
+          unit?: string | null
+          updated_at?: string
+          value_bool?: boolean | null
+          value_num?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          extracted_at?: string
+          field?: string
+          id?: string
+          model?: string | null
+          prompt_version?: string | null
+          source_page?: number | null
+          source_quote?: string | null
+          spec_id?: string
+          unit?: string | null
+          updated_at?: string
+          value_bool?: boolean | null
+          value_num?: number | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tds_field_provenance_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_activity: {
         Row: {
@@ -1191,18 +1325,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_worker_allowed: {
+        Args: never
+        Returns: {
+          allowed: boolean
+          reason: string
+        }[]
+      }
       claim_tds_items: {
         Args: { _lease_seconds: number; _limit: number }
         Returns: {
           attempts: number
           batch_id: string
+          cost_usd: number | null
           created_at: string
           document_hash: string | null
           error: string | null
           id: string
+          input_tokens: number | null
           latency_ms: number | null
           lease_until: string | null
           model: string | null
+          output_tokens: number | null
           prompt_version: string | null
           spec_id: string
           status: string
@@ -1227,6 +1371,16 @@ export type Database = {
       is_demo_active: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       mark_invitation_accepted: { Args: { _email: string }; Returns: undefined }
+      record_ai_usage: {
+        Args: {
+          _cost_usd: number
+          _failed: boolean
+          _input_tokens: number
+          _model: string
+          _output_tokens: number
+        }
+        Returns: undefined
+      }
       stamp_first_login: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
