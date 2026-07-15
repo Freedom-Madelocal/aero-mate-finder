@@ -1306,8 +1306,7 @@ function RangeFilter({
 /* --- Spec detail drawer (with compliance section) --- */
 
 function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }) {
-  const fmt = (n: number | null, suffix = "") =>
-    n === null || n === undefined ? "—" : `${n}${suffix}`;
+  const fmt = (n: number | null, suffix = "") => fmtNonZero(n, suffix);
   const e595Pass =
     spec.tmlPct !== null && spec.tmlPct <= 1.0 &&
     spec.cvcmPct !== null && spec.cvcmPct <= 0.1;
@@ -1402,12 +1401,12 @@ function SpecDrawer({ spec, onClose }: { spec: MasterSpec; onClose: () => void }
           </DrawerSection>
 
           <DrawerSection title="Thermal & Cure">
-            <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °F")} />
+            <Row label="Cure Temperature" value={fmtTempF(spec.cureTemperatureC)} />
             <Row label="Cure Time" value={spec.cureTime} />
-            <Row label="Dry Tg Onset" value={fmt(spec.dryTgOnsetC, " °F")} />
-            <Row label="Wet Tg" value={fmt(spec.wetTgC, " °F")} />
-            <Row label="Peak Tg" value={fmt(spec.peakTgC, " °F")} />
-            <Row label="Max Service Temp" value={fmt(spec.maxServiceTemperatureC, " °F")} />
+            <Row label="Dry Tg Onset" value={fmtTempF(spec.dryTgOnsetC)} />
+            <Row label="Wet Tg" value={fmtTempF(spec.wetTgC)} />
+            <Row label="Peak Tg" value={fmtTempF(spec.peakTgC)} />
+            <Row label="Max Service Temp" value={fmtTempF(spec.maxServiceTemperatureC)} />
           </DrawerSection>
 
           <DrawerSection title="Mechanical">

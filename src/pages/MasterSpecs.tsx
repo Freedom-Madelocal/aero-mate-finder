@@ -101,8 +101,7 @@ export default function MasterSpecs() {
 
   const visibleFiltered = useMemo(() => filtered.slice(0, visibleLimit), [filtered, visibleLimit]);
 
-  const fmt = (n: number | null, suffix = "") =>
-    n === null || n === undefined ? "—" : `${n}${suffix}`;
+  const fmt = (n: number | null, suffix = "") => fmtNonZero(n, suffix);
 
   return (
     <AdminShell>
@@ -229,9 +228,9 @@ export default function MasterSpecs() {
                         <Td className="text-muted-foreground">{s.materialCategory ?? "—"}</Td>
                         <Td className="text-muted-foreground">{s.resinChemistry ?? "—"}</Td>
                         <Td className="text-muted-foreground">{s.productForm ?? "—"}</Td>
-                        <Td>{fmt(s.cureTemperatureC)}</Td>
-                        <Td>{fmt(s.maxServiceTemperatureC)}</Td>
-                        <Td>{fmt(s.dryTgOnsetC ?? s.peakTgC)}</Td>
+                        <Td>{fmtTempF(s.cureTemperatureC)}</Td>
+                        <Td>{fmtTempF(s.maxServiceTemperatureC)}</Td>
+                        <Td>{fmtTempF(s.dryTgOnsetC ?? s.peakTgC)}</Td>
                         <Td>
                           {s.ooaVboCapable ? (
                             <span className="text-[var(--status-compliant)]">Yes</span>
@@ -375,8 +374,7 @@ function InventoryBadge({ status }: { status: "in-stock" | "tracked" | "none" })
 function SpecDrawer({
   spec, inv, onClose,
 }: { spec: MasterSpec; inv: ReturnType<typeof getInventoryMatch>; onClose: () => void }) {
-  const fmt = (n: number | null, suffix = "") =>
-    n === null || n === undefined ? "—" : `${n}${suffix}`;
+  const fmt = (n: number | null, suffix = "") => fmtNonZero(n, suffix);
   const flags = [
     ["OOA / VBO", spec.ooaVboCapable], ["Toughened", spec.toughened],
     ["Flame Retardant", spec.flameRetardant], ["Low Dielectric", spec.lowDielectric],
@@ -487,12 +485,12 @@ function SpecDrawer({
           )}
 
           <Section title="Thermal & Cure">
-            <Row label="Cure Temperature" value={fmt(spec.cureTemperatureC, " °F")} />
+            <Row label="Cure Temperature" value={fmtTempF(spec.cureTemperatureC)} />
             <Row label="Cure Time" value={spec.cureTime} />
-            <Row label="Dry Tg Onset" value={fmt(spec.dryTgOnsetC, " °F")} />
-            <Row label="Wet Tg" value={fmt(spec.wetTgC, " °F")} />
-            <Row label="Peak Tg" value={fmt(spec.peakTgC, " °F")} />
-            <Row label="Max Service Temp" value={fmt(spec.maxServiceTemperatureC, " °F")} />
+            <Row label="Dry Tg Onset" value={fmtTempF(spec.dryTgOnsetC)} />
+            <Row label="Wet Tg" value={fmtTempF(spec.wetTgC)} />
+            <Row label="Peak Tg" value={fmtTempF(spec.peakTgC)} />
+            <Row label="Max Service Temp" value={fmtTempF(spec.maxServiceTemperatureC)} />
           </Section>
 
           <Section title="Storage">
