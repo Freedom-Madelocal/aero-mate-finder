@@ -318,6 +318,63 @@ export type UsageStats = {
   costUsd: number | null;
 };
 
+export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
+  const dl = await supabaseAdmin.storage.from(BUCKET).download(pdfPath);
+  if (dl.error || !dl.data) {
+    throw new TdsExtractError(
+      `Failed to download TDS: ${dl.error?.message ?? "unknown"}`,
+      "missing_pdf",
+    );
+  }
+  const bytes = new Uint8Array(await dl.data.arrayBuffer());
+  if (bytes.length > MAX_PDF_BYTES) {
+    throw new TdsExtractError(
+      `TDS PDF is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB, max 20MB).`,
+      "permanent",
+    );
+  }
+  return bytes;
+}
+
+/**
+ * Best-effort object ETag lookup via the storage list API. Returns null if
+ * unavailable so callers fall back to a full download + hash.
+ */
+export async function fetchObjectEtag(pdfPath: string): Promise<string | null> {
+  try {
+    const idx = pdfPath.lastIndexOf("/");
+    const dir = idx >= 0 ? pdfPath.slice(0, idx) : "";
+    const name = idx >= 0 ? pdfPath.slice(idx + 1) : pdfPath;
+    const { data, error } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .list(dir, { limit: 1, search: name });
+    if (error || !data || data.length === 0) return null;
+    const meta = data[0].metadata as Record<string, unknown> | null | undefined;
+    const raw = (meta?.eTag ?? meta?.etag) as string | undefined;
+    if (!raw) return null;
+    // Storage returns quoted etags like "\"abc123\"" — normalize.
+    return raw.replace(/^"+|"+$/g, "");
+  } catch (err) {
+    console.warn("[tdsExtract] etag lookup failed", err);
+    return null;
+  }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+export type UsageStats = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  costUsd: number | null;
+};
+
 export async function callGeminiForSpec(params: {
   vendor: string;
   productName: string;
@@ -325,7 +382,7 @@ export async function callGeminiForSpec(params: {
   bytes: Uint8Array;
 }): Promise<{ row: ExtractedRow; usage: UsageStats }> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured.");
+  if (!apiKey) throw new TdsExtractError("LOVABLE_API_KEY is not configured.", "permanent");
 
   const fileBase64 = bytesToBase64(params.bytes);
   const fileName = params.pdfPath.split("/").pop() || "tds.pdf";
@@ -368,19 +425,36 @@ export async function callGeminiForSpec(params: {
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`);
+      throw new TdsExtractError(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`, "transient");
     }
-    throw err;
+    throw new TdsExtractError(err instanceof Error ? err.message : String(err), "transient");
   } finally {
     clearTimeout(to);
   }
 
-  if (resp.status === 429) throw new Error("AI rate limit reached. Please wait and try again.");
-  if (resp.status === 402) throw new Error("AI credits exhausted. Add credits in Settings > Workspace > Usage.");
+  if (resp.status === 429) {
+    const ra = Number(resp.headers.get("retry-after") ?? "");
+    throw new TdsExtractError(
+      "AI rate limit reached. Please wait and try again.",
+      "rate_limited",
+      Number.isFinite(ra) ? ra : undefined,
+    );
+  }
+  if (resp.status === 402) {
+    throw new TdsExtractError(
+      "AI credits exhausted. Add credits in Settings > Workspace > Usage.",
+      "permanent",
+    );
+  }
+  if (resp.status >= 500) {
+    const t = await resp.text().catch(() => "");
+    console.error("[tdsExtract] gateway 5xx", resp.status, t);
+    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "transient");
+  }
   if (!resp.ok) {
     const t = await resp.text().catch(() => "");
     console.error("[tdsExtract] gateway error", resp.status, t);
-    throw new Error(`AI gateway error (${resp.status}).`);
+    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "permanent");
   }
 
   const json = (await resp.json()) as {
@@ -388,16 +462,16 @@ export async function callGeminiForSpec(params: {
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new Error("AI returned no structured output.");
+  if (!args) throw new TdsExtractError("AI returned no structured output.", "permanent");
 
   let parsedRaw: unknown;
   try {
     parsedRaw = JSON.parse(args);
   } catch {
-    throw new Error("AI returned malformed JSON.");
+    throw new TdsExtractError("AI returned malformed JSON.", "permanent");
   }
   const parsed = RowSchema.safeParse(parsedRaw);
-  if (!parsed.success) throw new Error("AI output did not match expected schema.");
+  if (!parsed.success) throw new TdsExtractError("AI output did not match expected schema.", "permanent");
 
   const inTok = json.usage?.prompt_tokens ?? null;
   const outTok = json.usage?.completion_tokens ?? null;
