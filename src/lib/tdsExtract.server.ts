@@ -293,30 +293,6 @@ export function computeDocumentHash(bytes: Uint8Array): string {
   return h.digest("hex");
 }
 
-export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
-  const dl = await supabaseAdmin.storage.from(BUCKET).download(pdfPath);
-  if (dl.error || !dl.data) throw new Error(`Failed to download TDS: ${dl.error?.message ?? "unknown"}`);
-  const bytes = new Uint8Array(await dl.data.arrayBuffer());
-  if (bytes.length > MAX_PDF_BYTES) {
-    throw new Error(`TDS PDF is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB, max 20MB).`);
-  }
-  return bytes;
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(binary);
-}
-
-export type UsageStats = {
-  inputTokens: number | null;
-  outputTokens: number | null;
-  costUsd: number | null;
-};
 
 export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
   const dl = await supabaseAdmin.storage.from(BUCKET).download(pdfPath);
