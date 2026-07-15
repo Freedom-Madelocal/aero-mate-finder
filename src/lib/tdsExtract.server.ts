@@ -558,17 +558,17 @@ export async function runExtractionForSpec(specId: string): Promise<{
       // Record usage rollup (success)
       await supabaseAdmin.rpc("record_ai_usage", {
         _model: MODEL,
-        _input_tokens: usage.inputTokens,
-        _output_tokens: usage.outputTokens,
-        _cost_usd: usage.costUsd,
+        _input_tokens: usage.inputTokens ?? 0,
+        _output_tokens: usage.outputTokens ?? 0,
+        _cost_usd: usage.costUsd ?? 0,
         _failed: false,
       });
     } catch (err) {
       await supabaseAdmin.rpc("record_ai_usage", {
         _model: MODEL,
-        _input_tokens: null,
-        _output_tokens: null,
-        _cost_usd: null,
+        _input_tokens: 0,
+        _output_tokens: 0,
+        _cost_usd: 0,
         _failed: true,
       });
       throw err;
