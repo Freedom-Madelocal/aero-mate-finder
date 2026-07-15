@@ -15,6 +15,49 @@ export const PROMPT_VERSION = "v2";
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB
 export const REQUEST_TIMEOUT_MS = 60_000;
 
+/** Classified error thrown by the extractor. Worker maps these to retry policy. */
+export type TdsErrorClass =
+  | "transient"
+  | "permanent"
+  | "plausibility"
+  | "missing_pdf"
+  | "rate_limited";
+
+export class TdsExtractError extends Error {
+  errorClass: TdsErrorClass;
+  retryAfterSec?: number;
+  constructor(message: string, errorClass: TdsErrorClass, retryAfterSec?: number) {
+    super(message);
+    this.name = "TdsExtractError";
+    this.errorClass = errorClass;
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
+export function maxAttemptsFor(cls: TdsErrorClass): number {
+  switch (cls) {
+    case "permanent":
+    case "plausibility":
+    case "missing_pdf":
+      return 1;
+    case "rate_limited":
+      return 6;
+    case "transient":
+    default:
+      return 5;
+  }
+}
+
+export function backoffSecondsFor(cls: TdsErrorClass, attempt: number, retryAfterSec?: number): number {
+  if (cls === "rate_limited" && retryAfterSec && retryAfterSec > 0) {
+    return Math.min(retryAfterSec, 600);
+  }
+  // Exponential backoff w/ jitter: 30s, 60s, 120s, 240s, 480s (capped)
+  const base = Math.min(30 * Math.pow(2, Math.max(0, attempt - 1)), 480);
+  const jitter = Math.floor(Math.random() * 15);
+  return base + jitter;
+}
+
 // Rough Gemini 2.5 Pro pricing (per 1M tokens, USD). Used for rollup only.
 const PRICE_IN_PER_MTOK = 1.25;
 const PRICE_OUT_PER_MTOK = 5.0;
@@ -250,14 +293,47 @@ export function computeDocumentHash(bytes: Uint8Array): string {
   return h.digest("hex");
 }
 
+
 export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
   const dl = await supabaseAdmin.storage.from(BUCKET).download(pdfPath);
-  if (dl.error || !dl.data) throw new Error(`Failed to download TDS: ${dl.error?.message ?? "unknown"}`);
+  if (dl.error || !dl.data) {
+    throw new TdsExtractError(
+      `Failed to download TDS: ${dl.error?.message ?? "unknown"}`,
+      "missing_pdf",
+    );
+  }
   const bytes = new Uint8Array(await dl.data.arrayBuffer());
   if (bytes.length > MAX_PDF_BYTES) {
-    throw new Error(`TDS PDF is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB, max 20MB).`);
+    throw new TdsExtractError(
+      `TDS PDF is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB, max 20MB).`,
+      "permanent",
+    );
   }
   return bytes;
+}
+
+/**
+ * Best-effort object ETag lookup via the storage list API. Returns null if
+ * unavailable so callers fall back to a full download + hash.
+ */
+export async function fetchObjectEtag(pdfPath: string): Promise<string | null> {
+  try {
+    const idx = pdfPath.lastIndexOf("/");
+    const dir = idx >= 0 ? pdfPath.slice(0, idx) : "";
+    const name = idx >= 0 ? pdfPath.slice(idx + 1) : pdfPath;
+    const { data, error } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .list(dir, { limit: 1, search: name });
+    if (error || !data || data.length === 0) return null;
+    const meta = data[0].metadata as Record<string, unknown> | null | undefined;
+    const raw = (meta?.eTag ?? meta?.etag) as string | undefined;
+    if (!raw) return null;
+    // Storage returns quoted etags like "\"abc123\"" — normalize.
+    return raw.replace(/^"+|"+$/g, "");
+  } catch (err) {
+    console.warn("[tdsExtract] etag lookup failed", err);
+    return null;
+  }
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -282,7 +358,7 @@ export async function callGeminiForSpec(params: {
   bytes: Uint8Array;
 }): Promise<{ row: ExtractedRow; usage: UsageStats }> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured.");
+  if (!apiKey) throw new TdsExtractError("LOVABLE_API_KEY is not configured.", "permanent");
 
   const fileBase64 = bytesToBase64(params.bytes);
   const fileName = params.pdfPath.split("/").pop() || "tds.pdf";
@@ -325,19 +401,36 @@ export async function callGeminiForSpec(params: {
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`);
+      throw new TdsExtractError(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`, "transient");
     }
-    throw err;
+    throw new TdsExtractError(err instanceof Error ? err.message : String(err), "transient");
   } finally {
     clearTimeout(to);
   }
 
-  if (resp.status === 429) throw new Error("AI rate limit reached. Please wait and try again.");
-  if (resp.status === 402) throw new Error("AI credits exhausted. Add credits in Settings > Workspace > Usage.");
+  if (resp.status === 429) {
+    const ra = Number(resp.headers.get("retry-after") ?? "");
+    throw new TdsExtractError(
+      "AI rate limit reached. Please wait and try again.",
+      "rate_limited",
+      Number.isFinite(ra) ? ra : undefined,
+    );
+  }
+  if (resp.status === 402) {
+    throw new TdsExtractError(
+      "AI credits exhausted. Add credits in Settings > Workspace > Usage.",
+      "permanent",
+    );
+  }
+  if (resp.status >= 500) {
+    const t = await resp.text().catch(() => "");
+    console.error("[tdsExtract] gateway 5xx", resp.status, t);
+    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "transient");
+  }
   if (!resp.ok) {
     const t = await resp.text().catch(() => "");
     console.error("[tdsExtract] gateway error", resp.status, t);
-    throw new Error(`AI gateway error (${resp.status}).`);
+    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "permanent");
   }
 
   const json = (await resp.json()) as {
@@ -345,16 +438,16 @@ export async function callGeminiForSpec(params: {
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new Error("AI returned no structured output.");
+  if (!args) throw new TdsExtractError("AI returned no structured output.", "permanent");
 
   let parsedRaw: unknown;
   try {
     parsedRaw = JSON.parse(args);
   } catch {
-    throw new Error("AI returned malformed JSON.");
+    throw new TdsExtractError("AI returned malformed JSON.", "permanent");
   }
   const parsed = RowSchema.safeParse(parsedRaw);
-  if (!parsed.success) throw new Error("AI output did not match expected schema.");
+  if (!parsed.success) throw new TdsExtractError("AI output did not match expected schema.", "permanent");
 
   const inTok = json.usage?.prompt_tokens ?? null;
   const outTok = json.usage?.completion_tokens ?? null;
@@ -515,27 +608,56 @@ export async function runExtractionForSpec(specId: string): Promise<{
     .select("*")
     .eq("id", specId)
     .maybeSingle();
-  if (specErr) throw new Error(specErr.message);
-  if (!spec) throw new Error("Spec not found.");
-  if (!spec.tds_pdf_path) throw new Error("This spec has no attached TDS PDF.");
-
-  const bytes = await downloadTdsPdf(spec.tds_pdf_path);
-  const documentHash = computeDocumentHash(bytes);
+  if (specErr) throw new TdsExtractError(specErr.message, "transient");
+  if (!spec) throw new TdsExtractError("Spec not found.", "permanent");
+  if (!spec.tds_pdf_path) throw new TdsExtractError("This spec has no attached TDS PDF.", "missing_pdf");
 
   let extracted: ExtractedRow | null = null;
   let cacheHit = false;
   let usage: UsageStats = { inputTokens: null, outputTokens: null, costUsd: null };
+  let documentHash: string | null = null;
+  let bytes: Uint8Array | null = null;
 
-  const { data: cached } = await supabaseAdmin
-    .from("tds_extraction_cache")
-    .select("extracted")
-    .eq("document_hash", documentHash)
-    .maybeSingle();
-  if (cached?.extracted) {
-    const p = RowSchema.safeParse(cached.extracted);
-    if (p.success) {
-      extracted = p.data;
-      cacheHit = true;
+  // B3: try ETag short-circuit before downloading bytes.
+  const etag = await fetchObjectEtag(spec.tds_pdf_path);
+  if (etag) {
+    const { data: cachedByEtag } = await supabaseAdmin
+      .from("tds_extraction_cache")
+      .select("document_hash, extracted")
+      .eq("object_etag", etag)
+      .maybeSingle();
+    if (cachedByEtag?.extracted && cachedByEtag.document_hash) {
+      const p = RowSchema.safeParse(cachedByEtag.extracted);
+      if (p.success) {
+        extracted = p.data;
+        documentHash = cachedByEtag.document_hash;
+        cacheHit = true;
+      }
+    }
+  }
+
+  if (!extracted) {
+    bytes = await downloadTdsPdf(spec.tds_pdf_path);
+    documentHash = computeDocumentHash(bytes);
+
+    const { data: cached } = await supabaseAdmin
+      .from("tds_extraction_cache")
+      .select("extracted")
+      .eq("document_hash", documentHash)
+      .maybeSingle();
+    if (cached?.extracted) {
+      const p = RowSchema.safeParse(cached.extracted);
+      if (p.success) {
+        extracted = p.data;
+        cacheHit = true;
+        // Backfill etag mapping so next run skips download.
+        if (etag) {
+          await supabaseAdmin
+            .from("tds_extraction_cache")
+            .update({ object_etag: etag })
+            .eq("document_hash", documentHash);
+        }
+      }
     }
   }
 
@@ -545,17 +667,17 @@ export async function runExtractionForSpec(specId: string): Promise<{
         vendor: spec.vendor ?? "",
         productName: spec.product_name ?? "",
         pdfPath: spec.tds_pdf_path,
-        bytes,
+        bytes: bytes!,
       });
       extracted = res.row;
       usage = res.usage;
       await supabaseAdmin.from("tds_extraction_cache").upsert({
-        document_hash: documentHash,
+        document_hash: documentHash!,
         model: MODEL,
         prompt_version: PROMPT_VERSION,
         extracted: extracted as never,
+        object_etag: etag,
       });
-      // Record usage rollup (success)
       await supabaseAdmin.rpc("record_ai_usage", {
         _model: MODEL,
         _input_tokens: usage.inputTokens ?? 0,
@@ -574,6 +696,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
       throw err;
     }
   }
+
 
   const { patch, updated, provenanceRows } = buildSafePatch(extracted, spec as Record<string, unknown>);
 
@@ -597,7 +720,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
     updatedCount: updated.length,
     fields: updated,
     cacheHit,
-    documentHash,
+    documentHash: documentHash!,
     latencyMs: Date.now() - t0,
     usage,
   };
