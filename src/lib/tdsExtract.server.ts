@@ -1145,18 +1145,131 @@ export async function runExtractionForSpec(specId: string): Promise<{
         );
       }
     } else {
+      // Preflight decides the route. Text-layer native PDFs → cheap fast
+      // model; scanned / oversize / low-text → vision Pro. Fast route can
+      // return null (unviable) to fall back without penalty.
+      const { preflightPdf } = await import("@/lib/tdsPreflight.server");
+      const preflight = preflightPdf(bytes!);
+      const chosenRoute: "text_layer_fast" | "vision_pro" =
+        preflight.suggestedRoute === "text_layer_fast" ? "text_layer_fast" : "vision_pro";
+
+      let routeUsed: "text_layer_fast" | "vision_pro" = chosenRoute;
+      const routeStart = Date.now();
       try {
-        const res = await callGeminiForSpec({
-          vendor: spec.vendor ?? "",
-          productName: spec.product_name ?? "",
-          pdfPath: spec.tds_pdf_path,
-          bytes: bytes!,
-        });
-        extracted = res.row;
-        usage = res.usage;
-        // Persist the validated extraction BEFORE merging — a merge/write
-        // failure below can then be retried without re-downloading the PDF
-        // or re-calling the model (cache short-circuits on next attempt).
+        if (chosenRoute === "text_layer_fast") {
+          const { callFastTextRoute, FAST_MODEL } = await import("@/lib/tdsFastRoute.server");
+          try {
+            const fast = await callFastTextRoute({
+              vendor: spec.vendor ?? "",
+              productName: spec.product_name ?? "",
+              bytes: bytes!,
+            });
+            if (fast) {
+              extracted = fast.row;
+              usage = fast.usage;
+              await writeExtractionRun({
+                specId: spec.id,
+                documentHash,
+                route: "text_layer_fast",
+                model: FAST_MODEL,
+                promptVersion: PROMPT_VERSION,
+                pages: preflight.pages,
+                inputBytes: bytes!.length,
+                usage: fast.usage,
+                latencyMs: Date.now() - routeStart,
+                cacheStatus: "miss",
+                outcome: "success",
+              });
+            } else {
+              // Unviable — fall through to vision.
+              routeUsed = "vision_pro";
+              await writeExtractionRun({
+                specId: spec.id,
+                documentHash,
+                route: "text_layer_fast",
+                model: FAST_MODEL,
+                promptVersion: PROMPT_VERSION,
+                pages: preflight.pages,
+                inputBytes: bytes!.length,
+                usage: { inputTokens: null, outputTokens: null, costUsd: null },
+                latencyMs: Date.now() - routeStart,
+                cacheStatus: "miss",
+                outcome: "failure",
+                errorCode: "fast_route_unviable",
+                errorClass: "transient",
+              });
+            }
+          } catch (fastErr) {
+            // Only fall back to vision for structural failures; pause / rate
+            // limits must still surface (bubble).
+            const isRecoverable =
+              fastErr instanceof TdsExtractError &&
+              (fastErr.errorClass === "transient" || fastErr.errorClass === "permanent");
+            await writeExtractionRun({
+              specId: spec.id,
+              documentHash,
+              route: "text_layer_fast",
+              model: FAST_MODEL,
+              promptVersion: PROMPT_VERSION,
+              pages: preflight.pages,
+              inputBytes: bytes!.length,
+              usage: { inputTokens: null, outputTokens: null, costUsd: null },
+              latencyMs: Date.now() - routeStart,
+              cacheStatus: "miss",
+              outcome: "failure",
+              errorCode: fastErr instanceof TdsExtractError ? fastErr.errorCode : "unknown",
+              errorClass: fastErr instanceof TdsExtractError ? fastErr.errorClass : "transient",
+            });
+            if (!isRecoverable) throw fastErr;
+            routeUsed = "vision_pro";
+          }
+        }
+
+        if (!extracted) {
+          const visionStart = Date.now();
+          try {
+            const res = await callGeminiForSpec({
+              vendor: spec.vendor ?? "",
+              productName: spec.product_name ?? "",
+              pdfPath: spec.tds_pdf_path,
+              bytes: bytes!,
+            });
+            extracted = res.row;
+            usage = res.usage;
+            await writeExtractionRun({
+              specId: spec.id,
+              documentHash,
+              route: "vision_pro",
+              model: MODEL,
+              promptVersion: PROMPT_VERSION,
+              pages: preflight.pages,
+              inputBytes: bytes!.length,
+              usage: res.usage,
+              latencyMs: Date.now() - visionStart,
+              cacheStatus: "miss",
+              outcome: "success",
+            });
+          } catch (visionErr) {
+            await writeExtractionRun({
+              specId: spec.id,
+              documentHash,
+              route: "vision_pro",
+              model: MODEL,
+              promptVersion: PROMPT_VERSION,
+              pages: preflight.pages,
+              inputBytes: bytes!.length,
+              usage: { inputTokens: null, outputTokens: null, costUsd: null },
+              latencyMs: Date.now() - visionStart,
+              cacheStatus: "miss",
+              outcome: "failure",
+              errorCode: visionErr instanceof TdsExtractError ? visionErr.errorCode : "unknown",
+              errorClass: visionErr instanceof TdsExtractError ? visionErr.errorClass : "transient",
+            });
+            throw visionErr;
+          }
+        }
+
+        // Persist the validated extraction BEFORE merging — retry-safe.
         await supabaseAdmin.from("tds_extraction_cache").upsert({
           document_hash: documentHash!,
           model: MODEL,
@@ -1165,7 +1278,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
           object_etag: etag,
         });
         await supabaseAdmin.rpc("record_ai_usage", {
-          _model: MODEL,
+          _model: routeUsed === "text_layer_fast" ? "google/gemini-3.5-flash" : MODEL,
           _input_tokens: usage.inputTokens ?? 0,
           _output_tokens: usage.outputTokens ?? 0,
           _cost_usd: usage.costUsd ?? 0,
@@ -1181,8 +1294,6 @@ export async function runExtractionForSpec(specId: string): Promise<{
         });
         throw err;
       } finally {
-        // Always release, even on failure — a crash leaves the reservation
-        // to expire on its own TTL.
         try {
           await supabaseAdmin.rpc("release_extraction_reservation", {
             _document_hash: documentHash!,
