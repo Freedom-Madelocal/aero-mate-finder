@@ -126,7 +126,7 @@ const EMPTY_FILTERS: FilterState = {
 
 // Tier-1 primary chip vocabularies (hard-coded, not derived from data)
 const PRODUCT_TYPES = ["Prepreg", "Film adhesive", "Paste adhesive", "Fabric", "RTM"] as const;
-const SUPPLIERS = ["Hexcel", "Toray", "Syensqo", "3M", "Henkel"] as const;
+const SUPPLIERS = ["Hexcel", "Toray", "Syensqo", "3M", "Henkel", "JPS"] as const;
 const CHEMISTRY_GROUPS = ["Epoxy", "BMI", "Cyanate ester", "PEEK", "PEKK", "LMPAEK", "Phenolic"] as const;
 const PROCESS_GROUPS = ["OoA / VBO", "Autoclave", "AFP / ATL", "RTM / Infusion"] as const;
 const APPLICATION_GROUPS = [
