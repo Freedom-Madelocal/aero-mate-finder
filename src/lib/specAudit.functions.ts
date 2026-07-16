@@ -180,7 +180,7 @@ export const getSpecAudit = createServerFn({ method: "GET" })
         attemptedUrl: r.attempted_url ?? null,
         httpStatus: r.http_status ?? null,
         errorMessage: r.error_message ?? null,
-        details: r.details ?? null,
+        details: r.details == null ? null : typeof r.details === "string" ? r.details : JSON.stringify(r.details),
       })),
       analysisItems: (itemsRes.data ?? []).map((r) => ({
         id: r.id,
