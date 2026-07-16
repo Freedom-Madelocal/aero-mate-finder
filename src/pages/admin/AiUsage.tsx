@@ -10,6 +10,8 @@ export default function AiUsage() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [repairing, setRepairing] = useState(false);
+
 
   async function load() {
     try {
