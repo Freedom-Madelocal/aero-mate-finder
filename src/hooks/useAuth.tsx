@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         open={idle.showWarning}
         secondsLeft={idle.secondsLeft}
         onStay={handleStay}
-        onSignOut={signOut}
+        onSignOut={() => void forceSignOut()}
       />
     </Ctx.Provider>
   );
