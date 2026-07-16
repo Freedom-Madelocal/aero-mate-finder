@@ -932,7 +932,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
       .from("master_specs")
       .update(patch as never)
       .eq("id", spec.id);
-    if (upErr) throw new Error(upErr.message);
+    if (upErr) throw new TdsExtractError(upErr.message, "transient", ERROR_CODES.TEMPORARY_DATABASE);
   } else {
     await supabaseAdmin
       .from("master_specs")
