@@ -386,9 +386,13 @@ export function computeDocumentHash(bytes: Uint8Array): string {
 export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
   const dl = await supabaseAdmin.storage.from(BUCKET).download(pdfPath);
   if (dl.error || !dl.data) {
+    const msg = dl.error?.message ?? "unknown";
+    const transient =
+      /timeout|temporar|rate|5\d\d|network/i.test(msg);
     throw new TdsExtractError(
-      `Failed to download TDS: ${dl.error?.message ?? "unknown"}`,
-      "missing_pdf",
+      `Failed to download TDS: ${msg}`,
+      transient ? "transient" : "missing_pdf",
+      transient ? ERROR_CODES.TEMPORARY_STORAGE : ERROR_CODES.MISSING_TDS,
     );
   }
   const bytes = new Uint8Array(await dl.data.arrayBuffer());
@@ -396,6 +400,21 @@ export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
     throw new TdsExtractError(
       `TDS PDF is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB, max 20MB).`,
       "permanent",
+      ERROR_CODES.OVERSIZED_PDF,
+    );
+  }
+  // Cheap PDF sanity check: %PDF- header and no encryption dictionary hint.
+  const head = new TextDecoder().decode(bytes.subarray(0, Math.min(bytes.length, 1024)));
+  if (!head.startsWith("%PDF-")) {
+    throw new TdsExtractError("File is not a valid PDF.", "permanent", ERROR_CODES.INVALID_PDF);
+  }
+  // Weak but useful heuristic — /Encrypt keyword in first 4KB.
+  const sniff = new TextDecoder().decode(bytes.subarray(0, Math.min(bytes.length, 4096)));
+  if (/\/Encrypt\s/.test(sniff)) {
+    throw new TdsExtractError(
+      "PDF is encrypted — cannot extract.",
+      "permanent",
+      ERROR_CODES.ENCRYPTED_PDF,
     );
   }
   return bytes;
@@ -417,7 +436,6 @@ export async function fetchObjectEtag(pdfPath: string): Promise<string | null> {
     const meta = data[0].metadata as Record<string, unknown> | null | undefined;
     const raw = (meta?.eTag ?? meta?.etag) as string | undefined;
     if (!raw) return null;
-    // Storage returns quoted etags like "\"abc123\"" — normalize.
     return raw.replace(/^"+|"+$/g, "");
   } catch (err) {
     console.warn("[tdsExtract] etag lookup failed", err);
@@ -440,18 +458,19 @@ export type UsageStats = {
   costUsd: number | null;
 };
 
-export async function callGeminiForSpec(params: {
+/**
+ * Single HTTP round-trip to the gateway. Returns the raw string tool
+ * arguments so the caller can decide whether to accept, or repair once
+ * with a hint on malformed output.
+ */
+async function requestModelOnce(params: {
+  apiKey: string;
   vendor: string;
   productName: string;
-  pdfPath: string;
-  bytes: Uint8Array;
-}): Promise<{ row: ExtractedRow; usage: UsageStats }> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new TdsExtractError("LOVABLE_API_KEY is not configured.", "permanent");
-
-  const fileBase64 = bytesToBase64(params.bytes);
-  const fileName = params.pdfPath.split("/").pop() || "tds.pdf";
-
+  fileName: string;
+  fileBase64: string;
+  extraUserHint?: string;
+}): Promise<{ args: string | undefined; usage: UsageStats }> {
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   let resp: Response;
@@ -460,7 +479,7 @@ export async function callGeminiForSpec(params: {
       method: "POST",
       signal: ctrl.signal,
       headers: {
-        "Lovable-API-Key": apiKey,
+        "Lovable-API-Key": params.apiKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -472,13 +491,15 @@ export async function callGeminiForSpec(params: {
             content: [
               {
                 type: "text",
-                text: `Extract the technical specs for vendor "${params.vendor}" product "${params.productName}" from this TDS PDF. Every numeric or boolean value MUST have a matching provenance entry with an exact verbatim quote from the PDF.`,
+                text:
+                  `Extract the technical specs for vendor "${params.vendor}" product "${params.productName}" from this TDS PDF. Every numeric or boolean value MUST have a matching provenance entry with an exact verbatim quote from the PDF.` +
+                  (params.extraUserHint ? `\n\n${params.extraUserHint}` : ""),
               },
               {
                 type: "file",
                 file: {
-                  filename: fileName,
-                  file_data: `data:application/pdf;base64,${fileBase64}`,
+                  filename: params.fileName,
+                  file_data: `data:application/pdf;base64,${params.fileBase64}`,
                 },
               },
             ],
@@ -490,36 +511,26 @@ export async function callGeminiForSpec(params: {
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new TdsExtractError(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`, "transient");
+      throw new TdsExtractError(
+        `AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`,
+        "transient",
+        ERROR_CODES.MODEL_TIMEOUT,
+      );
     }
-    throw new TdsExtractError(err instanceof Error ? err.message : String(err), "transient");
+    throw new TdsExtractError(
+      err instanceof Error ? err.message : String(err),
+      "transient",
+      ERROR_CODES.NETWORK_ERROR,
+    );
   } finally {
     clearTimeout(to);
   }
 
-  if (resp.status === 429) {
-    const ra = Number(resp.headers.get("retry-after") ?? "");
-    throw new TdsExtractError(
-      "AI rate limit reached. Please wait and try again.",
-      "rate_limited",
-      Number.isFinite(ra) ? ra : undefined,
-    );
-  }
-  if (resp.status === 402) {
-    throw new TdsExtractError(
-      "AI credits exhausted. Add credits in Settings > Workspace > Usage.",
-      "permanent",
-    );
-  }
-  if (resp.status >= 500) {
-    const t = await resp.text().catch(() => "");
-    console.error("[tdsExtract] gateway 5xx", resp.status, t);
-    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "transient");
-  }
   if (!resp.ok) {
     const t = await resp.text().catch(() => "");
-    console.error("[tdsExtract] gateway error", resp.status, t);
-    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "permanent");
+    // Never log request body / signed URLs / api key — status + short body only.
+    console.error("[tdsExtract] gateway not ok", { status: resp.status, bodyPreview: t.slice(0, 200) });
+    throw classifyGatewayStatus(resp.status, t, resp.headers.get("retry-after"));
   }
 
   const json = (await resp.json()) as {
@@ -527,16 +538,89 @@ export async function callGeminiForSpec(params: {
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new TdsExtractError("AI returned no structured output.", "permanent");
+  const inTok = json.usage?.prompt_tokens ?? null;
+  const outTok = json.usage?.completion_tokens ?? null;
+  const cost =
+    inTok != null && outTok != null
+      ? (inTok / 1_000_000) * PRICE_IN_PER_MTOK + (outTok / 1_000_000) * PRICE_OUT_PER_MTOK
+      : null;
+  return { args, usage: { inputTokens: inTok, outputTokens: outTok, costUsd: cost } };
+}
 
-  let parsedRaw: unknown;
-  try {
-    parsedRaw = JSON.parse(args);
-  } catch {
-    throw new TdsExtractError("AI returned malformed JSON.", "permanent");
+export async function callGeminiForSpec(params: {
+  vendor: string;
+  productName: string;
+  pdfPath: string;
+  bytes: Uint8Array;
+}): Promise<{ row: ExtractedRow; usage: UsageStats }> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    throw new TdsExtractError(
+      "LOVABLE_API_KEY is not configured.",
+      "paused",
+      ERROR_CODES.AI_CONFIG_ERROR,
+    );
   }
-  const parsed = RowSchema.safeParse(parsedRaw);
-  if (!parsed.success) throw new TdsExtractError("AI output did not match expected schema.", "permanent");
+
+  const fileBase64 = bytesToBase64(params.bytes);
+  const fileName = params.pdfPath.split("/").pop() || "tds.pdf";
+
+  // First attempt
+  let { args, usage } = await requestModelOnce({
+    apiKey,
+    vendor: params.vendor,
+    productName: params.productName,
+    fileName,
+    fileBase64,
+  });
+
+  // Parse; if malformed, allow ONE controlled repair pass with a hint.
+  const tryParse = (raw: string | undefined) => {
+    if (!raw) return { ok: false as const, reason: "no_output" as const };
+    let parsedRaw: unknown;
+    try {
+      parsedRaw = JSON.parse(raw);
+    } catch {
+      return { ok: false as const, reason: "invalid_json" as const };
+    }
+    const parsed = RowSchema.safeParse(parsedRaw);
+    if (!parsed.success) return { ok: false as const, reason: "schema_mismatch" as const };
+    return { ok: true as const, row: parsed.data };
+  };
+
+  let parsed = tryParse(args);
+  if (!parsed.ok) {
+    console.warn("[tdsExtract] malformed structured output, attempting one repair", {
+      reason: parsed.reason,
+    });
+    const repair = await requestModelOnce({
+      apiKey,
+      vendor: params.vendor,
+      productName: params.productName,
+      fileName,
+      fileBase64,
+      extraUserHint:
+        "Your previous response could not be parsed. Emit ONLY the emit_spec tool call with valid arguments strictly matching the schema. Do not include prose. Every numeric/boolean value MUST have a provenance entry.",
+    });
+    // Accumulate token usage across attempts.
+    usage = {
+      inputTokens: (usage.inputTokens ?? 0) + (repair.usage.inputTokens ?? 0),
+      outputTokens: (usage.outputTokens ?? 0) + (repair.usage.outputTokens ?? 0),
+      costUsd: (usage.costUsd ?? 0) + (repair.usage.costUsd ?? 0),
+    };
+    parsed = tryParse(repair.args);
+    if (!parsed.ok) {
+      throw new TdsExtractError(
+        `AI structured output could not be parsed after repair (${parsed.reason}).`,
+        "permanent",
+        ERROR_CODES.MALFORMED_STRUCTURED_OUTPUT,
+      );
+    }
+  }
+
+  return { row: parsed.row, usage };
+}
+
 
   const inTok = json.usage?.prompt_tokens ?? null;
   const outTok = json.usage?.completion_tokens ?? null;
