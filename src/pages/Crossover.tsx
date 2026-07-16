@@ -203,7 +203,7 @@ function SpecMiniCard({ spec, bestMatch = false }: { spec: MasterSpec; bestMatch
             className="text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-auto"
             style={{ background: okBadge.bg, color: okBadge.color, border: `0.5px solid ${okBadge.border}` }}
           >
-            Best match
+            Plausible Match
           </span>
         )}
       </div>
