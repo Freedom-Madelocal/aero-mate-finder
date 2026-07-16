@@ -260,6 +260,11 @@ const TOOL = {
         resinChemistry: { type: "string" },
         reinforcement: { type: "string" },
         productForm: { type: "string" },
+        applicationProcess: { type: "string", description: "How the product is applied/processed. Verbatim summary (e.g. 'apply a minimum coating, dry for 10 minutes, and apply tape within 2 hours'). Do NOT confuse drying/flash-off time with cure time." },
+        activeIngredientOrResin: { type: "string", description: "The primary resin/chemistry family (e.g. 'polyamide', 'epoxy'). Only if explicitly stated." },
+        shelfLifeMonths: { type: ["number", "null"], description: "Shelf life in months. NOT the same as freezer life or out-life." },
+        storageTempMinC: { type: ["number", "null"], description: "Minimum recommended storage temperature in °C." },
+        storageTempMaxC: { type: ["number", "null"], description: "Maximum recommended storage temperature in °C." },
         cureTemperatureC: { type: ["number", "null"] },
         cureTime: { type: "string" },
         dryTgOnsetC: { type: ["number", "null"] },
@@ -283,11 +288,95 @@ const TOOL = {
         impactResistant: { type: "boolean" },
         highTemperature: { type: "boolean" },
         applications: { type: "string" },
-        qualificationsStandards: { type: "string" },
+        qualificationsStandards: { type: "string", description: "Legacy comma-joined list of qualifications (for back-compat). Prefer populating the structured 'qualifications' array." },
         minimumOrderQuantity: { type: "string" },
         profiles: { type: "array", items: { type: "string" } },
         keySpecs: { type: "array", items: { type: "string" } },
         customers: { type: "array", items: { type: "string" } },
+        qualifications: {
+          type: "array",
+          description: "ONLY standards the product ITSELF is stated to conform to / be qualified under / approved to (e.g. 'conforms to MIL-PRF-XYZ', 'qualified to AIMS 05-04-000'). Do NOT include test methods or standards that only describe the test setup.",
+          items: {
+            type: "object",
+            properties: {
+              standard: { type: "string" },
+              revision: { type: ["string", "null"] },
+              class: { type: ["string", "null"] },
+              type: { type: ["string", "null"] },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["standard"],
+          },
+        },
+        testMethods: {
+          type: "array",
+          description: "Standards used ONLY as test methods (e.g. 'ASTM D1000', 'ASTM D3359'). If the PDF says 'tested per ASTM Dxxx' or 'in accordance with ASTM Dxxx', it belongs here — NOT in qualifications.",
+          items: {
+            type: "object",
+            properties: {
+              method: { type: "string" },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["method"],
+          },
+        },
+        contextualStandards: {
+          type: "array",
+          description: "Standards mentioned as CONTEXT for a test — e.g. the tested substrate coating, the tested tape, the tested primer. Example: 'adhesion tested over MIL-PRF-85285 Type IV coating' → contextual, role='tested_substrate_coating'. NOT a qualification of the product.",
+          items: {
+            type: "object",
+            properties: {
+              standard: { type: "string" },
+              role: { type: "string", description: "e.g. 'tested_substrate_coating', 'tested_primer', 'tested_tape', 'reference'." },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["standard", "role"],
+          },
+        },
+        productIdentifiers: {
+          type: "array",
+          description: "Product-level identifiers such as NSN, CAGE, part numbers. Include applicability when several identifiers map to different pack/size variants.",
+          items: {
+            type: "object",
+            properties: {
+              kind: { type: "string", enum: ["nsn", "cage", "part_number", "upc", "other"] },
+              value: { type: "string" },
+              applicability: { type: ["string", "null"] },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["kind", "value"],
+          },
+        },
+        testResults: {
+          type: "array",
+          description: "Multi-dimensional test tables preserved verbatim (do not force into scalar fields). One entry per table; rows[] captures each label/value/units triple.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              conditions: { type: ["string", "null"] },
+              rows: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    label: { type: "string" },
+                    value: { type: ["string", "number", "null"] },
+                    units: { type: ["string", "null"] },
+                  },
+                  required: ["label"],
+                },
+              },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["name", "rows"],
+          },
+        },
         provenance: {
           type: "array",
           description:
