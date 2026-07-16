@@ -146,3 +146,81 @@ export const cancelBatch = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Repair legacy zero values: enqueue specs where any tracked numeric
+ * column is exactly 0 (legacy 3M ingest artifact). Also nulls the affected
+ * columns and clears their provenance so the safe-merge policy can refill.
+ */
+const NUMERIC_COLS = [
+  "cure_temperature_c",
+  "dry_tg_onset_c",
+  "wet_tg_c",
+  "peak_tg_c",
+  "max_service_temperature_c",
+  "out_life_days",
+  "freezer_life_months",
+  "tml_pct",
+  "cvcm_pct",
+  "tensile_lap_shear_mpa",
+  "t_peel_n_per_25mm",
+  "flatwise_tension_mpa",
+  "climbing_drum_peel_in_lb_per_in",
+] as const;
+
+export const enqueueLegacyZeroRepair = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertSuperAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const orFilter = NUMERIC_COLS.map((c) => `${c}.eq.0`).join(",");
+    const { data: specs, error } = await supabaseAdmin
+      .from("master_specs")
+      .select("id")
+      .not("tds_pdf_path", "is", null)
+      .or(orFilter);
+    if (error) throw new Error(error.message);
+    const list = specs ?? [];
+    if (list.length === 0) return { batchId: null as string | null, total: 0 };
+
+    const ids = list.map((s) => s.id);
+
+    // Null out zero-valued columns per column so safe-merge will refill them.
+    for (const col of NUMERIC_COLS) {
+      await supabaseAdmin
+        .from("master_specs")
+        .update({ [col]: null } as never)
+        .in("id", ids)
+        .eq(col, 0);
+    }
+
+    // Drop provenance rows for those fields so re-extraction is unblocked.
+    await supabaseAdmin
+      .from("tds_field_provenance")
+      .delete()
+      .in("spec_id", ids)
+      .in("field", NUMERIC_COLS as unknown as string[]);
+
+    const { data: batch, error: bErr } = await supabaseAdmin
+      .from("tds_analysis_batches")
+      .insert({
+        created_by: context.userId,
+        label: "Legacy zero repair",
+        total: list.length,
+        status: "running",
+      })
+      .select("id")
+      .single();
+    if (bErr || !batch) throw new Error(bErr?.message ?? "Failed to create batch.");
+
+    const items = ids.map((id) => ({
+      batch_id: batch.id,
+      spec_id: id,
+      status: "pending" as const,
+    }));
+    const { error: iErr } = await supabaseAdmin.from("tds_analysis_items").insert(items);
+    if (iErr) throw new Error(iErr.message);
+
+    return { batchId: batch.id, total: list.length };
+  });
