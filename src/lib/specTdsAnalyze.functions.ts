@@ -137,7 +137,7 @@ const BatchIdSchema = z.object({ batchId: z.string().uuid() });
 export const getBatchHealth = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => BatchIdSchema.parse(input))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<Record<string, unknown>> => {
     const { data: isAdmin, error: rErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "super_admin",
