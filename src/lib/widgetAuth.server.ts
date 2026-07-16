@@ -44,13 +44,29 @@ export async function verifyWidgetKey(request: Request) {
     .from("widget_clients")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", client.id);
-  void supabaseAdmin
-    .from("widget_usage_monthly")
-    .upsert(
-      { client_id: client.id, month: monthStr, request_count: 1 },
-      { onConflict: "client_id,month", ignoreDuplicates: false },
-    )
-    .then(() => {}, () => {});
+  void (async () => {
+    try {
+      const { data: existing } = await supabaseAdmin
+        .from("widget_usage_monthly")
+        .select("request_count")
+        .eq("client_id", client.id)
+        .eq("month", monthStr)
+        .maybeSingle();
+      await supabaseAdmin
+        .from("widget_usage_monthly")
+        .upsert(
+          {
+            client_id: client.id,
+            month: monthStr,
+            request_count: (existing?.request_count ?? 0) + 1,
+          },
+          { onConflict: "client_id,month" },
+        );
+    } catch {
+      /* non-fatal */
+    }
+  })();
+
 
 
   return { client } as const;
