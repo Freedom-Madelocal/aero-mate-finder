@@ -466,8 +466,11 @@ export type Database = {
       }
       master_specs: {
         Row: {
+          active_ingredient_or_resin: string | null
+          application_process: string | null
           applications: string | null
           climbing_drum_peel_in_lb_per_in: number | null
+          contextual_standards: Json | null
           created_at: string
           crossover_product: string | null
           crossover_vendor: string | null
@@ -498,12 +501,17 @@ export type Database = {
           process_method: string | null
           product_family: string | null
           product_form: string | null
+          product_identifiers: Json | null
           product_name: string
           profiles: string[]
+          qualifications: Json | null
           qualifications_standards: string | null
           reinforcement: string | null
           resin_chemistry: string | null
+          shelf_life_months: number | null
           source_document: string | null
+          storage_temp_max_c: number | null
+          storage_temp_min_c: number | null
           t_peel_n_per_25mm: number | null
           tds_analyzed_at: string | null
           tds_pdf_downloaded_at: string | null
@@ -515,6 +523,8 @@ export type Database = {
           tds_source_title: string | null
           tds_url: string | null
           tensile_lap_shear_mpa: number | null
+          test_methods: Json | null
+          test_results: Json | null
           tml_pct: number | null
           toughened: boolean
           updated_at: string
@@ -523,8 +533,11 @@ export type Database = {
           wet_tg_c: number | null
         }
         Insert: {
+          active_ingredient_or_resin?: string | null
+          application_process?: string | null
           applications?: string | null
           climbing_drum_peel_in_lb_per_in?: number | null
+          contextual_standards?: Json | null
           created_at?: string
           crossover_product?: string | null
           crossover_vendor?: string | null
@@ -555,12 +568,17 @@ export type Database = {
           process_method?: string | null
           product_family?: string | null
           product_form?: string | null
+          product_identifiers?: Json | null
           product_name: string
           profiles?: string[]
+          qualifications?: Json | null
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
+          shelf_life_months?: number | null
           source_document?: string | null
+          storage_temp_max_c?: number | null
+          storage_temp_min_c?: number | null
           t_peel_n_per_25mm?: number | null
           tds_analyzed_at?: string | null
           tds_pdf_downloaded_at?: string | null
@@ -572,6 +590,8 @@ export type Database = {
           tds_source_title?: string | null
           tds_url?: string | null
           tensile_lap_shear_mpa?: number | null
+          test_methods?: Json | null
+          test_results?: Json | null
           tml_pct?: number | null
           toughened?: boolean
           updated_at?: string
@@ -580,8 +600,11 @@ export type Database = {
           wet_tg_c?: number | null
         }
         Update: {
+          active_ingredient_or_resin?: string | null
+          application_process?: string | null
           applications?: string | null
           climbing_drum_peel_in_lb_per_in?: number | null
+          contextual_standards?: Json | null
           created_at?: string
           crossover_product?: string | null
           crossover_vendor?: string | null
@@ -612,12 +635,17 @@ export type Database = {
           process_method?: string | null
           product_family?: string | null
           product_form?: string | null
+          product_identifiers?: Json | null
           product_name?: string
           profiles?: string[]
+          qualifications?: Json | null
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
+          shelf_life_months?: number | null
           source_document?: string | null
+          storage_temp_max_c?: number | null
+          storage_temp_min_c?: number | null
           t_peel_n_per_25mm?: number | null
           tds_analyzed_at?: string | null
           tds_pdf_downloaded_at?: string | null
@@ -629,6 +657,8 @@ export type Database = {
           tds_source_title?: string | null
           tds_url?: string | null
           tensile_lap_shear_mpa?: number | null
+          test_methods?: Json | null
+          test_results?: Json | null
           tml_pct?: number | null
           toughened?: boolean
           updated_at?: string
@@ -1003,6 +1033,50 @@ export type Database = {
         }
         Relationships: []
       }
+      spec_corrections: {
+        Row: {
+          actor_user_id: string | null
+          after_values: Json
+          before_values: Json
+          correction_key: string
+          created_at: string
+          evidence: string | null
+          expected_document_hash: string | null
+          id: string
+          spec_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          after_values: Json
+          before_values: Json
+          correction_key: string
+          created_at?: string
+          evidence?: string | null
+          expected_document_hash?: string | null
+          id?: string
+          spec_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          after_values?: Json
+          before_values?: Json
+          correction_key?: string
+          created_at?: string
+          evidence?: string | null
+          expected_document_hash?: string | null
+          id?: string
+          spec_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spec_corrections_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_reports: {
         Row: {
           created_at: string
@@ -1236,6 +1310,77 @@ export type Database = {
           prompt_version?: string
         }
         Relationships: []
+      }
+      tds_extraction_runs: {
+        Row: {
+          cache_status: string | null
+          cancelled: boolean
+          cost_usd: number | null
+          created_at: string
+          document_hash: string | null
+          error_class: string | null
+          error_code: string | null
+          id: string
+          input_bytes: number | null
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string
+          outcome: string
+          output_tokens: number | null
+          pages: number | null
+          prompt_version: string | null
+          route: string
+          spec_id: string | null
+        }
+        Insert: {
+          cache_status?: string | null
+          cancelled?: boolean
+          cost_usd?: number | null
+          created_at?: string
+          document_hash?: string | null
+          error_class?: string | null
+          error_code?: string | null
+          id?: string
+          input_bytes?: number | null
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model: string
+          outcome: string
+          output_tokens?: number | null
+          pages?: number | null
+          prompt_version?: string | null
+          route: string
+          spec_id?: string | null
+        }
+        Update: {
+          cache_status?: string | null
+          cancelled?: boolean
+          cost_usd?: number | null
+          created_at?: string
+          document_hash?: string | null
+          error_class?: string | null
+          error_code?: string | null
+          id?: string
+          input_bytes?: number | null
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string
+          outcome?: string
+          output_tokens?: number | null
+          pages?: number | null
+          prompt_version?: string | null
+          route?: string
+          spec_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tds_extraction_runs_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tds_field_provenance: {
         Row: {

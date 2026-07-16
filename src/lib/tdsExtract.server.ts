@@ -158,12 +158,57 @@ const ProvenanceItem = z.object({
   confidence: z.enum(["high", "medium", "low"]).optional(),
 });
 
+// Grouped standards + identifiers. Every entry can carry evidence for audit.
+const QualificationItemSchema = z.object({
+  standard: z.string(),
+  revision: z.string().nullable().optional(),
+  class: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const TestMethodItemSchema = z.object({
+  method: z.string(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const ContextualStandardItemSchema = z.object({
+  standard: z.string(),
+  role: z.string(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const ProductIdentifierItemSchema = z.object({
+  kind: z.string(), // 'nsn' | 'cage' | 'part_number' | 'other'
+  value: z.string(),
+  applicability: z.string().nullable().optional(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const TestResultRowSchema = z.object({
+  label: z.string(),
+  value: z.union([z.string(), z.number()]).nullable().optional(),
+  units: z.string().nullable().optional(),
+});
+const TestResultTableSchema = z.object({
+  name: z.string(),
+  conditions: z.string().nullable().optional(),
+  rows: z.array(TestResultRowSchema),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+
 const RowSchema = z.object({
   productFamily: z.string().nullable().optional(),
   materialCategory: z.string().nullable().optional(),
   resinChemistry: z.string().nullable().optional(),
   reinforcement: z.string().nullable().optional(),
   productForm: z.string().nullable().optional(),
+  applicationProcess: z.string().nullable().optional(),
+  activeIngredientOrResin: z.string().nullable().optional(),
+  shelfLifeMonths: z.number().nullable().optional(),
+  storageTempMinC: z.number().nullable().optional(),
+  storageTempMaxC: z.number().nullable().optional(),
   cureTemperatureC: z.number().nullable().optional(),
   cureTime: z.string().nullable().optional(),
   dryTgOnsetC: z.number().nullable().optional(),
@@ -192,6 +237,11 @@ const RowSchema = z.object({
   profiles: z.array(z.string()).optional(),
   keySpecs: z.array(z.string()).optional(),
   customers: z.array(z.string()).optional(),
+  qualifications: z.array(QualificationItemSchema).optional(),
+  testMethods: z.array(TestMethodItemSchema).optional(),
+  contextualStandards: z.array(ContextualStandardItemSchema).optional(),
+  productIdentifiers: z.array(ProductIdentifierItemSchema).optional(),
+  testResults: z.array(TestResultTableSchema).optional(),
   provenance: z.array(ProvenanceItem).optional(),
 });
 
@@ -210,6 +260,11 @@ const TOOL = {
         resinChemistry: { type: "string" },
         reinforcement: { type: "string" },
         productForm: { type: "string" },
+        applicationProcess: { type: "string", description: "How the product is applied/processed. Verbatim summary (e.g. 'apply a minimum coating, dry for 10 minutes, and apply tape within 2 hours'). Do NOT confuse drying/flash-off time with cure time." },
+        activeIngredientOrResin: { type: "string", description: "The primary resin/chemistry family (e.g. 'polyamide', 'epoxy'). Only if explicitly stated." },
+        shelfLifeMonths: { type: ["number", "null"], description: "Shelf life in months. NOT the same as freezer life or out-life." },
+        storageTempMinC: { type: ["number", "null"], description: "Minimum recommended storage temperature in °C." },
+        storageTempMaxC: { type: ["number", "null"], description: "Maximum recommended storage temperature in °C." },
         cureTemperatureC: { type: ["number", "null"] },
         cureTime: { type: "string" },
         dryTgOnsetC: { type: ["number", "null"] },
@@ -233,11 +288,95 @@ const TOOL = {
         impactResistant: { type: "boolean" },
         highTemperature: { type: "boolean" },
         applications: { type: "string" },
-        qualificationsStandards: { type: "string" },
+        qualificationsStandards: { type: "string", description: "Legacy comma-joined list of qualifications (for back-compat). Prefer populating the structured 'qualifications' array." },
         minimumOrderQuantity: { type: "string" },
         profiles: { type: "array", items: { type: "string" } },
         keySpecs: { type: "array", items: { type: "string" } },
         customers: { type: "array", items: { type: "string" } },
+        qualifications: {
+          type: "array",
+          description: "ONLY standards the product ITSELF is stated to conform to / be qualified under / approved to (e.g. 'conforms to MIL-PRF-XYZ', 'qualified to AIMS 05-04-000'). Do NOT include test methods or standards that only describe the test setup.",
+          items: {
+            type: "object",
+            properties: {
+              standard: { type: "string" },
+              revision: { type: ["string", "null"] },
+              class: { type: ["string", "null"] },
+              type: { type: ["string", "null"] },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["standard"],
+          },
+        },
+        testMethods: {
+          type: "array",
+          description: "Standards used ONLY as test methods (e.g. 'ASTM D1000', 'ASTM D3359'). If the PDF says 'tested per ASTM Dxxx' or 'in accordance with ASTM Dxxx', it belongs here — NOT in qualifications.",
+          items: {
+            type: "object",
+            properties: {
+              method: { type: "string" },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["method"],
+          },
+        },
+        contextualStandards: {
+          type: "array",
+          description: "Standards mentioned as CONTEXT for a test — e.g. the tested substrate coating, the tested tape, the tested primer. Example: 'adhesion tested over MIL-PRF-85285 Type IV coating' → contextual, role='tested_substrate_coating'. NOT a qualification of the product.",
+          items: {
+            type: "object",
+            properties: {
+              standard: { type: "string" },
+              role: { type: "string", description: "e.g. 'tested_substrate_coating', 'tested_primer', 'tested_tape', 'reference'." },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["standard", "role"],
+          },
+        },
+        productIdentifiers: {
+          type: "array",
+          description: "Product-level identifiers such as NSN, CAGE, part numbers. Include applicability when several identifiers map to different pack/size variants.",
+          items: {
+            type: "object",
+            properties: {
+              kind: { type: "string", enum: ["nsn", "cage", "part_number", "upc", "other"] },
+              value: { type: "string" },
+              applicability: { type: ["string", "null"] },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["kind", "value"],
+          },
+        },
+        testResults: {
+          type: "array",
+          description: "Multi-dimensional test tables preserved verbatim (do not force into scalar fields). One entry per table; rows[] captures each label/value/units triple.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              conditions: { type: ["string", "null"] },
+              rows: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    label: { type: "string" },
+                    value: { type: ["string", "number", "null"] },
+                    units: { type: ["string", "null"] },
+                  },
+                  required: ["label"],
+                },
+              },
+              evidence_quote: { type: ["string", "null"] },
+              page: { type: ["number", "null"] },
+            },
+            required: ["name", "rows"],
+          },
+        },
         provenance: {
           type: "array",
           description:
@@ -271,11 +410,21 @@ Units (STRICT — the schema stores these units):
 Rules:
 - Extract data ONLY for the specified vendor + product. Ignore other products the PDF may list.
 - For TEXT fields: if the value is not clearly stated, OMIT the field (do not guess).
-- Application dry time is NOT cure_time. Shelf life is NOT freezer life.
+- Application dry time / flash-off time is NOT cure_time. A "dry for 10 minutes" step is application_process, NOT cure_time.
+- Shelf life is NOT freezer life is NOT out life. Keep them distinct; use shelfLifeMonths for the overall shelf life.
 - For BOOLEAN flags: return true only when the PDF clearly states/implies the property. Omit if unknown.
 - keySpecs: universal/OEM specifications the product itself is qualified/approved to (BMS, AIMS, AMS, MIL-*, etc.), verbatim. Do NOT include test methods (ASTM D-xxxx) or specs of tested substrates.
 - customers: every OEM/customer the PDF names as qualified/approved.
 - profiles: section/category tags the product falls under in the PDF.
+
+Standards classification (STRICT):
+- qualifications[]: ONLY when the PDF says the product itself conforms to / is qualified to / is approved under the standard.
+- testMethods[]: standards that only describe HOW a test was run (e.g. "tested per ASTM D1000"). ASTM Dxxx numbers almost always belong here, not in qualifications.
+- contextualStandards[]: standards that describe the TEST CONTEXT — e.g. the substrate coating, primer, or tape the product was tested against. Example: "adhesion tested over MIL-PRF-85285 Type IV" → contextual with role "tested_substrate_coating".
+- When in doubt, prefer testMethods or contextualStandards over qualifications.
+
+Complex tables:
+- If a property has multiple values across conditions (temperatures, substrates, cure schedules), emit the full table under testResults[] rather than picking one number for the scalar field. Only emit the scalar field when the PDF gives a single unambiguous value or a clearly labelled "typical" value.
 
 Provenance (REQUIRED):
 - For every NUMERIC or BOOLEAN value you emit, add a matching entry in "provenance" with the field name, the source page number, an exact verbatim quote from the PDF that supports the value, and a confidence rating.
@@ -287,6 +436,11 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["resinChemistry", "resin_chemistry", "text"],
   ["reinforcement", "reinforcement", "text"],
   ["productForm", "product_form", "text"],
+  ["applicationProcess", "application_process", "text"],
+  ["activeIngredientOrResin", "active_ingredient_or_resin", "text"],
+  ["shelfLifeMonths", "shelf_life_months", "num"],
+  ["storageTempMinC", "storage_temp_min_c", "num"],
+  ["storageTempMaxC", "storage_temp_max_c", "num"],
   ["cureTemperatureC", "cure_temperature_c", "num"],
   ["cureTime", "cure_time", "text"],
   ["dryTgOnsetC", "dry_tg_onset_c", "num"],
@@ -314,6 +468,25 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["minimumOrderQuantity", "minimum_order_quantity", "text"],
 ];
 
+/**
+ * Columns where a stored `0` almost always means "we lost the value" (legacy
+ * import default), not an actual measurement. `isExistingEmpty` treats these
+ * zeros as empty so extraction can overwrite them. Do NOT list scalar
+ * mechanical / mass-loss properties here — a real 0 is a plausible reading.
+ */
+const ZERO_IS_MISSING: ReadonlySet<string> = new Set([
+  "cure_temperature_c",
+  "out_life_days",
+  "freezer_life_months",
+  "shelf_life_months",
+  "storage_temp_min_c",
+  "storage_temp_max_c",
+  "dry_tg_onset_c",
+  "wet_tg_c",
+  "peak_tg_c",
+  "max_service_temperature_c",
+]);
+
 // Plausibility gates per DB column. Values outside these ranges are dropped.
 const RANGES: Record<string, [number, number]> = {
   cure_temperature_c: [20, 400],
@@ -323,6 +496,9 @@ const RANGES: Record<string, [number, number]> = {
   max_service_temperature_c: [20, 500],
   out_life_days: [0, 365],
   freezer_life_months: [0, 60],
+  shelf_life_months: [0, 120],
+  storage_temp_min_c: [-80, 60],
+  storage_temp_max_c: [-40, 80],
   tml_pct: [0, 10],
   cvcm_pct: [0, 5],
   tensile_lap_shear_mpa: [0, 200],
@@ -340,6 +516,9 @@ const UNIT_FOR: Record<string, string> = {
   max_service_temperature_c: "°C",
   out_life_days: "days",
   freezer_life_months: "months",
+  shelf_life_months: "months",
+  storage_temp_min_c: "°C",
+  storage_temp_max_c: "°C",
   tml_pct: "%",
   cvcm_pct: "%",
   tensile_lap_shear_mpa: "MPa",
@@ -357,9 +536,16 @@ function isMissing(v: unknown): boolean {
   return false;
 }
 
-function isExistingEmpty(v: unknown): boolean {
+/**
+ * Whether a stored value should be treated as "empty" and therefore safe to
+ * fill via extraction. `dbCol` opt-in: legacy `0` is treated as missing only
+ * for columns listed in ZERO_IS_MISSING (temperature/time sentinels). For
+ * mechanical properties, mass loss %, etc., a real 0 is preserved.
+ */
+function isExistingEmpty(v: unknown, dbCol?: string): boolean {
   if (v === null || v === undefined) return true;
   if (typeof v === "string" && v.trim() === "") return true;
+  if (typeof v === "number" && v === 0 && dbCol && ZERO_IS_MISSING.has(dbCol)) return true;
   return false;
 }
 
@@ -648,7 +834,7 @@ export function buildSafePatch(
 
     if (kind === "text") {
       if (isMissing(v)) continue;
-      if (!isExistingEmpty(existing)) continue;
+      if (!isExistingEmpty(existing, dbCol)) continue;
       patch[dbCol] = String(v);
       updated.push(dbCol);
       if (prov?.quote) {
@@ -662,7 +848,7 @@ export function buildSafePatch(
       }
     } else if (kind === "num") {
       if (typeof v !== "number" || !Number.isFinite(v)) continue;
-      if (existing !== null && existing !== undefined) continue;
+      if (!isExistingEmpty(existing, dbCol)) continue;
       // Provenance quote required for numeric values.
       if (!prov?.quote || !prov.quote.trim()) {
         console.warn(`[tdsExtract] dropping ${dbCol}=${v} — no provenance quote`);
@@ -712,6 +898,38 @@ export function buildSafePatch(
   if (mergedCustomers.length > existingCustomers.length) {
     patch.customers = mergedCustomers;
     updated.push("customers");
+  }
+
+  // Grouped standards / identifiers / test-results: only write when the
+  // target column is empty — never overwrite curated structured data.
+  const groupWrites: Array<[string, unknown]> = [
+    ["qualifications", row.qualifications],
+    ["test_methods", row.testMethods],
+    ["contextual_standards", row.contextualStandards],
+    ["product_identifiers", row.productIdentifiers],
+    ["test_results", row.testResults],
+  ];
+  for (const [col, val] of groupWrites) {
+    if (!Array.isArray(val) || val.length === 0) continue;
+    const existing = spec[col];
+    const existingArr = Array.isArray(existing) ? existing : null;
+    if (existingArr && existingArr.length > 0) continue; // curated / already present
+    patch[col] = val as never;
+    updated.push(col);
+  }
+
+  // Back-compat: if qualifications[] came through but qualifications_standards
+  // (legacy text) is empty, populate the joined string so old UI still renders.
+  if (
+    Array.isArray(row.qualifications) &&
+    row.qualifications.length > 0 &&
+    isExistingEmpty(spec.qualifications_standards)
+  ) {
+    const joined = dedupe(row.qualifications.map((q) => q.standard)).join(", ");
+    if (joined) {
+      patch.qualifications_standards = joined;
+      if (!updated.includes("qualifications_standards")) updated.push("qualifications_standards");
+    }
   }
 
   return { patch, updated, provenanceRows };
