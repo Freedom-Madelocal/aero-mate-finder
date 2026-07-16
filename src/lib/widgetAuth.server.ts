@@ -44,10 +44,14 @@ export async function verifyWidgetKey(request: Request) {
     .from("widget_clients")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", client.id);
-  void supabaseAdmin.rpc("increment_widget_usage", {
-    _client_id: client.id,
-    _month: monthStr,
-  }).then(() => {}, () => {});
+  void supabaseAdmin
+    .from("widget_usage_monthly")
+    .upsert(
+      { client_id: client.id, month: monthStr, request_count: 1 },
+      { onConflict: "client_id,month", ignoreDuplicates: false },
+    )
+    .then(() => {}, () => {});
+
 
   return { client } as const;
 }

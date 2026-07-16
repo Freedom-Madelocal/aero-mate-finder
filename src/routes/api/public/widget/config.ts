@@ -10,11 +10,12 @@ export const Route = createFileRoute("/api/public/widget/config")({
         const cors = corsHeaders(request.headers.get("origin"));
         const result = await verifyWidgetKey(request);
         if ("error" in result) {
-          const r = result.error;
+          const r = result.error!;
           const merged = new Headers(r.headers);
           Object.entries(cors).forEach(([k, v]) => merged.set(k, v));
           return new Response(r.body, { status: r.status, headers: merged });
         }
+
         const c = result.client;
         return Response.json(
           {

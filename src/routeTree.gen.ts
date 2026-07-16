@@ -44,6 +44,8 @@ import { Route as AppCompareRouteImport } from './routes/_app.compare'
 import { Route as ApiPublicTdsWorkerTickRouteImport } from './routes/api/public/tds-worker-tick'
 import { Route as AppOrgTeamRouteImport } from './routes/_app.org.team'
 import { Route as AppMaterialIdRouteImport } from './routes/_app.material.$id'
+import { Route as ApiPublicWidgetConfigRouteImport } from './routes/api/public/widget/config'
+import { Route as ApiPublicWidgetCatalogRouteImport } from './routes/api/public/widget/catalog'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -219,6 +221,16 @@ const AppMaterialIdRoute = AppMaterialIdRouteImport.update({
   path: '/material/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicWidgetConfigRoute = ApiPublicWidgetConfigRouteImport.update({
+  id: '/api/public/widget/config',
+  path: '/api/public/widget/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWidgetCatalogRoute = ApiPublicWidgetCatalogRouteImport.update({
+  id: '/api/public/widget/catalog',
+  path: '/api/public/widget/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -255,6 +267,8 @@ export interface FileRoutesByFullPath {
   '/material/$id': typeof AppMaterialIdRoute
   '/org/team': typeof AppOrgTeamRoute
   '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
+  '/api/public/widget/catalog': typeof ApiPublicWidgetCatalogRoute
+  '/api/public/widget/config': typeof ApiPublicWidgetConfigRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -291,6 +305,8 @@ export interface FileRoutesByTo {
   '/material/$id': typeof AppMaterialIdRoute
   '/org/team': typeof AppOrgTeamRoute
   '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
+  '/api/public/widget/catalog': typeof ApiPublicWidgetCatalogRoute
+  '/api/public/widget/config': typeof ApiPublicWidgetConfigRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -329,6 +345,8 @@ export interface FileRoutesById {
   '/_app/material/$id': typeof AppMaterialIdRoute
   '/_app/org/team': typeof AppOrgTeamRoute
   '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
+  '/api/public/widget/catalog': typeof ApiPublicWidgetCatalogRoute
+  '/api/public/widget/config': typeof ApiPublicWidgetConfigRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -367,6 +385,8 @@ export interface FileRouteTypes {
     | '/material/$id'
     | '/org/team'
     | '/api/public/tds-worker-tick'
+    | '/api/public/widget/catalog'
+    | '/api/public/widget/config'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -403,6 +423,8 @@ export interface FileRouteTypes {
     | '/material/$id'
     | '/org/team'
     | '/api/public/tds-worker-tick'
+    | '/api/public/widget/catalog'
+    | '/api/public/widget/config'
   id:
     | '__root__'
     | '/'
@@ -440,6 +462,8 @@ export interface FileRouteTypes {
     | '/_app/material/$id'
     | '/_app/org/team'
     | '/api/public/tds-worker-tick'
+    | '/api/public/widget/catalog'
+    | '/api/public/widget/config'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -463,6 +487,8 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicTdsWorkerTickRoute: typeof ApiPublicTdsWorkerTickRoute
+  ApiPublicWidgetCatalogRoute: typeof ApiPublicWidgetCatalogRoute
+  ApiPublicWidgetConfigRoute: typeof ApiPublicWidgetConfigRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -712,6 +738,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaterialIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/widget/config': {
+      id: '/api/public/widget/config'
+      path: '/api/public/widget/config'
+      fullPath: '/api/public/widget/config'
+      preLoaderRoute: typeof ApiPublicWidgetConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/widget/catalog': {
+      id: '/api/public/widget/catalog'
+      path: '/api/public/widget/catalog'
+      fullPath: '/api/public/widget/catalog'
+      preLoaderRoute: typeof ApiPublicWidgetCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -783,6 +823,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicTdsWorkerTickRoute: ApiPublicTdsWorkerTickRoute,
+  ApiPublicWidgetCatalogRoute: ApiPublicWidgetCatalogRoute,
+  ApiPublicWidgetConfigRoute: ApiPublicWidgetConfigRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
