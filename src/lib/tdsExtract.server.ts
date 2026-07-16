@@ -410,11 +410,21 @@ Units (STRICT — the schema stores these units):
 Rules:
 - Extract data ONLY for the specified vendor + product. Ignore other products the PDF may list.
 - For TEXT fields: if the value is not clearly stated, OMIT the field (do not guess).
-- Application dry time is NOT cure_time. Shelf life is NOT freezer life.
+- Application dry time / flash-off time is NOT cure_time. A "dry for 10 minutes" step is application_process, NOT cure_time.
+- Shelf life is NOT freezer life is NOT out life. Keep them distinct; use shelfLifeMonths for the overall shelf life.
 - For BOOLEAN flags: return true only when the PDF clearly states/implies the property. Omit if unknown.
 - keySpecs: universal/OEM specifications the product itself is qualified/approved to (BMS, AIMS, AMS, MIL-*, etc.), verbatim. Do NOT include test methods (ASTM D-xxxx) or specs of tested substrates.
 - customers: every OEM/customer the PDF names as qualified/approved.
 - profiles: section/category tags the product falls under in the PDF.
+
+Standards classification (STRICT):
+- qualifications[]: ONLY when the PDF says the product itself conforms to / is qualified to / is approved under the standard.
+- testMethods[]: standards that only describe HOW a test was run (e.g. "tested per ASTM D1000"). ASTM Dxxx numbers almost always belong here, not in qualifications.
+- contextualStandards[]: standards that describe the TEST CONTEXT — e.g. the substrate coating, primer, or tape the product was tested against. Example: "adhesion tested over MIL-PRF-85285 Type IV" → contextual with role "tested_substrate_coating".
+- When in doubt, prefer testMethods or contextualStandards over qualifications.
+
+Complex tables:
+- If a property has multiple values across conditions (temperatures, substrates, cure schedules), emit the full table under testResults[] rather than picking one number for the scalar field. Only emit the scalar field when the PDF gives a single unambiguous value or a clearly labelled "typical" value.
 
 Provenance (REQUIRED):
 - For every NUMERIC or BOOLEAN value you emit, add a matching entry in "provenance" with the field name, the source page number, an exact verbatim quote from the PDF that supports the value, and a confidence rating.
