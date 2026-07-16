@@ -131,7 +131,7 @@ export default function Crossover() {
           {/* RIGHT */}
           <div className="space-y-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Traceium equivalents
+              VIABLE CANDIDATES
             </p>
             {!selected ? (
               <div
