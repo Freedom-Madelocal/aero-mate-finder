@@ -1,8 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdleTimer } from "@/hooks/useIdleTimer";
+import { useSessionSentinel } from "@/hooks/useSessionSentinel";
 import { IdleWarningDialog } from "@/components/IdleWarningDialog";
+
 
 export type AppRole = "super_admin" | "org_admin" | "engineer" | "procurement" | "dev" | "integrator";
 
@@ -128,18 +133,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     Date.now() - new Date(demo.first_login_at).getTime() > 48 * 60 * 60 * 1000 &&
     !isSuperAdmin;
 
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const forcingRef = useRef(false);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
 
+  const forceSignOut = useCallback(
+    async (reason?: string) => {
+      if (forcingRef.current) return;
+      forcingRef.current = true;
+      try {
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn("[auth] forceSignOut error", err);
+      } finally {
+        if (reason) toast.error(reason);
+        try {
+          await router.navigate({ to: "/login", replace: true });
+        } catch {
+          if (typeof window !== "undefined") window.location.assign("/login");
+        }
+        // Allow re-entry on the next real session.
+        setTimeout(() => {
+          forcingRef.current = false;
+        }, 1000);
+      }
+    },
+    [queryClient, router],
+  );
+
+  useSessionSentinel(session, () =>
+    forceSignOut("Your session expired. Please sign in again."),
+  );
+
   const idle = useIdleTimer(!!session, () => {
-    void supabase.auth.signOut();
+    void forceSignOut("You were signed out due to inactivity.");
   });
 
   const handleStay = useCallback(() => {
     idle.stayActive();
     void supabase.auth.refreshSession();
   }, [idle]);
+
 
   const value = useMemo<AuthCtx>(
     () => ({
