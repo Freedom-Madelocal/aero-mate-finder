@@ -436,6 +436,11 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["resinChemistry", "resin_chemistry", "text"],
   ["reinforcement", "reinforcement", "text"],
   ["productForm", "product_form", "text"],
+  ["applicationProcess", "application_process", "text"],
+  ["activeIngredientOrResin", "active_ingredient_or_resin", "text"],
+  ["shelfLifeMonths", "shelf_life_months", "num"],
+  ["storageTempMinC", "storage_temp_min_c", "num"],
+  ["storageTempMaxC", "storage_temp_max_c", "num"],
   ["cureTemperatureC", "cure_temperature_c", "num"],
   ["cureTime", "cure_time", "text"],
   ["dryTgOnsetC", "dry_tg_onset_c", "num"],
@@ -463,6 +468,25 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["minimumOrderQuantity", "minimum_order_quantity", "text"],
 ];
 
+/**
+ * Columns where a stored `0` almost always means "we lost the value" (legacy
+ * import default), not an actual measurement. `isExistingEmpty` treats these
+ * zeros as empty so extraction can overwrite them. Do NOT list scalar
+ * mechanical / mass-loss properties here — a real 0 is a plausible reading.
+ */
+const ZERO_IS_MISSING: ReadonlySet<string> = new Set([
+  "cure_temperature_c",
+  "out_life_days",
+  "freezer_life_months",
+  "shelf_life_months",
+  "storage_temp_min_c",
+  "storage_temp_max_c",
+  "dry_tg_onset_c",
+  "wet_tg_c",
+  "peak_tg_c",
+  "max_service_temperature_c",
+]);
+
 // Plausibility gates per DB column. Values outside these ranges are dropped.
 const RANGES: Record<string, [number, number]> = {
   cure_temperature_c: [20, 400],
@@ -472,6 +496,9 @@ const RANGES: Record<string, [number, number]> = {
   max_service_temperature_c: [20, 500],
   out_life_days: [0, 365],
   freezer_life_months: [0, 60],
+  shelf_life_months: [0, 120],
+  storage_temp_min_c: [-80, 60],
+  storage_temp_max_c: [-40, 80],
   tml_pct: [0, 10],
   cvcm_pct: [0, 5],
   tensile_lap_shear_mpa: [0, 200],
