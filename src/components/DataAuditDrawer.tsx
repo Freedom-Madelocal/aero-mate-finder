@@ -226,8 +226,9 @@ function AuditBody({ data }: { data: SpecAuditPayload }) {
                     {it.error}
                   </p>
                 )}
-                {it.nextRunAt && it.status !== "done" && (
-                  <p className="text-muted-foreground">Next retry: {fmtDate(it.nextRunAt)}</p>
+                {it.nextAttemptAt && it.status !== "done" && (
+                  <p className="text-muted-foreground">Next retry: {fmtDate(it.nextAttemptAt)}</p>
+
                 )}
               </li>
             ))}

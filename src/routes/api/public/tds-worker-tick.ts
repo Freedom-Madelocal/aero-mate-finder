@@ -40,6 +40,8 @@ async function processOne(itemId: string, specId: string) {
         cost_usd: res.usage.costUsd,
         error: null,
         error_class: null,
+        error_code: null,
+        completed_at: new Date().toISOString(),
       })
       .eq("id", itemId);
     return { ok: true };
@@ -60,6 +62,7 @@ async function processOne(itemId: string, specId: string) {
     const desiredMax = maxAttemptsFor(errClass);
     const effectiveMax = Math.min(item?.max_attempts ?? desiredMax, desiredMax);
     const attempts = item?.attempts ?? effectiveMax;
+    const nowIso = new Date().toISOString();
 
     if (attempts < effectiveMax) {
       const deferSec = backoffSecondsFor(errClass, attempts, retryAfter);
@@ -67,10 +70,14 @@ async function processOne(itemId: string, specId: string) {
         .from("tds_analysis_items")
         .update({
           status: "pending",
-          next_run_at: new Date(Date.now() + deferSec * 1000).toISOString(),
+          // next_attempt_at is the retry schedule. lease_until is a
+          // processing lease only, and is cleared here.
+          next_attempt_at: new Date(Date.now() + deferSec * 1000).toISOString(),
           lease_until: null,
           error: msg,
           error_class: errClass,
+          error_code: errClass,
+          last_error_at: nowIso,
           max_attempts: effectiveMax,
         })
         .eq("id", itemId);
@@ -81,6 +88,9 @@ async function processOne(itemId: string, specId: string) {
           status: "failed",
           error: msg,
           error_class: errClass,
+          error_code: errClass,
+          last_error_at: nowIso,
+          completed_at: nowIso,
           max_attempts: effectiveMax,
         })
         .eq("id", itemId);
@@ -88,6 +98,7 @@ async function processOne(itemId: string, specId: string) {
     return { ok: false, error: msg, errClass };
   }
 }
+
 
 function isAuthorized(request: Request): boolean {
   const workerSecret = process.env.TDS_WORKER_SECRET;

@@ -1038,8 +1038,11 @@ export type Database = {
           failed_count: number
           id: string
           label: string | null
+          paused_at: string | null
+          paused_reason: string | null
           pending_count: number
           processing_count: number
+          resumed_at: string | null
           skipped_cache_count: number
           status: string
           terminal_count: number
@@ -1053,8 +1056,11 @@ export type Database = {
           failed_count?: number
           id?: string
           label?: string | null
+          paused_at?: string | null
+          paused_reason?: string | null
           pending_count?: number
           processing_count?: number
+          resumed_at?: string | null
           skipped_cache_count?: number
           status?: string
           terminal_count?: number
@@ -1068,8 +1074,11 @@ export type Database = {
           failed_count?: number
           id?: string
           label?: string | null
+          paused_at?: string | null
+          paused_reason?: string | null
           pending_count?: number
           processing_count?: number
+          resumed_at?: string | null
           skipped_cache_count?: number
           status?: string
           terminal_count?: number
@@ -1082,17 +1091,21 @@ export type Database = {
         Row: {
           attempts: number
           batch_id: string
+          completed_at: string | null
           cost_usd: number | null
           created_at: string
           document_hash: string | null
           error: string | null
           error_class: string | null
+          error_code: string | null
           id: string
           input_tokens: number | null
+          last_error_at: string | null
           latency_ms: number | null
           lease_until: string | null
           max_attempts: number
           model: string | null
+          next_attempt_at: string | null
           next_run_at: string | null
           output_tokens: number | null
           prompt_version: string | null
@@ -1104,17 +1117,21 @@ export type Database = {
         Insert: {
           attempts?: number
           batch_id: string
+          completed_at?: string | null
           cost_usd?: number | null
           created_at?: string
           document_hash?: string | null
           error?: string | null
           error_class?: string | null
+          error_code?: string | null
           id?: string
           input_tokens?: number | null
+          last_error_at?: string | null
           latency_ms?: number | null
           lease_until?: string | null
           max_attempts?: number
           model?: string | null
+          next_attempt_at?: string | null
           next_run_at?: string | null
           output_tokens?: number | null
           prompt_version?: string | null
@@ -1126,17 +1143,21 @@ export type Database = {
         Update: {
           attempts?: number
           batch_id?: string
+          completed_at?: string | null
           cost_usd?: number | null
           created_at?: string
           document_hash?: string | null
           error?: string | null
           error_class?: string | null
+          error_code?: string | null
           id?: string
           input_tokens?: number | null
+          last_error_at?: string | null
           latency_ms?: number | null
           lease_until?: string | null
           max_attempts?: number
           model?: string | null
+          next_attempt_at?: string | null
           next_run_at?: string | null
           output_tokens?: number | null
           prompt_version?: string | null
@@ -1453,17 +1474,21 @@ export type Database = {
         Returns: {
           attempts: number
           batch_id: string
+          completed_at: string | null
           cost_usd: number | null
           created_at: string
           document_hash: string | null
           error: string | null
           error_class: string | null
+          error_code: string | null
           id: string
           input_tokens: number | null
+          last_error_at: string | null
           latency_ms: number | null
           lease_until: string | null
           max_attempts: number
           model: string | null
+          next_attempt_at: string | null
           next_run_at: string | null
           output_tokens: number | null
           prompt_version: string | null
@@ -1480,6 +1505,13 @@ export type Database = {
         }
       }
       finalize_stuck_batches: { Args: never; Returns: undefined }
+      get_batch_status_summary: {
+        Args: { _batch_id: string }
+        Returns: {
+          count: number
+          status: string
+        }[]
+      }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
