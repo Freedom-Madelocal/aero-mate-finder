@@ -99,9 +99,9 @@ export function joinPagesForPrompt(
   return { text: out, includedPages: included, totalPages: chunks.length, truncated: false };
 }
 
-// Re-declared locally to avoid a circular import; kept in sync with tdsExtract.server.ts.
-// Do not import from tdsExtract.server via a helper — bundlers would double-load.
-const RowSchemaLocal = _RowSchema as unknown as typeof _RowSchema;
+// The safe-merge in tdsExtract.server.ts already validates every field
+// defensively before writing, so trusting the tool-call JSON shape here is
+// safe: bad fields are dropped by buildSafePatch, not persisted.
 
 const FAST_SYSTEM = `You extract aerospace material specs for ONE named product from its TDS PDF, which has been converted to plain text with "--- Page N ---" markers.
 
