@@ -79,31 +79,34 @@ export const getBatchProgress = createServerFn({ method: "GET" })
     await assertSuperAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [{ data: batch, error: bErr }, { data: items, error: iErr }] = await Promise.all([
-      supabaseAdmin
-        .from("tds_analysis_batches")
-        .select("id, status, total, label, created_at, updated_at")
-        .eq("id", data.batchId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("tds_analysis_items")
-        .select("id, spec_id, status, updated_fields, error, latency_ms")
-        .eq("batch_id", data.batchId),
-    ]);
+    // Cheap poll: read pre-aggregated counters from the batch row (maintained
+    // by an AFTER trigger on tds_analysis_items). Failures capped at 20.
+    const { data: batch, error: bErr } = await supabaseAdmin
+      .from("tds_analysis_batches")
+      .select(
+        "id, status, total, label, created_at, updated_at, pending_count, processing_count, done_count, failed_count, skipped_cache_count",
+      )
+      .eq("id", data.batchId)
+      .maybeSingle();
     if (bErr) throw new Error(bErr.message);
     if (!batch) throw new Error("Batch not found.");
-    if (iErr) throw new Error(iErr.message);
 
-    const counts = { pending: 0, processing: 0, done: 0, failed: 0, skipped_cache: 0 };
-    const failures: Array<{ specId: string; error: string }> = [];
-    for (const it of items ?? []) {
-      const s = it.status as keyof typeof counts;
-      if (s in counts) counts[s]++;
-      if (it.status === "failed" && it.error) {
-        failures.push({ specId: it.spec_id, error: it.error });
-      }
-    }
+    const { data: failureRows, error: fErr } = await supabaseAdmin
+      .from("tds_analysis_items")
+      .select("spec_id, error")
+      .eq("batch_id", data.batchId)
+      .eq("status", "failed")
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (fErr) throw new Error(fErr.message);
 
+    const counts = {
+      pending: batch.pending_count ?? 0,
+      processing: batch.processing_count ?? 0,
+      done: batch.done_count ?? 0,
+      failed: batch.failed_count ?? 0,
+      skipped_cache: batch.skipped_cache_count ?? 0,
+    };
     const finishedCount = counts.done + counts.failed + counts.skipped_cache;
     const isFinished = finishedCount >= (batch.total ?? 0);
     if (isFinished && batch.status === "running") {
@@ -114,9 +117,19 @@ export const getBatchProgress = createServerFn({ method: "GET" })
     }
 
     return {
-      batch: { ...batch, status: isFinished ? "complete" : batch.status },
+      batch: {
+        id: batch.id,
+        status: isFinished ? "complete" : batch.status,
+        total: batch.total,
+        label: batch.label,
+        created_at: batch.created_at,
+        updated_at: batch.updated_at,
+      },
       counts,
-      failures,
+      failures: (failureRows ?? []).map((f) => ({
+        specId: f.spec_id,
+        error: f.error ?? "unknown",
+      })),
     };
   });
 
