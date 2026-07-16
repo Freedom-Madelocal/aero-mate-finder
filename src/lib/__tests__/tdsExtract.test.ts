@@ -5,6 +5,10 @@ import {
   computeDocumentHash,
   buildSafePatch,
   TdsExtractError,
+  ERROR_CODES,
+  classifyGatewayStatus,
+  providerCooldownSeconds,
+  isPauseCode,
   type ExtractedRow,
 } from "@/lib/tdsExtract.server";
 
