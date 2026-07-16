@@ -2,7 +2,7 @@ import AdminShell from "@/components/AdminShell";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
 import { useFeatureFlag } from "@/data/featureFlags";
-import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
+import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink, ClipboardList } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 import { BulkAnalyzeTdsButton } from "@/components/BulkAnalyzeTdsButton";
 import { fmtTempF, fmtNonZero } from "@/lib/units";
 import { SpecValueProvenance } from "@/components/SpecValueProvenance";
+import { DataAuditDrawer } from "@/components/DataAuditDrawer";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
@@ -376,6 +377,7 @@ function InventoryBadge({ status }: { status: "in-stock" | "tracked" | "none" })
 function SpecDrawer({
   spec, inv, onClose,
 }: { spec: MasterSpec; inv: ReturnType<typeof getInventoryMatch>; onClose: () => void }) {
+  const [showAudit, setShowAudit] = useState(false);
   const fmt = (n: number | null, suffix = "") => fmtNonZero(n, suffix);
   const flags = [
     ["OOA / VBO", spec.ooaVboCapable], ["Toughened", spec.toughened],
@@ -401,10 +403,20 @@ function SpecDrawer({
             <h3 className="text-base font-semibold text-foreground">{spec.productName}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{spec.materialCategory ?? "—"}</p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAudit(true)}
+              className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-border bg-secondary/40 text-foreground hover:bg-secondary"
+              title="View data lineage and scrape attempts"
+            >
+              <ClipboardList className="w-3.5 h-3.5" /> Data audit
+            </button>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+        {showAudit && <DataAuditDrawer specId={spec.id} onClose={() => setShowAudit(false)} />}
 
         <div className="p-5 space-y-5">
           {/* Inventory link */}
