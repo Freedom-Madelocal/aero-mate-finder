@@ -6,24 +6,28 @@
  *
  * All applied corrections are audited into public.spec_corrections.
  *
- * Values below are transcribed verbatim from the reviewed 3M 86A TDS. See the
- * Phase-2A plan for the audit rationale; unsupported scalar fields (cure_time,
- * dry_tg_onset_c, wet_tg_c, peak_tg_c, max_service_temperature_c, tml/cvcm,
- * mechanical properties) MUST remain null — do not add "reasonable defaults".
+ * Values below are transcribed from the reviewed 3M 86A TDS. Unsupported
+ * scalar fields (cure_time, dry/wet/peak Tg, max service temp, TML/CVCM,
+ * mechanical properties) MUST remain null — do not add defaults.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { downloadTdsPdf, computeDocumentHash } from "@/lib/tdsExtract.server";
 
 export const CORRECTION_KEY = "3m_adhesion_promoter_86a_v1";
 
 const VENDOR_MATCH = /3\s*m/i;
 const PRODUCT_MATCH = /(adhesion\s*promoter.*86a|^86a$)/i;
 
-// Fields we care about for the correction. Any field that must remain NULL
-// per the audit is included with an explicit `null` so the preview shows it
-// alongside the corrected values.
-export const CORRECTION_86A = {
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
+
+/**
+ * The exact patch we apply. Explicit `null` fields overwrite legacy zero/wrong
+ * values; scalar fields not listed here are left untouched.
+ */
+export const CORRECTION_86A: Record<string, Json> = {
   material_category: "Adhesion Promoter",
   active_ingredient_or_resin: "Polyamide",
   resin_chemistry: "Polyamide",
@@ -33,29 +37,28 @@ export const CORRECTION_86A = {
   shelf_life_months: 24,
   storage_temp_min_c: 16, // 60 °F
   storage_temp_max_c: 27, // 80 °F
-  // Explicit nulls: prior legacy 0s are wrong, correct value is unknown.
-  cure_temperature_c: null as number | null,
-  cure_time: null as string | null,
-  out_life_days: null as number | null,
-  freezer_life_months: null as number | null,
-  dry_tg_onset_c: null as number | null,
-  wet_tg_c: null as number | null,
-  peak_tg_c: null as number | null,
-  max_service_temperature_c: null as number | null,
-  tml_pct: null as number | null,
-  cvcm_pct: null as number | null,
-  tensile_lap_shear_mpa: null as number | null,
-  t_peel_n_per_25mm: null as number | null,
-  flatwise_tension_mpa: null as number | null,
-  climbing_drum_peel_in_lb_per_in: null as number | null,
 
-  // JSON groups
-  qualifications: [] as Array<Record<string, unknown>>, // none — TDS lists no product-conformance standards
+  // Explicit nulls — clears legacy zero/incorrect values.
+  cure_temperature_c: null,
+  cure_time: null,
+  out_life_days: null,
+  freezer_life_months: null,
+  dry_tg_onset_c: null,
+  wet_tg_c: null,
+  peak_tg_c: null,
+  max_service_temperature_c: null,
+  tml_pct: null,
+  cvcm_pct: null,
+  tensile_lap_shear_mpa: null,
+  t_peel_n_per_25mm: null,
+  flatwise_tension_mpa: null,
+  climbing_drum_peel_in_lb_per_in: null,
+
+  qualifications: [],
   test_methods: [
     {
       method: "ASTM D1000",
-      evidence_quote:
-        "Adhesion is measured in accordance with ASTM D1000.",
+      evidence_quote: "Adhesion is measured in accordance with ASTM D1000.",
       page: null,
     },
   ],
@@ -63,8 +66,7 @@ export const CORRECTION_86A = {
     {
       standard: "MIL-PRF-85285 Type IV",
       role: "tested_substrate_coating",
-      evidence_quote:
-        "Adhesion tested over MIL-PRF-85285 Type IV coating.",
+      evidence_quote: "Adhesion tested over MIL-PRF-85285 Type IV coating.",
       page: null,
     },
   ],
@@ -84,9 +86,7 @@ export const CORRECTION_86A = {
       page: null,
     },
   ],
-} as const;
-
-type CorrectionValues = typeof CORRECTION_86A;
+};
 
 const ArgsSchema = z.object({
   specId: z.string().uuid(),
@@ -94,25 +94,28 @@ const ArgsSchema = z.object({
   evidence: z.string().optional(),
 });
 
-function pickSnapshot(spec: Record<string, unknown>): Record<string, unknown> {
-  const keys = Object.keys(CORRECTION_86A) as (keyof CorrectionValues)[];
-  const out: Record<string, unknown> = {};
-  for (const k of keys) out[k] = spec[k] ?? null;
+function pickSnapshot(spec: Record<string, unknown>): Record<string, Json> {
+  const out: Record<string, Json> = {};
+  for (const k of Object.keys(CORRECTION_86A)) {
+    const v = spec[k];
+    out[k] = (v === undefined ? null : (v as Json));
+  }
   return out;
 }
 
-async function assertSuperAdmin(supabase: ReturnType<typeof requireSupabaseAuth>["_"]["context"] extends never ? never : never, _userId: string) {
-  return; // helper placeholder — we do the check inline against context.supabase
+async function assertSuperAdmin(userId: string): Promise<void> {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  if (!(data ?? []).some((r) => r.role === "super_admin")) {
+    throw new Response("Forbidden", { status: 403 });
+  }
 }
-void assertSuperAdmin;
 
-async function loadAndVerify(context: { supabase: ReturnType<typeof import("@supabase/supabase-js").createClient>; userId: string }, args: z.infer<typeof ArgsSchema>) {
-  const { data: isAdmin, error: roleErr } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
-  if (roleErr) throw new Error(roleErr.message);
-  if (!isAdmin) throw new Error("Forbidden: super-admin only");
-
-  // Import admin client only after authorization (see server-functions-modern).
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+async function loadAndVerify(userId: string, args: z.infer<typeof ArgsSchema>) {
+  await assertSuperAdmin(userId);
 
   const { data: spec, error: specErr } = await supabaseAdmin
     .from("master_specs")
@@ -122,18 +125,16 @@ async function loadAndVerify(context: { supabase: ReturnType<typeof import("@sup
   if (specErr) throw new Error(specErr.message);
   if (!spec) throw new Error("Spec not found");
 
-  const vendor = String((spec as Record<string, unknown>).vendor ?? "");
-  const productName = String((spec as Record<string, unknown>).product_name ?? "");
+  const row = spec as Record<string, unknown>;
+  const vendor = String(row.vendor ?? "");
+  const productName = String(row.product_name ?? "");
   if (!VENDOR_MATCH.test(vendor) || !PRODUCT_MATCH.test(productName)) {
     throw new Error(
-      `Row does not match 3M Adhesion Promoter 86A (got vendor="${vendor}" product="${productName}")`,
+      `Row does not match 3M Adhesion Promoter 86A (vendor="${vendor}" product="${productName}").`,
     );
   }
 
-  // Verify document hash — download PDF and hash it with the same policy as
-  // the extractor so the caller cannot apply against a different document.
-  const { downloadTdsPdf, computeDocumentHash } = await import("@/lib/tdsExtract.server");
-  const pdfPath = (spec as Record<string, unknown>).tds_pdf_path as string | null;
+  const pdfPath = row.tds_pdf_path as string | null;
   if (!pdfPath) throw new Error("Spec has no attached TDS PDF");
   const bytes = await downloadTdsPdf(pdfPath);
   const actualHash = computeDocumentHash(bytes);
@@ -142,19 +143,20 @@ async function loadAndVerify(context: { supabase: ReturnType<typeof import("@sup
       `Document hash mismatch — refusing correction. Expected ${args.expectedDocumentHash}, got ${actualHash}.`,
     );
   }
-
-  return { spec: spec as Record<string, unknown>, supabaseAdmin };
+  return row;
 }
 
 export const previewCorrection86A = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => ArgsSchema.parse(raw))
   .handler(async ({ data, context }) => {
-    const { spec } = await loadAndVerify(context as never, data);
+    const spec = await loadAndVerify(context.userId, data);
+    const before = pickSnapshot(spec);
+    const after = CORRECTION_86A;
     return {
       specId: data.specId,
-      before: pickSnapshot(spec),
-      after: CORRECTION_86A,
+      before: before as Record<string, Json>,
+      after: after as Record<string, Json>,
     };
   });
 
@@ -162,13 +164,12 @@ export const applyCorrection86A = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => ArgsSchema.parse(raw))
   .handler(async ({ data, context }) => {
-    const { spec, supabaseAdmin } = await loadAndVerify(context as never, data);
+    const spec = await loadAndVerify(context.userId, data);
     const before = pickSnapshot(spec);
 
-    const patch: Record<string, unknown> = { ...CORRECTION_86A };
     const { error: upErr } = await supabaseAdmin
       .from("master_specs")
-      .update(patch as never)
+      .update(CORRECTION_86A as never)
       .eq("id", data.specId);
     if (upErr) throw new Error(upErr.message);
 
@@ -176,7 +177,7 @@ export const applyCorrection86A = createServerFn({ method: "POST" })
       spec_id: data.specId,
       correction_key: CORRECTION_KEY,
       expected_document_hash: data.expectedDocumentHash,
-      actor_user_id: (context as { userId: string }).userId,
+      actor_user_id: context.userId,
       before_values: before as never,
       after_values: CORRECTION_86A as never,
       evidence: data.evidence ?? null,
