@@ -24,7 +24,7 @@ const SCRIPT = `(function(){
   mount.appendChild(iframe);
 })();`;
 
-export const Route = createFileRoute("/widget[.]js")({
+export const Route = createFileRoute("/widget.js")({
   server: {
     handlers: {
       GET: async () =>
