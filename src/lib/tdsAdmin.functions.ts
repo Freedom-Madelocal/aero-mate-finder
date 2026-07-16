@@ -32,7 +32,7 @@ function redact<T>(value: T): T {
     }
     return out as T;
   }
-  if (typeof value === "string" && (value.startsWith("http") || value.includes("/storage/"))) {
+  if (typeof value === "string" && (/(^|\s)https?:\/\//i.test(value) || value.includes("/storage/"))) {
     return "[redacted]" as unknown as T;
   }
   return value;
