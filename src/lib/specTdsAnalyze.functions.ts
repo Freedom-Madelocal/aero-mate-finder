@@ -134,10 +134,41 @@ export const analyzeSpecTds = createServerFn({ method: "POST" })
  */
 const BatchIdSchema = z.object({ batchId: z.string().uuid() });
 
+export interface BatchHealth {
+  batch: {
+    id: string;
+    status: string;
+    paused_reason: string | null;
+    paused_at: string | null;
+    resumed_at: string | null;
+    label: string | null;
+    total: number;
+    terminal_count: number;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  counts: Record<string, number>;
+  errors: Record<string, number>;
+  attempts: Record<string, number>;
+  oldest_pending_seconds: number | null;
+  next_retry_at: string | null;
+  worker_last_run_at: string | null;
+  worker_heartbeat_at: string | null;
+  cooldowns: Record<string, string>;
+  latency_ms: { p50: number; p95: number };
+  cache_hits: number;
+  model_calls: number;
+  estimated_cost_usd: number;
+  throughput_per_sec: number | null;
+  eta_seconds: number | null;
+  as_of: string;
+  error?: string;
+}
+
 export const getBatchHealth = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => BatchIdSchema.parse(input))
-  .handler(async ({ data, context }): Promise<Record<string, unknown>> => {
+  .handler(async ({ data, context }): Promise<BatchHealth> => {
     const { data: isAdmin, error: rErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "super_admin",
@@ -149,5 +180,5 @@ export const getBatchHealth = createServerFn({ method: "GET" })
       _batch_id: data.batchId,
     });
     if (error) throw new Error(error.message);
-    return health as Record<string, unknown>;
+    return health as unknown as BatchHealth;
   });
