@@ -62,7 +62,45 @@ export interface MasterSpec {
   tdsScrapeStatus: "success" | "not_found" | "failed" | null;
   tdsScrapeError: string | null;
   tdsAnalyzedAt: string | null;
+  // --- Phase 2A additive fields ---
+  applicationProcess: string | null;
+  shelfLifeMonths: number | null;
+  storageTempMinC: number | null;
+  storageTempMaxC: number | null;
+  activeIngredientOrResin: string | null;
+  qualifications: QualificationItem[] | null;
+  testMethods: TestMethodItem[] | null;
+  contextualStandards: ContextualStandardItem[] | null;
+  productIdentifiers: ProductIdentifierItem[] | null;
+  testResults: TestResultItem[] | null;
 }
+
+export interface QualificationItem {
+  standard: string;
+  status?: string | null;
+  notes?: string | null;
+}
+export interface TestMethodItem {
+  method: string;
+  property?: string | null;
+  notes?: string | null;
+}
+export interface ContextualStandardItem {
+  standard: string;
+  context?: string | null;
+}
+export interface ProductIdentifierItem {
+  type: string;
+  value: string;
+}
+export interface TestResultItem {
+  property: string;
+  value: string | number | null;
+  unit?: string | null;
+  method?: string | null;
+  conditions?: string | null;
+}
+
 
 export interface MasterSpecUpload {
   fileName: string;
