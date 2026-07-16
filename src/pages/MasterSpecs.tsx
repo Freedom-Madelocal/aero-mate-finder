@@ -2,7 +2,7 @@ import AdminShell from "@/components/AdminShell";
 import { useMasterSpecStore, getInventoryMatch, type MasterSpec } from "@/data/masterSpecs";
 import { useMaterialStore } from "@/data/materials";
 import { useFeatureFlag } from "@/data/featureFlags";
-import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink } from "lucide-react";
+import { Search, Upload, X, Package, BookOpen, Filter, ExternalLink, ClipboardList } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import { AnalyzeTdsButton } from "@/components/AnalyzeTdsButton";
 import { BulkAnalyzeTdsButton } from "@/components/BulkAnalyzeTdsButton";
 import { fmtTempF, fmtNonZero } from "@/lib/units";
 import { SpecValueProvenance } from "@/components/SpecValueProvenance";
+import { DataAuditDrawer } from "@/components/DataAuditDrawer";
 
 const PAGE_SIZE = 100;
 const SpecSheetUpload = lazy(() => import("@/components/SpecSheetUpload"));
