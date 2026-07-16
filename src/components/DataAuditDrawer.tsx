@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { X, ExternalLink, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { getSpecAudit, type SpecAuditPayload } from "@/lib/specAudit.functions";
 

@@ -42,7 +42,7 @@ export type SpecAuditPayload = {
     attemptedUrl: string | null;
     httpStatus: number | null;
     errorMessage: string | null;
-    details: unknown;
+    details: string | null;
   }>;
   analysisItems: Array<{
     id: string;
