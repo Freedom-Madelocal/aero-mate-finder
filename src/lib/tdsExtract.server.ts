@@ -158,12 +158,57 @@ const ProvenanceItem = z.object({
   confidence: z.enum(["high", "medium", "low"]).optional(),
 });
 
+// Grouped standards + identifiers. Every entry can carry evidence for audit.
+const QualificationItemSchema = z.object({
+  standard: z.string(),
+  revision: z.string().nullable().optional(),
+  class: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const TestMethodItemSchema = z.object({
+  method: z.string(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const ContextualStandardItemSchema = z.object({
+  standard: z.string(),
+  role: z.string(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const ProductIdentifierItemSchema = z.object({
+  kind: z.string(), // 'nsn' | 'cage' | 'part_number' | 'other'
+  value: z.string(),
+  applicability: z.string().nullable().optional(),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+const TestResultRowSchema = z.object({
+  label: z.string(),
+  value: z.union([z.string(), z.number()]).nullable().optional(),
+  units: z.string().nullable().optional(),
+});
+const TestResultTableSchema = z.object({
+  name: z.string(),
+  conditions: z.string().nullable().optional(),
+  rows: z.array(TestResultRowSchema),
+  evidence_quote: z.string().nullable().optional(),
+  page: z.number().nullable().optional(),
+});
+
 const RowSchema = z.object({
   productFamily: z.string().nullable().optional(),
   materialCategory: z.string().nullable().optional(),
   resinChemistry: z.string().nullable().optional(),
   reinforcement: z.string().nullable().optional(),
   productForm: z.string().nullable().optional(),
+  applicationProcess: z.string().nullable().optional(),
+  activeIngredientOrResin: z.string().nullable().optional(),
+  shelfLifeMonths: z.number().nullable().optional(),
+  storageTempMinC: z.number().nullable().optional(),
+  storageTempMaxC: z.number().nullable().optional(),
   cureTemperatureC: z.number().nullable().optional(),
   cureTime: z.string().nullable().optional(),
   dryTgOnsetC: z.number().nullable().optional(),
@@ -192,6 +237,11 @@ const RowSchema = z.object({
   profiles: z.array(z.string()).optional(),
   keySpecs: z.array(z.string()).optional(),
   customers: z.array(z.string()).optional(),
+  qualifications: z.array(QualificationItemSchema).optional(),
+  testMethods: z.array(TestMethodItemSchema).optional(),
+  contextualStandards: z.array(ContextualStandardItemSchema).optional(),
+  productIdentifiers: z.array(ProductIdentifierItemSchema).optional(),
+  testResults: z.array(TestResultTableSchema).optional(),
   provenance: z.array(ProvenanceItem).optional(),
 });
 
