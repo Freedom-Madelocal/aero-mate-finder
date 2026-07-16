@@ -621,17 +621,6 @@ export async function callGeminiForSpec(params: {
   return { row: parsed.row, usage };
 }
 
-
-  const inTok = json.usage?.prompt_tokens ?? null;
-  const outTok = json.usage?.completion_tokens ?? null;
-  const cost =
-    inTok != null && outTok != null
-      ? (inTok / 1_000_000) * PRICE_IN_PER_MTOK + (outTok / 1_000_000) * PRICE_OUT_PER_MTOK
-      : null;
-
-  return { row: parsed.data, usage: { inputTokens: inTok, outputTokens: outTok, costUsd: cost } };
-}
-
 function provenanceFor(row: ExtractedRow, aiKey: string) {
   const list = row.provenance ?? [];
   return list.find((p) => p.field === aiKey);
