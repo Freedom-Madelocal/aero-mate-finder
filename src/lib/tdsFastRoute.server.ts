@@ -10,10 +10,8 @@
  * caller falls back to the vision route — never silently loses data.
  */
 import { extractText, getDocumentProxy } from "unpdf";
-import { z } from "zod";
 import {
   ERROR_CODES,
-  RowSchema as _RowSchema, // re-imported below via export from tdsExtract.server
   TdsExtractError,
   classifyGatewayStatus,
   type ExtractedRow,
