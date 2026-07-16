@@ -980,6 +980,51 @@ async function writeProvenance(specId: string, rows: ProvenanceRow[]) {
 }
 
 /**
+ * Log one extraction attempt. Best-effort — never throws; the caller has
+ * already succeeded or failed on its own.
+ */
+type ExtractionRunLog = {
+  specId: string | null;
+  documentHash: string | null;
+  route: "text_layer_fast" | "vision_pro" | "cache_hit_hash" | "cache_hit_etag" | "reservation_wait";
+  model: string;
+  promptVersion: string;
+  pages: number | null;
+  inputBytes: number | null;
+  usage: UsageStats;
+  latencyMs: number;
+  cacheStatus: "miss" | "hit_hash" | "hit_etag" | "reservation_wait";
+  outcome: "success" | "failure";
+  errorCode?: string | null;
+  errorClass?: string | null;
+  cancelled?: boolean;
+};
+async function writeExtractionRun(log: ExtractionRunLog): Promise<void> {
+  try {
+    await supabaseAdmin.from("tds_extraction_runs").insert({
+      spec_id: log.specId,
+      document_hash: log.documentHash,
+      route: log.route,
+      model: log.model,
+      prompt_version: log.promptVersion,
+      pages: log.pages,
+      input_bytes: log.inputBytes,
+      input_tokens: log.usage.inputTokens,
+      output_tokens: log.usage.outputTokens,
+      cost_usd: log.usage.costUsd,
+      latency_ms: log.latencyMs,
+      cache_status: log.cacheStatus,
+      cancelled: log.cancelled ?? false,
+      outcome: log.outcome,
+      error_code: log.errorCode ?? null,
+      error_class: log.errorClass ?? null,
+    } as never);
+  } catch (err) {
+    console.warn("[tdsExtract] writeExtractionRun failed", err);
+  }
+}
+
+/**
  * Full pipeline: download PDF, check cache, call model if needed, apply
  * safe patch, stamp tds_analyzed_at when anything changed.
  */
