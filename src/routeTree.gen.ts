@@ -21,6 +21,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
+import { Route as AdminWidgetClientsRouteImport } from './routes/admin.widget-clients'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTdsUploadRouteImport } from './routes/admin.tds-upload'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
@@ -105,6 +106,11 @@ const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => ConsoleRoute,
+} as any)
+const AdminWidgetClientsRoute = AdminWidgetClientsRouteImport.update({
+  id: '/admin/widget-clients',
+  path: '/admin/widget-clients',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/widget-clients': typeof AdminWidgetClientsRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
   '/material/$id': typeof AppMaterialIdRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/widget-clients': typeof AdminWidgetClientsRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin': typeof AdminIndexRoute
   '/material/$id': typeof AppMaterialIdRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/widget-clients': typeof AdminWidgetClientsRoute
   '/console/login': typeof ConsoleLoginRoute
   '/admin/': typeof AdminIndexRoute
   '/_app/material/$id': typeof AppMaterialIdRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/tds-upload'
     | '/admin/users'
+    | '/admin/widget-clients'
     | '/console/login'
     | '/admin/'
     | '/material/$id'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/tds-upload'
     | '/admin/users'
+    | '/admin/widget-clients'
     | '/console/login'
     | '/admin'
     | '/material/$id'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/tds-upload'
     | '/admin/users'
+    | '/admin/widget-clients'
     | '/console/login'
     | '/admin/'
     | '/_app/material/$id'
@@ -485,6 +497,7 @@ export interface RootRouteChildren {
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminTdsUploadRoute: typeof AdminTdsUploadRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWidgetClientsRoute: typeof AdminWidgetClientsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicTdsWorkerTickRoute: typeof ApiPublicTdsWorkerTickRoute
   ApiPublicWidgetCatalogRoute: typeof ApiPublicWidgetCatalogRoute
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/console/login'
       preLoaderRoute: typeof ConsoleLoginRouteImport
       parentRoute: typeof ConsoleRoute
+    }
+    '/admin/widget-clients': {
+      id: '/admin/widget-clients'
+      path: '/admin/widget-clients'
+      fullPath: '/admin/widget-clients'
+      preLoaderRoute: typeof AdminWidgetClientsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
       id: '/admin/users'
@@ -821,6 +841,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminTdsUploadRoute: AdminTdsUploadRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWidgetClientsRoute: AdminWidgetClientsRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicTdsWorkerTickRoute: ApiPublicTdsWorkerTickRoute,
   ApiPublicWidgetCatalogRoute: ApiPublicWidgetCatalogRoute,
