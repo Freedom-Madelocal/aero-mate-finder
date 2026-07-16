@@ -53,7 +53,7 @@ export const analyzeSpecTds = createServerFn({ method: "POST" })
         .from("tds_analysis_items")
         .update({
           status: res.cacheHit ? "skipped_cache" : "done",
-          updated_fields: res.fields,
+          updated_fields: res.updatedCount,
           latency_ms: Date.now() - startedAt,
         })
         .eq("id", item.id);
