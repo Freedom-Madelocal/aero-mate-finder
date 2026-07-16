@@ -471,8 +471,23 @@ function SpecDrawer({
             <Row label="Reinforcement" value={spec.reinforcement} />
             <Row label="Product Form" value={spec.productForm} />
             <Row label="Resin Chemistry" value={spec.resinChemistry} />
+            <Row specId={spec.id} field="active_ingredient_or_resin" label="Active Ingredient / Resin" value={spec.activeIngredientOrResin} />
             <Row label="Process Method" value={spec.processMethod} />
+            <Row specId={spec.id} field="application_process" label="Application Process" value={spec.applicationProcess} />
           </Section>
+
+          {(spec.productIdentifiers ?? []).length > 0 && (
+            <Section title="Product Identifiers">
+              <div className="space-y-1">
+                {spec.productIdentifiers!.map((p, i) => (
+                  <div key={i} className="flex justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">{p.type}</span>
+                    <span className="text-foreground text-right font-mono text-xs">{p.value}</span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           {(spec.keySpecs ?? []).length > 0 && (
             <Section title="Key Specifications">
@@ -510,7 +525,19 @@ function SpecDrawer({
           <Section title="Storage">
             <Row specId={spec.id} field="out_life_days" label="Out Life" value={fmt(spec.outLifeDays, " days")} />
             <Row specId={spec.id} field="freezer_life_months" label="Freezer Life" value={fmt(spec.freezerLifeMonths, " months")} />
+            <Row specId={spec.id} field="shelf_life_months" label="Shelf Life" value={fmt(spec.shelfLifeMonths, " months")} />
+            <Row
+              specId={spec.id}
+              field="storage_temp_min_c"
+              label="Storage Temp Range"
+              value={
+                spec.storageTempMinC !== null || spec.storageTempMaxC !== null
+                  ? `${spec.storageTempMinC ?? "—"} to ${spec.storageTempMaxC ?? "—"} °C`
+                  : null
+              }
+            />
           </Section>
+
 
           <Section title="Outgassing (NASA E595)">
             <Row specId={spec.id} field="tml_pct" label="TML" value={fmt(spec.tmlPct, " %")} />
