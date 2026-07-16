@@ -68,7 +68,7 @@ export function BulkAnalyzeTdsButton({
       }
     };
     void tick();
-    pollRef.current = setInterval(tick, 3000);
+    pollRef.current = setInterval(tick, 5000);
     return () => {
       cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
