@@ -471,8 +471,23 @@ function SpecDrawer({
             <Row label="Reinforcement" value={spec.reinforcement} />
             <Row label="Product Form" value={spec.productForm} />
             <Row label="Resin Chemistry" value={spec.resinChemistry} />
+            <Row specId={spec.id} field="active_ingredient_or_resin" label="Active Ingredient / Resin" value={spec.activeIngredientOrResin} />
             <Row label="Process Method" value={spec.processMethod} />
+            <Row specId={spec.id} field="application_process" label="Application Process" value={spec.applicationProcess} />
           </Section>
+
+          {(spec.productIdentifiers ?? []).length > 0 && (
+            <Section title="Product Identifiers">
+              <div className="space-y-1">
+                {spec.productIdentifiers!.map((p, i) => (
+                  <div key={i} className="flex justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">{p.type}</span>
+                    <span className="text-foreground text-right font-mono text-xs">{p.value}</span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           {(spec.keySpecs ?? []).length > 0 && (
             <Section title="Key Specifications">
@@ -510,7 +525,19 @@ function SpecDrawer({
           <Section title="Storage">
             <Row specId={spec.id} field="out_life_days" label="Out Life" value={fmt(spec.outLifeDays, " days")} />
             <Row specId={spec.id} field="freezer_life_months" label="Freezer Life" value={fmt(spec.freezerLifeMonths, " months")} />
+            <Row specId={spec.id} field="shelf_life_months" label="Shelf Life" value={fmt(spec.shelfLifeMonths, " months")} />
+            <Row
+              specId={spec.id}
+              field="storage_temp_min_c"
+              label="Storage Temp Range"
+              value={
+                spec.storageTempMinC !== null || spec.storageTempMaxC !== null
+                  ? `${spec.storageTempMinC ?? "—"} to ${spec.storageTempMaxC ?? "—"} °C`
+                  : null
+              }
+            />
           </Section>
+
 
           <Section title="Outgassing (NASA E595)">
             <Row specId={spec.id} field="tml_pct" label="TML" value={fmt(spec.tmlPct, " %")} />
@@ -546,9 +573,76 @@ function SpecDrawer({
               <p className="text-sm text-foreground whitespace-pre-wrap">{spec.applications}</p>
             </Section>
           )}
-          {spec.qualificationsStandards && (
+          {(spec.qualifications ?? []).length > 0 ? (
+            <Section title="Qualifications / Standards">
+              <div className="space-y-1.5">
+                {spec.qualifications!.map((q, i) => (
+                  <div key={i} className="flex items-start justify-between gap-3 text-sm border-l-2 border-border pl-2">
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs text-foreground">{q.standard}</p>
+                      {q.notes && <p className="text-xs text-muted-foreground mt-0.5">{q.notes}</p>}
+                    </div>
+                    {q.status && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary text-muted-foreground shrink-0">
+                        {q.status}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          ) : spec.qualificationsStandards ? (
             <Section title="Qualifications / Standards">
               <p className="text-sm text-foreground whitespace-pre-wrap">{spec.qualificationsStandards}</p>
+            </Section>
+          ) : null}
+          {(spec.testMethods ?? []).length > 0 && (
+            <Section title="Test Methods">
+              <div className="space-y-1.5">
+                {spec.testMethods!.map((t, i) => (
+                  <div key={i} className="text-sm border-l-2 border-border pl-2">
+                    <p className="font-mono text-xs text-foreground">{t.method}</p>
+                    {t.property && <p className="text-xs text-muted-foreground">{t.property}</p>}
+                    {t.notes && <p className="text-xs text-muted-foreground/80 mt-0.5">{t.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+          {(spec.testResults ?? []).length > 0 && (
+            <Section title="Test Results">
+              <div className="space-y-1.5">
+                {spec.testResults!.map((r, i) => (
+                  <div key={i} className="flex justify-between gap-3 text-sm border-l-2 border-border pl-2">
+                    <div className="min-w-0">
+                      <p className="text-foreground text-xs">{r.property}</p>
+                      {(r.method || r.conditions) && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {[r.method, r.conditions].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-foreground text-right font-mono text-xs shrink-0">
+                      {r.value ?? "—"}{r.unit ? ` ${r.unit}` : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+          {(spec.contextualStandards ?? []).length > 0 && (
+            <Section title="Referenced Standards">
+              <div className="flex flex-wrap gap-1.5">
+                {spec.contextualStandards!.map((c, i) => (
+                  <span
+                    key={i}
+                    title={c.context ?? undefined}
+                    className="text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded border border-border bg-secondary/40 text-foreground"
+                  >
+                    {c.standard}
+                  </span>
+                ))}
+              </div>
             </Section>
           )}
           {(spec.crossoverProduct || spec.crossoverVendor) && (

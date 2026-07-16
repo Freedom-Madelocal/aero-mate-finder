@@ -62,7 +62,45 @@ export interface MasterSpec {
   tdsScrapeStatus: "success" | "not_found" | "failed" | null;
   tdsScrapeError: string | null;
   tdsAnalyzedAt: string | null;
+  // --- Phase 2A additive fields ---
+  applicationProcess: string | null;
+  shelfLifeMonths: number | null;
+  storageTempMinC: number | null;
+  storageTempMaxC: number | null;
+  activeIngredientOrResin: string | null;
+  qualifications: QualificationItem[] | null;
+  testMethods: TestMethodItem[] | null;
+  contextualStandards: ContextualStandardItem[] | null;
+  productIdentifiers: ProductIdentifierItem[] | null;
+  testResults: TestResultItem[] | null;
 }
+
+export interface QualificationItem {
+  standard: string;
+  status?: string | null;
+  notes?: string | null;
+}
+export interface TestMethodItem {
+  method: string;
+  property?: string | null;
+  notes?: string | null;
+}
+export interface ContextualStandardItem {
+  standard: string;
+  context?: string | null;
+}
+export interface ProductIdentifierItem {
+  type: string;
+  value: string;
+}
+export interface TestResultItem {
+  property: string;
+  value: string | number | null;
+  unit?: string | null;
+  method?: string | null;
+  conditions?: string | null;
+}
+
 
 export interface MasterSpecUpload {
   fileName: string;
@@ -122,10 +160,24 @@ interface SpecRow {
   tds_scrape_status: string | null;
   tds_scrape_error: string | null;
   tds_analyzed_at: string | null;
+  application_process?: string | null;
+  shelf_life_months?: number | string | null;
+  storage_temp_min_c?: number | string | null;
+  storage_temp_max_c?: number | string | null;
+  active_ingredient_or_resin?: string | null;
+  qualifications?: unknown;
+  test_methods?: unknown;
+  contextual_standards?: unknown;
+  product_identifiers?: unknown;
+  test_results?: unknown;
 }
 
-const num = (v: number | string | null): number | null =>
-  v === null || v === "" ? null : Number(v);
+const num = (v: number | string | null | undefined): number | null =>
+  v === null || v === undefined || v === "" ? null : Number(v);
+
+function asArray<T>(v: unknown): T[] | null {
+  return Array.isArray(v) && v.length > 0 ? (v as T[]) : null;
+}
 
 function rowToSpec(r: SpecRow): MasterSpec {
   return {
@@ -180,6 +232,16 @@ function rowToSpec(r: SpecRow): MasterSpec {
     tdsScrapeStatus: (r.tds_scrape_status as MasterSpec["tdsScrapeStatus"]) ?? null,
     tdsScrapeError: r.tds_scrape_error ?? null,
     tdsAnalyzedAt: r.tds_analyzed_at ?? null,
+    applicationProcess: r.application_process ?? null,
+    shelfLifeMonths: num(r.shelf_life_months),
+    storageTempMinC: num(r.storage_temp_min_c),
+    storageTempMaxC: num(r.storage_temp_max_c),
+    activeIngredientOrResin: r.active_ingredient_or_resin ?? null,
+    qualifications: asArray<QualificationItem>(r.qualifications),
+    testMethods: asArray<TestMethodItem>(r.test_methods),
+    contextualStandards: asArray<ContextualStandardItem>(r.contextual_standards),
+    productIdentifiers: asArray<ProductIdentifierItem>(r.product_identifiers),
+    testResults: asArray<TestResultItem>(r.test_results),
   };
 }
 
