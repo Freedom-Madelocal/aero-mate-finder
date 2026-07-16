@@ -516,6 +516,9 @@ const UNIT_FOR: Record<string, string> = {
   max_service_temperature_c: "°C",
   out_life_days: "days",
   freezer_life_months: "months",
+  shelf_life_months: "months",
+  storage_temp_min_c: "°C",
+  storage_temp_max_c: "°C",
   tml_pct: "%",
   cvcm_pct: "%",
   tensile_lap_shear_mpa: "MPa",
@@ -533,9 +536,16 @@ function isMissing(v: unknown): boolean {
   return false;
 }
 
-function isExistingEmpty(v: unknown): boolean {
+/**
+ * Whether a stored value should be treated as "empty" and therefore safe to
+ * fill via extraction. `dbCol` opt-in: legacy `0` is treated as missing only
+ * for columns listed in ZERO_IS_MISSING (temperature/time sentinels). For
+ * mechanical properties, mass loss %, etc., a real 0 is preserved.
+ */
+function isExistingEmpty(v: unknown, dbCol?: string): boolean {
   if (v === null || v === undefined) return true;
   if (typeof v === "string" && v.trim() === "") return true;
+  if (typeof v === "number" && v === 0 && dbCol && ZERO_IS_MISSING.has(dbCol)) return true;
   return false;
 }
 
