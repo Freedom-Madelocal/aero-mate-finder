@@ -10,10 +10,20 @@ import { createHash } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const BUCKET = "tds-pdfs";
-export const MODEL = "google/gemini-2.5-pro";
+export const MODEL = "google/gemini-2.5-pro"; // vision fallback / default cache key
 export const PROMPT_VERSION = "v2";
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB
-export const REQUEST_TIMEOUT_MS = 60_000;
+
+/**
+ * Stage-specific timeouts (Phase 2B). Fetch and parse are bounded separately
+ * from the model call so a slow download can't chew through the model budget.
+ */
+export const STAGE_TIMEOUTS = {
+  fetchMs: 15_000,
+  parseMs: 20_000,
+  modelCallMs: 60_000,
+};
+export const REQUEST_TIMEOUT_MS = STAGE_TIMEOUTS.modelCallMs;
 
 /** Classified error thrown by the extractor. Worker maps these to retry policy. */
 export type TdsErrorClass =
