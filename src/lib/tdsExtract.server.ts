@@ -208,7 +208,7 @@ const TestResultTableSchema = z.object({
   page: z.number().nullable().optional(),
 });
 
-const RowSchema = z.object({
+export const RowSchema = z.object({
   productFamily: z.string().nullable().optional(),
   materialCategory: z.string().nullable().optional(),
   resinChemistry: z.string().nullable().optional(),
