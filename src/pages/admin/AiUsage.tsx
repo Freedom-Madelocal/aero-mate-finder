@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pause, Play, AlertTriangle } from "lucide-react";
+import { Loader2, Pause, Play, AlertTriangle, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { getAiUsageDashboard, updateAiSettings } from "@/lib/aiUsage.functions";
+import { enqueueLegacyZeroRepair } from "@/lib/tdsQueue.functions";
 
 type Dashboard = Awaited<ReturnType<typeof getAiUsageDashboard>>;
 
