@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { supplierBadge, chemistryBadge, okBadge, warnBadge } from "@/lib/badges";
 import { useSearch } from "@tanstack/react-router";
+import { scoreCandidates, searchSuggestions } from "@/lib/crossoverScoring";
+
 
 export default function Crossover() {
   const { specs } = useMasterSpecStore();
@@ -10,61 +12,14 @@ export default function Crossover() {
   const [query, setQuery] = useState(initialQ);
   const [selected, setSelected] = useState<MasterSpec | null>(null);
 
-  const suggestions = useMemo<MasterSpec[]>(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return specs
-      .filter((s) => {
-        const hay = [
-          s.productName,
-          s.vendor,
-          s.productFamily,
-          ...(s.keySpecs ?? []),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(q);
-      })
-      .slice(0, 6);
-  }, [query, specs]);
+  const suggestions = useMemo<MasterSpec[]>(
+    () => searchSuggestions(query, specs),
+    [query, specs],
+  );
 
   const equivalents = useMemo<MasterSpec[]>(() => {
     if (!selected) return [];
-    const sCat = normalizeCategory(selected.materialCategory);
-    const sChem = normalizeChemistry(selected.resinChemistry);
-    const sForm = normalizeForm(selected.productForm ?? selected.materialCategory);
-    const sSegs = tokens(selected.applications, selected.profiles);
-
-    return specs
-      .filter((s) => s.id !== selected.id && s.vendor !== selected.vendor)
-      .map((s) => {
-        let score = 0;
-        if (sCat && normalizeCategory(s.materialCategory) === sCat) score += 5;
-        if (sChem && normalizeChemistry(s.resinChemistry) === sChem) score += 4;
-        if (
-          selected.cureTemperatureC != null &&
-          s.cureTemperatureC != null &&
-          Math.abs(s.cureTemperatureC - selected.cureTemperatureC) <= 15
-        )
-          score += 2;
-        const tForm = normalizeForm(s.productForm ?? s.materialCategory);
-        if (sForm && tForm && sForm === tForm) score += 2;
-        const tSegs = tokens(s.applications, s.profiles);
-        if (sSegs.size && [...tSegs].some((t) => sSegs.has(t))) score += 1;
-        if (
-          (selected.crossoverProduct &&
-            s.productName?.toLowerCase().includes(selected.crossoverProduct.toLowerCase())) ||
-          (s.crossoverProduct &&
-            selected.productName?.toLowerCase().includes(s.crossoverProduct.toLowerCase()))
-        )
-          score += 100;
-        return { s, score };
-      })
-      .filter((x) => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map((x) => x.s);
+    return scoreCandidates(selected, specs);
   }, [selected, specs]);
 
   return (
