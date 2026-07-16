@@ -770,9 +770,9 @@ export async function runExtractionForSpec(specId: string): Promise<{
     .select("*")
     .eq("id", specId)
     .maybeSingle();
-  if (specErr) throw new TdsExtractError(specErr.message, "transient");
-  if (!spec) throw new TdsExtractError("Spec not found.", "permanent");
-  if (!spec.tds_pdf_path) throw new TdsExtractError("This spec has no attached TDS PDF.", "missing_pdf");
+  if (specErr) throw new TdsExtractError(specErr.message, "transient", ERROR_CODES.TEMPORARY_DATABASE);
+  if (!spec) throw new TdsExtractError("Spec not found.", "permanent", ERROR_CODES.MISSING_SPEC);
+  if (!spec.tds_pdf_path) throw new TdsExtractError("This spec has no attached TDS PDF.", "missing_pdf", ERROR_CODES.MISSING_TDS);
 
   let extracted: ExtractedRow | null = null;
   let cacheHit = false;
