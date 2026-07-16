@@ -824,40 +824,104 @@ export async function runExtractionForSpec(specId: string): Promise<{
   }
 
   if (!extracted) {
+    // Single-flight reservation: only one worker actually calls the model
+    // for (documentHash, MODEL, PROMPT_VERSION); others poll the cache.
+    const holder = `${globalThis.crypto?.randomUUID?.() ?? String(Date.now())}`;
+    const RES_TTL_SEC = Math.max(REQUEST_TIMEOUT_MS / 1000 + 60, 180);
+    let ownReservation = false;
     try {
-      const res = await callGeminiForSpec({
-        vendor: spec.vendor ?? "",
-        productName: spec.product_name ?? "",
-        pdfPath: spec.tds_pdf_path,
-        bytes: bytes!,
-      });
-      extracted = res.row;
-      usage = res.usage;
-      await supabaseAdmin.from("tds_extraction_cache").upsert({
-        document_hash: documentHash!,
-        model: MODEL,
-        prompt_version: PROMPT_VERSION,
-        extracted: extracted as never,
-        object_etag: etag,
-      });
-      await supabaseAdmin.rpc("record_ai_usage", {
+      const { data: won } = await supabaseAdmin.rpc("try_reserve_extraction", {
+        _document_hash: documentHash!,
         _model: MODEL,
-        _input_tokens: usage.inputTokens ?? 0,
-        _output_tokens: usage.outputTokens ?? 0,
-        _cost_usd: usage.costUsd ?? 0,
-        _failed: false,
+        _prompt_version: PROMPT_VERSION,
+        _holder: holder,
+        _ttl_seconds: RES_TTL_SEC,
       });
-    } catch (err) {
-      await supabaseAdmin.rpc("record_ai_usage", {
-        _model: MODEL,
-        _input_tokens: 0,
-        _output_tokens: 0,
-        _cost_usd: 0,
-        _failed: true,
-      });
-      throw err;
+      ownReservation = won === true;
+    } catch (e) {
+      console.warn("[tdsExtract] reservation rpc failed, proceeding without single-flight", e);
+      ownReservation = true;
+    }
+
+    if (!ownReservation) {
+      // Another worker is extracting the same document — wait briefly on
+      // the cache. This is the "10 concurrent duplicates → 1 model call" path.
+      const deadline = Date.now() + RES_TTL_SEC * 1000;
+      while (Date.now() < deadline && !extracted) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const { data: c } = await supabaseAdmin
+          .from("tds_extraction_cache")
+          .select("extracted")
+          .eq("document_hash", documentHash!)
+          .maybeSingle();
+        if (c?.extracted) {
+          const p = RowSchema.safeParse(c.extracted);
+          if (p.success) {
+            extracted = p.data;
+            cacheHit = true;
+            break;
+          }
+        }
+      }
+      if (!extracted) {
+        // The other holder crashed or timed out — take over next tick.
+        throw new TdsExtractError(
+          "Duplicate extraction in flight; will retry.",
+          "transient",
+          ERROR_CODES.TEMPORARY_DATABASE,
+        );
+      }
+    } else {
+      try {
+        const res = await callGeminiForSpec({
+          vendor: spec.vendor ?? "",
+          productName: spec.product_name ?? "",
+          pdfPath: spec.tds_pdf_path,
+          bytes: bytes!,
+        });
+        extracted = res.row;
+        usage = res.usage;
+        // Persist the validated extraction BEFORE merging — a merge/write
+        // failure below can then be retried without re-downloading the PDF
+        // or re-calling the model (cache short-circuits on next attempt).
+        await supabaseAdmin.from("tds_extraction_cache").upsert({
+          document_hash: documentHash!,
+          model: MODEL,
+          prompt_version: PROMPT_VERSION,
+          extracted: extracted as never,
+          object_etag: etag,
+        });
+        await supabaseAdmin.rpc("record_ai_usage", {
+          _model: MODEL,
+          _input_tokens: usage.inputTokens ?? 0,
+          _output_tokens: usage.outputTokens ?? 0,
+          _cost_usd: usage.costUsd ?? 0,
+          _failed: false,
+        });
+      } catch (err) {
+        await supabaseAdmin.rpc("record_ai_usage", {
+          _model: MODEL,
+          _input_tokens: 0,
+          _output_tokens: 0,
+          _cost_usd: 0,
+          _failed: true,
+        });
+        throw err;
+      } finally {
+        // Always release, even on failure — a crash leaves the reservation
+        // to expire on its own TTL.
+        try {
+          await supabaseAdmin.rpc("release_extraction_reservation", {
+            _document_hash: documentHash!,
+            _model: MODEL,
+            _prompt_version: PROMPT_VERSION,
+            _holder: holder,
+          });
+        } catch { /* noop */ }
+      }
     }
   }
+
 
 
   const { patch, updated, provenanceRows } = buildSafePatch(extracted, spec as Record<string, unknown>);
