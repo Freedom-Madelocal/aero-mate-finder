@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string
+          batch_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          item_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          batch_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          item_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          batch_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          item_id?: string | null
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
           daily_call_cap: number
@@ -1165,6 +1195,7 @@ export type Database = {
         Row: {
           attempts: number
           batch_id: string
+          client_request_id: string | null
           completed_at: string | null
           cost_usd: number | null
           created_at: string
@@ -1191,6 +1222,7 @@ export type Database = {
         Insert: {
           attempts?: number
           batch_id: string
+          client_request_id?: string | null
           completed_at?: string | null
           cost_usd?: number | null
           created_at?: string
@@ -1217,6 +1249,7 @@ export type Database = {
         Update: {
           attempts?: number
           batch_id?: string
+          client_request_id?: string | null
           completed_at?: string | null
           cost_usd?: number | null
           created_at?: string
@@ -1730,6 +1763,7 @@ export type Database = {
         Returns: {
           attempts: number
           batch_id: string
+          client_request_id: string | null
           completed_at: string | null
           cost_usd: number | null
           created_at: string
@@ -1761,6 +1795,7 @@ export type Database = {
         }
       }
       finalize_stuck_batches: { Args: never; Returns: undefined }
+      get_batch_health: { Args: { _batch_id: string }; Returns: Json }
       get_batch_status_summary: {
         Args: { _batch_id: string }
         Returns: {
@@ -1768,6 +1803,7 @@ export type Database = {
           status: string
         }[]
       }
+      get_latest_spec_batch: { Args: { _spec_id: string }; Returns: string }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
