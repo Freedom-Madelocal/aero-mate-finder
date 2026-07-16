@@ -199,7 +199,11 @@ export const getSpecAudit = createServerFn({ method: "GET" })
         inputTokens: r.input_tokens ?? null,
         outputTokens: r.output_tokens ?? null,
         costUsd: r.cost_usd ? Number(r.cost_usd) : null,
-        nextRunAt: r.next_run_at ?? null,
+        nextAttemptAt: r.next_attempt_at ?? r.next_run_at ?? null,
+        errorCode: r.error_code ?? null,
+        lastErrorAt: r.last_error_at ?? null,
+        completedAt: r.completed_at ?? null,
+
       })),
       provenance: (provRes.data ?? []).map((r) => ({
         field: r.field,
