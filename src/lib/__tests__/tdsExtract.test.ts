@@ -48,11 +48,60 @@ describe("backoffSecondsFor", () => {
 });
 
 describe("TdsExtractError", () => {
-  it("carries error class and retryAfter", () => {
-    const err = new TdsExtractError("boom", "rate_limited", 30);
+  it("carries error class, code, and retryAfter", () => {
+    const err = new TdsExtractError("boom", "rate_limited", ERROR_CODES.RATE_LIMITED, 30);
     expect(err.errorClass).toBe("rate_limited");
+    expect(err.errorCode).toBe(ERROR_CODES.RATE_LIMITED);
     expect(err.retryAfterSec).toBe(30);
     expect(err).toBeInstanceOf(Error);
+  });
+});
+
+describe("classifyGatewayStatus", () => {
+  it("maps 429 to rate_limited with Retry-After honored", () => {
+    const e = classifyGatewayStatus(429, "slow down", "42");
+    expect(e.errorClass).toBe("rate_limited");
+    expect(e.errorCode).toBe(ERROR_CODES.RATE_LIMITED);
+    expect(e.retryAfterSec).toBe(42);
+  });
+  it("maps 402 to paused/credits_exhausted (never fails item)", () => {
+    const e = classifyGatewayStatus(402, "", null);
+    expect(e.errorClass).toBe("paused");
+    expect(e.errorCode).toBe(ERROR_CODES.CREDITS_EXHAUSTED);
+    expect(isPauseCode(e.errorCode)).toBe(true);
+  });
+  it("maps 401/403 to paused/ai_config_error", () => {
+    for (const s of [401, 403]) {
+      const e = classifyGatewayStatus(s, "nope", null);
+      expect(e.errorClass, `status ${s}`).toBe("paused");
+      expect(e.errorCode).toBe(ERROR_CODES.AI_CONFIG_ERROR);
+    }
+  });
+  it("maps 5xx to transient/provider_5xx", () => {
+    const e = classifyGatewayStatus(503, "boom", null);
+    expect(e.errorClass).toBe("transient");
+    expect(e.errorCode).toBe(ERROR_CODES.PROVIDER_5XX);
+  });
+  it("maps other 4xx to permanent/unsupported_document", () => {
+    const e = classifyGatewayStatus(422, "bad input", null);
+    expect(e.errorClass).toBe("permanent");
+    expect(e.errorCode).toBe(ERROR_CODES.UNSUPPORTED_DOCUMENT);
+  });
+});
+
+describe("providerCooldownSeconds", () => {
+  it("returns a positive cooldown only for 429/5xx/timeout", () => {
+    expect(providerCooldownSeconds(ERROR_CODES.RATE_LIMITED)).toBeGreaterThan(0);
+    expect(providerCooldownSeconds(ERROR_CODES.PROVIDER_5XX)).toBeGreaterThan(0);
+    expect(providerCooldownSeconds(ERROR_CODES.MODEL_TIMEOUT)).toBeGreaterThan(0);
+    expect(providerCooldownSeconds(ERROR_CODES.NETWORK_ERROR)).toBe(0);
+    expect(providerCooldownSeconds(ERROR_CODES.MALFORMED_STRUCTURED_OUTPUT)).toBe(0);
+  });
+});
+
+describe("maxAttemptsFor for paused class", () => {
+  it("does not count paused as consuming attempts", () => {
+    expect(maxAttemptsFor("paused")).toBeGreaterThanOrEqual(50);
   });
 });
 
