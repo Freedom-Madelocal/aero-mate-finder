@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Users, Building2, Briefcase, FlaskConical, FileUp, Flag, LayoutTemplate, Gauge } from "lucide-react";
+import { Users, Building2, Briefcase, FlaskConical, FileUp, Flag, LayoutTemplate, Gauge, Boxes } from "lucide-react";
 import AdminShell from "@/components/AdminShell";
 
 const CARDS = [
@@ -11,7 +11,9 @@ const CARDS = [
   { to: "/admin/landing", label: "Landing Page", desc: "Control the public landing page — hero video and more.", Icon: LayoutTemplate },
   { to: "/admin/feature-flags", label: "Feature Flags", desc: "Turn platform features and UI themes on or off across the app.", Icon: Flag },
   { to: "/admin/ai-usage", label: "AI Usage & Controls", desc: "Extraction cost, token usage, worker pause, and daily caps.", Icon: Gauge },
+  { to: "/admin/widget-clients", label: "Widget Clients", desc: "Manage embeddable Crossover widget subscriptions and branding.", Icon: Boxes },
 ] as const;
+
 
 
 export default function AdminHome() {
