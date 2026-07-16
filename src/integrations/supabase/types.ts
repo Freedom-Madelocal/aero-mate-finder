@@ -1210,6 +1210,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tds_extraction_reservations: {
+        Row: {
+          created_at: string
+          document_hash: string
+          expires_at: string
+          holder: string
+          model: string
+          prompt_version: string
+        }
+        Insert: {
+          created_at?: string
+          document_hash: string
+          expires_at: string
+          holder: string
+          model: string
+          prompt_version: string
+        }
+        Update: {
+          created_at?: string
+          document_hash?: string
+          expires_at?: string
+          holder?: string
+          model?: string
+          prompt_version?: string
+        }
+        Relationships: []
+      }
       tds_field_provenance: {
         Row: {
           confidence: string | null
@@ -1271,6 +1298,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tds_provider_cooldowns: {
+        Row: {
+          cooldown_until: string
+          model: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          cooldown_until: string
+          model: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cooldown_until?: string
+          model?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tds_worker_lease: {
+        Row: {
+          acquired_at: string
+          expires_at: string
+          holder: string
+          key: string
+        }
+        Insert: {
+          acquired_at?: string
+          expires_at: string
+          holder: string
+          key: string
+        }
+        Update: {
+          acquired_at?: string
+          expires_at?: string
+          holder?: string
+          key?: string
+        }
+        Relationships: []
+      }
+      tds_worker_runs: {
+        Row: {
+          claimed: number
+          ended_at: string | null
+          error: string | null
+          holder: string | null
+          id: string
+          pause_reason: string | null
+          paused: boolean
+          permanent: number
+          retryable: number
+          started_at: string
+          success: number
+        }
+        Insert: {
+          claimed?: number
+          ended_at?: string | null
+          error?: string | null
+          holder?: string | null
+          id?: string
+          pause_reason?: string | null
+          paused?: boolean
+          permanent?: number
+          retryable?: number
+          started_at?: string
+          success?: number
+        }
+        Update: {
+          claimed?: number
+          ended_at?: string | null
+          error?: string | null
+          holder?: string | null
+          id?: string
+          pause_reason?: string | null
+          paused?: boolean
+          permanent?: number
+          retryable?: number
+          started_at?: string
+          success?: number
+        }
+        Relationships: []
       }
       user_activity: {
         Row: {
@@ -1523,6 +1634,7 @@ export type Database = {
       is_demo_active: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       mark_invitation_accepted: { Args: { _email: string }; Returns: undefined }
+      pause_running_batches_cap: { Args: { _reason: string }; Returns: number }
       record_ai_usage: {
         Args: {
           _cost_usd: number
@@ -1534,7 +1646,38 @@ export type Database = {
         Returns: undefined
       }
       recount_tds_batch: { Args: { _batch_id: string }; Returns: undefined }
+      release_extraction_reservation: {
+        Args: {
+          _document_hash: string
+          _holder: string
+          _model: string
+          _prompt_version: string
+        }
+        Returns: undefined
+      }
+      release_worker_lease: {
+        Args: { _holder: string; _key: string }
+        Returns: undefined
+      }
+      set_provider_cooldown: {
+        Args: { _model: string; _reason: string; _seconds: number }
+        Returns: string
+      }
       stamp_first_login: { Args: { _user_id: string }; Returns: undefined }
+      try_acquire_worker_lease: {
+        Args: { _holder: string; _key: string; _ttl_seconds: number }
+        Returns: boolean
+      }
+      try_reserve_extraction: {
+        Args: {
+          _document_hash: string
+          _holder: string
+          _model: string
+          _prompt_version: string
+          _ttl_seconds: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:

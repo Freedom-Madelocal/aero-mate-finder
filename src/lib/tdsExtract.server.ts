@@ -21,15 +21,59 @@ export type TdsErrorClass =
   | "permanent"
   | "plausibility"
   | "missing_pdf"
-  | "rate_limited";
+  | "rate_limited"
+  | "paused"; // admission denied — worker pauses batch, does not fail item
+
+/** Stable, machine-readable error codes surfaced in item.error_code and logs. */
+export const ERROR_CODES = {
+  // Permanent (single attempt)
+  MISSING_SPEC: "missing_spec",
+  MISSING_TDS: "missing_tds",
+  INVALID_PDF: "invalid_pdf",
+  ENCRYPTED_PDF: "encrypted_pdf",
+  OVERSIZED_PDF: "oversized_pdf",
+  UNSUPPORTED_DOCUMENT: "unsupported_document",
+  MALFORMED_STRUCTURED_OUTPUT: "malformed_structured_output",
+  PLAUSIBILITY_REJECTED: "plausibility_rejected",
+  // Retryable
+  RATE_LIMITED: "rate_limited",
+  PROVIDER_5XX: "provider_5xx",
+  NETWORK_ERROR: "network_error",
+  MODEL_TIMEOUT: "model_timeout",
+  TEMPORARY_STORAGE: "temporary_storage",
+  TEMPORARY_DATABASE: "temporary_database",
+  // Batch-pause (never a per-item failure)
+  CREDITS_EXHAUSTED: "credits_exhausted",
+  AI_CONFIG_ERROR: "ai_config_error",
+  DAILY_CALL_CAP: "daily_call_cap",
+  DAILY_COST_CAP: "daily_cost_cap",
+} as const;
+export type TdsErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+const PAUSE_CODES: ReadonlySet<string> = new Set<string>([
+  ERROR_CODES.CREDITS_EXHAUSTED,
+  ERROR_CODES.AI_CONFIG_ERROR,
+  ERROR_CODES.DAILY_CALL_CAP,
+  ERROR_CODES.DAILY_COST_CAP,
+]);
+export function isPauseCode(code: string | null | undefined): boolean {
+  return !!code && PAUSE_CODES.has(code);
+}
 
 export class TdsExtractError extends Error {
   errorClass: TdsErrorClass;
+  errorCode: TdsErrorCode;
   retryAfterSec?: number;
-  constructor(message: string, errorClass: TdsErrorClass, retryAfterSec?: number) {
+  constructor(
+    message: string,
+    errorClass: TdsErrorClass,
+    errorCode: TdsErrorCode,
+    retryAfterSec?: number,
+  ) {
     super(message);
     this.name = "TdsExtractError";
     this.errorClass = errorClass;
+    this.errorCode = errorCode;
     this.retryAfterSec = retryAfterSec;
   }
 }
@@ -42,6 +86,8 @@ export function maxAttemptsFor(cls: TdsErrorClass): number {
       return 1;
     case "rate_limited":
       return 6;
+    case "paused":
+      return 99; // re-queued unchanged, does not consume attempts
     case "transient":
     default:
       return 5;
@@ -52,10 +98,53 @@ export function backoffSecondsFor(cls: TdsErrorClass, attempt: number, retryAfte
   if (cls === "rate_limited" && retryAfterSec && retryAfterSec > 0) {
     return Math.min(retryAfterSec, 600);
   }
-  // Exponential backoff w/ jitter: 30s, 60s, 120s, 240s, 480s (capped)
   const base = Math.min(30 * Math.pow(2, Math.max(0, attempt - 1)), 480);
   const jitter = Math.floor(Math.random() * 15);
   return base + jitter;
+}
+
+/**
+ * Map a raw gateway HTTP status to a classified TdsExtractError. Keeps the
+ * decision testable and away from the worker tick handler.
+ */
+export function classifyGatewayStatus(
+  status: number,
+  bodyText: string,
+  retryAfterHeader: string | null,
+): TdsExtractError {
+  const ra = Number(retryAfterHeader ?? "");
+  const retryAfter = Number.isFinite(ra) && ra > 0 ? ra : undefined;
+  if (status === 429) {
+    return new TdsExtractError("AI rate limit reached.", "rate_limited", ERROR_CODES.RATE_LIMITED, retryAfter);
+  }
+  if (status === 402) {
+    return new TdsExtractError("AI credits exhausted.", "paused", ERROR_CODES.CREDITS_EXHAUSTED);
+  }
+  if (status === 401 || status === 403) {
+    return new TdsExtractError("AI gateway auth/config error.", "paused", ERROR_CODES.AI_CONFIG_ERROR);
+  }
+  if (status >= 500) {
+    return new TdsExtractError(`AI gateway 5xx (${status}).`, "transient", ERROR_CODES.PROVIDER_5XX, retryAfter);
+  }
+  return new TdsExtractError(
+    `AI gateway rejected request (${status}): ${bodyText.slice(0, 200)}`,
+    "permanent",
+    ERROR_CODES.UNSUPPORTED_DOCUMENT,
+  );
+}
+
+/** Cooldown lengths per code when we open a provider-wide cooldown. */
+export function providerCooldownSeconds(code: TdsErrorCode): number {
+  switch (code) {
+    case ERROR_CODES.RATE_LIMITED:
+      return 60;
+    case ERROR_CODES.PROVIDER_5XX:
+      return 45;
+    case ERROR_CODES.MODEL_TIMEOUT:
+      return 30;
+    default:
+      return 0;
+  }
 }
 
 // Rough Gemini 2.5 Pro pricing (per 1M tokens, USD). Used for rollup only.
@@ -297,9 +386,13 @@ export function computeDocumentHash(bytes: Uint8Array): string {
 export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
   const dl = await supabaseAdmin.storage.from(BUCKET).download(pdfPath);
   if (dl.error || !dl.data) {
+    const msg = dl.error?.message ?? "unknown";
+    const transient =
+      /timeout|temporar|rate|5\d\d|network/i.test(msg);
     throw new TdsExtractError(
-      `Failed to download TDS: ${dl.error?.message ?? "unknown"}`,
-      "missing_pdf",
+      `Failed to download TDS: ${msg}`,
+      transient ? "transient" : "missing_pdf",
+      transient ? ERROR_CODES.TEMPORARY_STORAGE : ERROR_CODES.MISSING_TDS,
     );
   }
   const bytes = new Uint8Array(await dl.data.arrayBuffer());
@@ -307,6 +400,21 @@ export async function downloadTdsPdf(pdfPath: string): Promise<Uint8Array> {
     throw new TdsExtractError(
       `TDS PDF is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB, max 20MB).`,
       "permanent",
+      ERROR_CODES.OVERSIZED_PDF,
+    );
+  }
+  // Cheap PDF sanity check: %PDF- header and no encryption dictionary hint.
+  const head = new TextDecoder().decode(bytes.subarray(0, Math.min(bytes.length, 1024)));
+  if (!head.startsWith("%PDF-")) {
+    throw new TdsExtractError("File is not a valid PDF.", "permanent", ERROR_CODES.INVALID_PDF);
+  }
+  // Weak but useful heuristic — /Encrypt keyword in first 4KB.
+  const sniff = new TextDecoder().decode(bytes.subarray(0, Math.min(bytes.length, 4096)));
+  if (/\/Encrypt\s/.test(sniff)) {
+    throw new TdsExtractError(
+      "PDF is encrypted — cannot extract.",
+      "permanent",
+      ERROR_CODES.ENCRYPTED_PDF,
     );
   }
   return bytes;
@@ -328,7 +436,6 @@ export async function fetchObjectEtag(pdfPath: string): Promise<string | null> {
     const meta = data[0].metadata as Record<string, unknown> | null | undefined;
     const raw = (meta?.eTag ?? meta?.etag) as string | undefined;
     if (!raw) return null;
-    // Storage returns quoted etags like "\"abc123\"" — normalize.
     return raw.replace(/^"+|"+$/g, "");
   } catch (err) {
     console.warn("[tdsExtract] etag lookup failed", err);
@@ -351,18 +458,19 @@ export type UsageStats = {
   costUsd: number | null;
 };
 
-export async function callGeminiForSpec(params: {
+/**
+ * Single HTTP round-trip to the gateway. Returns the raw string tool
+ * arguments so the caller can decide whether to accept, or repair once
+ * with a hint on malformed output.
+ */
+async function requestModelOnce(params: {
+  apiKey: string;
   vendor: string;
   productName: string;
-  pdfPath: string;
-  bytes: Uint8Array;
-}): Promise<{ row: ExtractedRow; usage: UsageStats }> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new TdsExtractError("LOVABLE_API_KEY is not configured.", "permanent");
-
-  const fileBase64 = bytesToBase64(params.bytes);
-  const fileName = params.pdfPath.split("/").pop() || "tds.pdf";
-
+  fileName: string;
+  fileBase64: string;
+  extraUserHint?: string;
+}): Promise<{ args: string | undefined; usage: UsageStats }> {
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   let resp: Response;
@@ -371,7 +479,7 @@ export async function callGeminiForSpec(params: {
       method: "POST",
       signal: ctrl.signal,
       headers: {
-        "Lovable-API-Key": apiKey,
+        "Lovable-API-Key": params.apiKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -383,13 +491,15 @@ export async function callGeminiForSpec(params: {
             content: [
               {
                 type: "text",
-                text: `Extract the technical specs for vendor "${params.vendor}" product "${params.productName}" from this TDS PDF. Every numeric or boolean value MUST have a matching provenance entry with an exact verbatim quote from the PDF.`,
+                text:
+                  `Extract the technical specs for vendor "${params.vendor}" product "${params.productName}" from this TDS PDF. Every numeric or boolean value MUST have a matching provenance entry with an exact verbatim quote from the PDF.` +
+                  (params.extraUserHint ? `\n\n${params.extraUserHint}` : ""),
               },
               {
                 type: "file",
                 file: {
-                  filename: fileName,
-                  file_data: `data:application/pdf;base64,${fileBase64}`,
+                  filename: params.fileName,
+                  file_data: `data:application/pdf;base64,${params.fileBase64}`,
                 },
               },
             ],
@@ -401,36 +511,26 @@ export async function callGeminiForSpec(params: {
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new TdsExtractError(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`, "transient");
+      throw new TdsExtractError(
+        `AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`,
+        "transient",
+        ERROR_CODES.MODEL_TIMEOUT,
+      );
     }
-    throw new TdsExtractError(err instanceof Error ? err.message : String(err), "transient");
+    throw new TdsExtractError(
+      err instanceof Error ? err.message : String(err),
+      "transient",
+      ERROR_CODES.NETWORK_ERROR,
+    );
   } finally {
     clearTimeout(to);
   }
 
-  if (resp.status === 429) {
-    const ra = Number(resp.headers.get("retry-after") ?? "");
-    throw new TdsExtractError(
-      "AI rate limit reached. Please wait and try again.",
-      "rate_limited",
-      Number.isFinite(ra) ? ra : undefined,
-    );
-  }
-  if (resp.status === 402) {
-    throw new TdsExtractError(
-      "AI credits exhausted. Add credits in Settings > Workspace > Usage.",
-      "permanent",
-    );
-  }
-  if (resp.status >= 500) {
-    const t = await resp.text().catch(() => "");
-    console.error("[tdsExtract] gateway 5xx", resp.status, t);
-    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "transient");
-  }
   if (!resp.ok) {
     const t = await resp.text().catch(() => "");
-    console.error("[tdsExtract] gateway error", resp.status, t);
-    throw new TdsExtractError(`AI gateway error (${resp.status}).`, "permanent");
+    // Never log request body / signed URLs / api key — status + short body only.
+    console.error("[tdsExtract] gateway not ok", { status: resp.status, bodyPreview: t.slice(0, 200) });
+    throw classifyGatewayStatus(resp.status, t, resp.headers.get("retry-after"));
   }
 
   const json = (await resp.json()) as {
@@ -438,25 +538,87 @@ export async function callGeminiForSpec(params: {
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new TdsExtractError("AI returned no structured output.", "permanent");
-
-  let parsedRaw: unknown;
-  try {
-    parsedRaw = JSON.parse(args);
-  } catch {
-    throw new TdsExtractError("AI returned malformed JSON.", "permanent");
-  }
-  const parsed = RowSchema.safeParse(parsedRaw);
-  if (!parsed.success) throw new TdsExtractError("AI output did not match expected schema.", "permanent");
-
   const inTok = json.usage?.prompt_tokens ?? null;
   const outTok = json.usage?.completion_tokens ?? null;
   const cost =
     inTok != null && outTok != null
       ? (inTok / 1_000_000) * PRICE_IN_PER_MTOK + (outTok / 1_000_000) * PRICE_OUT_PER_MTOK
       : null;
+  return { args, usage: { inputTokens: inTok, outputTokens: outTok, costUsd: cost } };
+}
 
-  return { row: parsed.data, usage: { inputTokens: inTok, outputTokens: outTok, costUsd: cost } };
+export async function callGeminiForSpec(params: {
+  vendor: string;
+  productName: string;
+  pdfPath: string;
+  bytes: Uint8Array;
+}): Promise<{ row: ExtractedRow; usage: UsageStats }> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    throw new TdsExtractError(
+      "LOVABLE_API_KEY is not configured.",
+      "paused",
+      ERROR_CODES.AI_CONFIG_ERROR,
+    );
+  }
+
+  const fileBase64 = bytesToBase64(params.bytes);
+  const fileName = params.pdfPath.split("/").pop() || "tds.pdf";
+
+  // First attempt
+  let { args, usage } = await requestModelOnce({
+    apiKey,
+    vendor: params.vendor,
+    productName: params.productName,
+    fileName,
+    fileBase64,
+  });
+
+  // Parse; if malformed, allow ONE controlled repair pass with a hint.
+  const tryParse = (raw: string | undefined) => {
+    if (!raw) return { ok: false as const, reason: "no_output" as const };
+    let parsedRaw: unknown;
+    try {
+      parsedRaw = JSON.parse(raw);
+    } catch {
+      return { ok: false as const, reason: "invalid_json" as const };
+    }
+    const parsed = RowSchema.safeParse(parsedRaw);
+    if (!parsed.success) return { ok: false as const, reason: "schema_mismatch" as const };
+    return { ok: true as const, row: parsed.data };
+  };
+
+  let parsed = tryParse(args);
+  if (!parsed.ok) {
+    console.warn("[tdsExtract] malformed structured output, attempting one repair", {
+      reason: parsed.reason,
+    });
+    const repair = await requestModelOnce({
+      apiKey,
+      vendor: params.vendor,
+      productName: params.productName,
+      fileName,
+      fileBase64,
+      extraUserHint:
+        "Your previous response could not be parsed. Emit ONLY the emit_spec tool call with valid arguments strictly matching the schema. Do not include prose. Every numeric/boolean value MUST have a provenance entry.",
+    });
+    // Accumulate token usage across attempts.
+    usage = {
+      inputTokens: (usage.inputTokens ?? 0) + (repair.usage.inputTokens ?? 0),
+      outputTokens: (usage.outputTokens ?? 0) + (repair.usage.outputTokens ?? 0),
+      costUsd: (usage.costUsd ?? 0) + (repair.usage.costUsd ?? 0),
+    };
+    parsed = tryParse(repair.args);
+    if (!parsed.ok) {
+      throw new TdsExtractError(
+        `AI structured output could not be parsed after repair (${parsed.reason}).`,
+        "permanent",
+        ERROR_CODES.MALFORMED_STRUCTURED_OUTPUT,
+      );
+    }
+  }
+
+  return { row: parsed.row, usage };
 }
 
 function provenanceFor(row: ExtractedRow, aiKey: string) {
@@ -608,9 +770,9 @@ export async function runExtractionForSpec(specId: string): Promise<{
     .select("*")
     .eq("id", specId)
     .maybeSingle();
-  if (specErr) throw new TdsExtractError(specErr.message, "transient");
-  if (!spec) throw new TdsExtractError("Spec not found.", "permanent");
-  if (!spec.tds_pdf_path) throw new TdsExtractError("This spec has no attached TDS PDF.", "missing_pdf");
+  if (specErr) throw new TdsExtractError(specErr.message, "transient", ERROR_CODES.TEMPORARY_DATABASE);
+  if (!spec) throw new TdsExtractError("Spec not found.", "permanent", ERROR_CODES.MISSING_SPEC);
+  if (!spec.tds_pdf_path) throw new TdsExtractError("This spec has no attached TDS PDF.", "missing_pdf", ERROR_CODES.MISSING_TDS);
 
   let extracted: ExtractedRow | null = null;
   let cacheHit = false;
@@ -662,40 +824,104 @@ export async function runExtractionForSpec(specId: string): Promise<{
   }
 
   if (!extracted) {
+    // Single-flight reservation: only one worker actually calls the model
+    // for (documentHash, MODEL, PROMPT_VERSION); others poll the cache.
+    const holder = `${globalThis.crypto?.randomUUID?.() ?? String(Date.now())}`;
+    const RES_TTL_SEC = Math.max(REQUEST_TIMEOUT_MS / 1000 + 60, 180);
+    let ownReservation = false;
     try {
-      const res = await callGeminiForSpec({
-        vendor: spec.vendor ?? "",
-        productName: spec.product_name ?? "",
-        pdfPath: spec.tds_pdf_path,
-        bytes: bytes!,
-      });
-      extracted = res.row;
-      usage = res.usage;
-      await supabaseAdmin.from("tds_extraction_cache").upsert({
-        document_hash: documentHash!,
-        model: MODEL,
-        prompt_version: PROMPT_VERSION,
-        extracted: extracted as never,
-        object_etag: etag,
-      });
-      await supabaseAdmin.rpc("record_ai_usage", {
+      const { data: won } = await supabaseAdmin.rpc("try_reserve_extraction", {
+        _document_hash: documentHash!,
         _model: MODEL,
-        _input_tokens: usage.inputTokens ?? 0,
-        _output_tokens: usage.outputTokens ?? 0,
-        _cost_usd: usage.costUsd ?? 0,
-        _failed: false,
+        _prompt_version: PROMPT_VERSION,
+        _holder: holder,
+        _ttl_seconds: RES_TTL_SEC,
       });
-    } catch (err) {
-      await supabaseAdmin.rpc("record_ai_usage", {
-        _model: MODEL,
-        _input_tokens: 0,
-        _output_tokens: 0,
-        _cost_usd: 0,
-        _failed: true,
-      });
-      throw err;
+      ownReservation = won === true;
+    } catch (e) {
+      console.warn("[tdsExtract] reservation rpc failed, proceeding without single-flight", e);
+      ownReservation = true;
+    }
+
+    if (!ownReservation) {
+      // Another worker is extracting the same document — wait briefly on
+      // the cache. This is the "10 concurrent duplicates → 1 model call" path.
+      const deadline = Date.now() + RES_TTL_SEC * 1000;
+      while (Date.now() < deadline && !extracted) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const { data: c } = await supabaseAdmin
+          .from("tds_extraction_cache")
+          .select("extracted")
+          .eq("document_hash", documentHash!)
+          .maybeSingle();
+        if (c?.extracted) {
+          const p = RowSchema.safeParse(c.extracted);
+          if (p.success) {
+            extracted = p.data;
+            cacheHit = true;
+            break;
+          }
+        }
+      }
+      if (!extracted) {
+        // The other holder crashed or timed out — take over next tick.
+        throw new TdsExtractError(
+          "Duplicate extraction in flight; will retry.",
+          "transient",
+          ERROR_CODES.TEMPORARY_DATABASE,
+        );
+      }
+    } else {
+      try {
+        const res = await callGeminiForSpec({
+          vendor: spec.vendor ?? "",
+          productName: spec.product_name ?? "",
+          pdfPath: spec.tds_pdf_path,
+          bytes: bytes!,
+        });
+        extracted = res.row;
+        usage = res.usage;
+        // Persist the validated extraction BEFORE merging — a merge/write
+        // failure below can then be retried without re-downloading the PDF
+        // or re-calling the model (cache short-circuits on next attempt).
+        await supabaseAdmin.from("tds_extraction_cache").upsert({
+          document_hash: documentHash!,
+          model: MODEL,
+          prompt_version: PROMPT_VERSION,
+          extracted: extracted as never,
+          object_etag: etag,
+        });
+        await supabaseAdmin.rpc("record_ai_usage", {
+          _model: MODEL,
+          _input_tokens: usage.inputTokens ?? 0,
+          _output_tokens: usage.outputTokens ?? 0,
+          _cost_usd: usage.costUsd ?? 0,
+          _failed: false,
+        });
+      } catch (err) {
+        await supabaseAdmin.rpc("record_ai_usage", {
+          _model: MODEL,
+          _input_tokens: 0,
+          _output_tokens: 0,
+          _cost_usd: 0,
+          _failed: true,
+        });
+        throw err;
+      } finally {
+        // Always release, even on failure — a crash leaves the reservation
+        // to expire on its own TTL.
+        try {
+          await supabaseAdmin.rpc("release_extraction_reservation", {
+            _document_hash: documentHash!,
+            _model: MODEL,
+            _prompt_version: PROMPT_VERSION,
+            _holder: holder,
+          });
+        } catch { /* noop */ }
+      }
     }
   }
+
 
 
   const { patch, updated, provenanceRows } = buildSafePatch(extracted, spec as Record<string, unknown>);
@@ -706,7 +932,7 @@ export async function runExtractionForSpec(specId: string): Promise<{
       .from("master_specs")
       .update(patch as never)
       .eq("id", spec.id);
-    if (upErr) throw new Error(upErr.message);
+    if (upErr) throw new TdsExtractError(upErr.message, "transient", ERROR_CODES.TEMPORARY_DATABASE);
   } else {
     await supabaseAdmin
       .from("master_specs")
