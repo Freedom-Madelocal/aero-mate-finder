@@ -61,7 +61,11 @@ export type SpecAuditPayload = {
     inputTokens: number | null;
     outputTokens: number | null;
     costUsd: number | null;
-    nextRunAt: string | null;
+    nextAttemptAt: string | null;
+    errorCode: string | null;
+    lastErrorAt: string | null;
+    completedAt: string | null;
+
   }>;
   provenance: Array<{
     field: string;
