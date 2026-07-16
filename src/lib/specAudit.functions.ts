@@ -126,7 +126,7 @@ export const getSpecAudit = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("tds_analysis_items")
         .select(
-          "id, created_at, updated_at, status, attempts, max_attempts, error_class, error, model, prompt_version, latency_ms, updated_fields, document_hash, input_tokens, output_tokens, cost_usd, next_run_at",
+          "id, created_at, updated_at, status, attempts, max_attempts, error_class, error_code, error, last_error_at, completed_at, model, prompt_version, latency_ms, updated_fields, document_hash, input_tokens, output_tokens, cost_usd, next_attempt_at, next_run_at",
         )
         .eq("spec_id", data.specId)
         .order("created_at", { ascending: false })
