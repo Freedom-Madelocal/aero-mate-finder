@@ -26,6 +26,7 @@ import { Route as ConsoleLoginRouteImport } from './routes/console.login'
 import { Route as AdminWidgetClientsRouteImport } from './routes/admin.widget-clients'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTdsUploadRouteImport } from './routes/admin.tds-upload'
+import { Route as AdminTdsBatchesRouteImport } from './routes/admin.tds-batches'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as AdminMasterSpecsRouteImport } from './routes/admin.master-specs'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
@@ -132,6 +133,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminTdsUploadRoute = AdminTdsUploadRouteImport.update({
   id: '/admin/tds-upload',
   path: '/admin/tds-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTdsBatchesRoute = AdminTdsBatchesRouteImport.update({
+  id: '/admin/tds-batches',
+  path: '/admin/tds-batches',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/admin/landing': typeof AdminLandingRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/tds-batches': typeof AdminTdsBatchesRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/widget-clients': typeof AdminWidgetClientsRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/admin/landing': typeof AdminLandingRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/tds-batches': typeof AdminTdsBatchesRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/widget-clients': typeof AdminWidgetClientsRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/admin/landing': typeof AdminLandingRoute
   '/admin/master-specs': typeof AdminMasterSpecsRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
+  '/admin/tds-batches': typeof AdminTdsBatchesRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/widget-clients': typeof AdminWidgetClientsRoute
@@ -406,6 +415,7 @@ export interface FileRouteTypes {
     | '/admin/landing'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/tds-batches'
     | '/admin/tds-upload'
     | '/admin/users'
     | '/admin/widget-clients'
@@ -447,6 +457,7 @@ export interface FileRouteTypes {
     | '/admin/landing'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/tds-batches'
     | '/admin/tds-upload'
     | '/admin/users'
     | '/admin/widget-clients'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/admin/landing'
     | '/admin/master-specs'
     | '/admin/organizations'
+    | '/admin/tds-batches'
     | '/admin/tds-upload'
     | '/admin/users'
     | '/admin/widget-clients'
@@ -520,6 +532,7 @@ export interface RootRouteChildren {
   AdminLandingRoute: typeof AdminLandingRoute
   AdminMasterSpecsRoute: typeof AdminMasterSpecsRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
+  AdminTdsBatchesRoute: typeof AdminTdsBatchesRoute
   AdminTdsUploadRoute: typeof AdminTdsUploadRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWidgetClientsRoute: typeof AdminWidgetClientsRoute
@@ -649,6 +662,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/tds-upload'
       fullPath: '/admin/tds-upload'
       preLoaderRoute: typeof AdminTdsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tds-batches': {
+      id: '/admin/tds-batches'
+      path: '/admin/tds-batches'
+      fullPath: '/admin/tds-batches'
+      preLoaderRoute: typeof AdminTdsBatchesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/organizations': {
@@ -880,6 +900,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLandingRoute: AdminLandingRoute,
   AdminMasterSpecsRoute: AdminMasterSpecsRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
+  AdminTdsBatchesRoute: AdminTdsBatchesRoute,
   AdminTdsUploadRoute: AdminTdsUploadRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWidgetClientsRoute: AdminWidgetClientsRoute,
