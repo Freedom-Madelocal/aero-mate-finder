@@ -21,15 +21,59 @@ export type TdsErrorClass =
   | "permanent"
   | "plausibility"
   | "missing_pdf"
-  | "rate_limited";
+  | "rate_limited"
+  | "paused"; // admission denied — worker pauses batch, does not fail item
+
+/** Stable, machine-readable error codes surfaced in item.error_code and logs. */
+export const ERROR_CODES = {
+  // Permanent (single attempt)
+  MISSING_SPEC: "missing_spec",
+  MISSING_TDS: "missing_tds",
+  INVALID_PDF: "invalid_pdf",
+  ENCRYPTED_PDF: "encrypted_pdf",
+  OVERSIZED_PDF: "oversized_pdf",
+  UNSUPPORTED_DOCUMENT: "unsupported_document",
+  MALFORMED_STRUCTURED_OUTPUT: "malformed_structured_output",
+  PLAUSIBILITY_REJECTED: "plausibility_rejected",
+  // Retryable
+  RATE_LIMITED: "rate_limited",
+  PROVIDER_5XX: "provider_5xx",
+  NETWORK_ERROR: "network_error",
+  MODEL_TIMEOUT: "model_timeout",
+  TEMPORARY_STORAGE: "temporary_storage",
+  TEMPORARY_DATABASE: "temporary_database",
+  // Batch-pause (never a per-item failure)
+  CREDITS_EXHAUSTED: "credits_exhausted",
+  AI_CONFIG_ERROR: "ai_config_error",
+  DAILY_CALL_CAP: "daily_call_cap",
+  DAILY_COST_CAP: "daily_cost_cap",
+} as const;
+export type TdsErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+const PAUSE_CODES: ReadonlySet<string> = new Set<string>([
+  ERROR_CODES.CREDITS_EXHAUSTED,
+  ERROR_CODES.AI_CONFIG_ERROR,
+  ERROR_CODES.DAILY_CALL_CAP,
+  ERROR_CODES.DAILY_COST_CAP,
+]);
+export function isPauseCode(code: string | null | undefined): boolean {
+  return !!code && PAUSE_CODES.has(code);
+}
 
 export class TdsExtractError extends Error {
   errorClass: TdsErrorClass;
+  errorCode: TdsErrorCode;
   retryAfterSec?: number;
-  constructor(message: string, errorClass: TdsErrorClass, retryAfterSec?: number) {
+  constructor(
+    message: string,
+    errorClass: TdsErrorClass,
+    errorCode: TdsErrorCode,
+    retryAfterSec?: number,
+  ) {
     super(message);
     this.name = "TdsExtractError";
     this.errorClass = errorClass;
+    this.errorCode = errorCode;
     this.retryAfterSec = retryAfterSec;
   }
 }
@@ -42,6 +86,8 @@ export function maxAttemptsFor(cls: TdsErrorClass): number {
       return 1;
     case "rate_limited":
       return 6;
+    case "paused":
+      return 99; // re-queued unchanged, does not consume attempts
     case "transient":
     default:
       return 5;
@@ -52,10 +98,53 @@ export function backoffSecondsFor(cls: TdsErrorClass, attempt: number, retryAfte
   if (cls === "rate_limited" && retryAfterSec && retryAfterSec > 0) {
     return Math.min(retryAfterSec, 600);
   }
-  // Exponential backoff w/ jitter: 30s, 60s, 120s, 240s, 480s (capped)
   const base = Math.min(30 * Math.pow(2, Math.max(0, attempt - 1)), 480);
   const jitter = Math.floor(Math.random() * 15);
   return base + jitter;
+}
+
+/**
+ * Map a raw gateway HTTP status to a classified TdsExtractError. Keeps the
+ * decision testable and away from the worker tick handler.
+ */
+export function classifyGatewayStatus(
+  status: number,
+  bodyText: string,
+  retryAfterHeader: string | null,
+): TdsExtractError {
+  const ra = Number(retryAfterHeader ?? "");
+  const retryAfter = Number.isFinite(ra) && ra > 0 ? ra : undefined;
+  if (status === 429) {
+    return new TdsExtractError("AI rate limit reached.", "rate_limited", ERROR_CODES.RATE_LIMITED, retryAfter);
+  }
+  if (status === 402) {
+    return new TdsExtractError("AI credits exhausted.", "paused", ERROR_CODES.CREDITS_EXHAUSTED);
+  }
+  if (status === 401 || status === 403) {
+    return new TdsExtractError("AI gateway auth/config error.", "paused", ERROR_CODES.AI_CONFIG_ERROR);
+  }
+  if (status >= 500) {
+    return new TdsExtractError(`AI gateway 5xx (${status}).`, "transient", ERROR_CODES.PROVIDER_5XX, retryAfter);
+  }
+  return new TdsExtractError(
+    `AI gateway rejected request (${status}): ${bodyText.slice(0, 200)}`,
+    "permanent",
+    ERROR_CODES.UNSUPPORTED_DOCUMENT,
+  );
+}
+
+/** Cooldown lengths per code when we open a provider-wide cooldown. */
+export function providerCooldownSeconds(code: TdsErrorCode): number {
+  switch (code) {
+    case ERROR_CODES.RATE_LIMITED:
+      return 60;
+    case ERROR_CODES.PROVIDER_5XX:
+      return 45;
+    case ERROR_CODES.MODEL_TIMEOUT:
+      return 30;
+    default:
+      return 0;
+  }
 }
 
 // Rough Gemini 2.5 Pro pricing (per 1M tokens, USD). Used for rollup only.
