@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pause, Play, AlertTriangle } from "lucide-react";
+import { Loader2, Pause, Play, AlertTriangle, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { getAiUsageDashboard, updateAiSettings } from "@/lib/aiUsage.functions";
+import { enqueueLegacyZeroRepair } from "@/lib/tdsQueue.functions";
 
 type Dashboard = Awaited<ReturnType<typeof getAiUsageDashboard>>;
 
@@ -9,6 +10,8 @@ export default function AiUsage() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [repairing, setRepairing] = useState(false);
+
 
   async function load() {
     try {
@@ -123,6 +126,38 @@ export default function AiUsage() {
           </label>
         </div>
       </section>
+
+      <section className="border border-border rounded-lg p-4">
+        <h2 className="font-semibold text-foreground mb-1">Repair legacy zeros</h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          Finds materials with attached TDS PDFs where any tracked numeric field is exactly 0
+          (legacy ingest artifact), nulls those fields, and enqueues a batch to re-extract them.
+        </p>
+        <button
+          disabled={repairing}
+          onClick={async () => {
+            if (!confirm("Enqueue a repair batch for all specs with legacy zero values?")) return;
+            setRepairing(true);
+            try {
+              const res = await enqueueLegacyZeroRepair();
+              if (res.total === 0) {
+                toast.info("No legacy zero values found.");
+              } else {
+                toast.success(`Enqueued ${res.total} spec${res.total === 1 ? "" : "s"} for re-analysis.`);
+              }
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Failed to enqueue repair");
+            } finally {
+              setRepairing(false);
+            }
+          }}
+          className="inline-flex items-center gap-2 border border-border rounded px-3 py-2 text-sm hover:bg-secondary disabled:opacity-60"
+        >
+          {repairing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
+          Enqueue repair batch
+        </button>
+      </section>
+
 
       <section className="border border-border rounded-lg p-4">
         <h2 className="font-semibold text-foreground mb-3">Daily usage</h2>

@@ -68,7 +68,7 @@ export function BulkAnalyzeTdsButton({
       }
     };
     void tick();
-    pollRef.current = setInterval(tick, 3000);
+    pollRef.current = setInterval(tick, 5000);
     return () => {
       cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
@@ -185,7 +185,13 @@ export function BulkAnalyzeTdsButton({
               <div>
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  {isRunning ? "Analyzing TDS PDFs" : progress.batch.status === "cancelled" ? "Cancelled" : "Analysis complete"}
+                  {isRunning
+                    ? "Analyzing TDS PDFs"
+                    : progress.batch.status === "cancelled"
+                    ? "Cancelled"
+                    : progress.batch.status === "paused"
+                    ? "Paused (worker disabled or capped)"
+                    : "Analysis complete"}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   {finishedCount} / {total} ({pct}%)
