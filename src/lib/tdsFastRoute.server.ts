@@ -353,10 +353,8 @@ export async function callFastTextRoute(params: {
   } catch {
     return null;
   }
-  const parsed = z.object({}).passthrough().safeParse(parsedRaw);
-  if (!parsed.success) return null;
-  const rowParsed = (RowSchemaLocal as unknown as { safeParse: (v: unknown) => { success: boolean; data?: ExtractedRow } }).safeParse(parsed.data);
-  if (!rowParsed.success || !rowParsed.data) return null;
+  if (!parsedRaw || typeof parsedRaw !== "object") return null;
+  const row = parsedRaw as ExtractedRow;
 
   const inTok = json.usage?.prompt_tokens ?? null;
   const outTok = json.usage?.completion_tokens ?? null;
@@ -366,7 +364,7 @@ export async function callFastTextRoute(params: {
       : null;
 
   return {
-    row: rowParsed.data,
+    row,
     usage: { inputTokens: inTok, outputTokens: outTok, costUsd: cost },
     includedPages: joined.includedPages,
     totalPages: joined.totalPages,
