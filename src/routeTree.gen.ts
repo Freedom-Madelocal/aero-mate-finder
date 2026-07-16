@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WidgetDotjsRouteImport } from './routes/widget[.]js'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PiRouteImport } from './routes/pi'
 import { Route as LoginRouteImport } from './routes/login'
@@ -20,7 +21,9 @@ import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as EmbedCrossoverRouteImport } from './routes/embed.crossover'
 import { Route as ConsoleLoginRouteImport } from './routes/console.login'
+import { Route as AdminWidgetClientsRouteImport } from './routes/admin.widget-clients'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTdsUploadRouteImport } from './routes/admin.tds-upload'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
@@ -44,7 +47,14 @@ import { Route as AppCompareRouteImport } from './routes/_app.compare'
 import { Route as ApiPublicTdsWorkerTickRouteImport } from './routes/api/public/tds-worker-tick'
 import { Route as AppOrgTeamRouteImport } from './routes/_app.org.team'
 import { Route as AppMaterialIdRouteImport } from './routes/_app.material.$id'
+import { Route as ApiPublicWidgetConfigRouteImport } from './routes/api/public/widget/config'
+import { Route as ApiPublicWidgetCatalogRouteImport } from './routes/api/public/widget/catalog'
 
+const WidgetDotjsRoute = WidgetDotjsRouteImport.update({
+  id: '/widget.js',
+  path: '/widget.js',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -99,10 +109,20 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmbedCrossoverRoute = EmbedCrossoverRouteImport.update({
+  id: '/embed/crossover',
+  path: '/embed/crossover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => ConsoleRoute,
+} as any)
+const AdminWidgetClientsRoute = AdminWidgetClientsRouteImport.update({
+  id: '/admin/widget-clients',
+  path: '/admin/widget-clients',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
@@ -219,6 +239,16 @@ const AppMaterialIdRoute = AppMaterialIdRouteImport.update({
   path: '/material/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicWidgetConfigRoute = ApiPublicWidgetConfigRouteImport.update({
+  id: '/api/public/widget/config',
+  path: '/api/public/widget/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWidgetCatalogRoute = ApiPublicWidgetCatalogRouteImport.update({
+  id: '/api/public/widget/catalog',
+  path: '/api/public/widget/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -230,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pi': typeof PiRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/widget.js': typeof WidgetDotjsRoute
   '/compare': typeof AppCompareRoute
   '/compliance': typeof AppComplianceRoute
   '/crossover': typeof AppCrossoverRoute
@@ -250,11 +281,15 @@ export interface FileRoutesByFullPath {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/widget-clients': typeof AdminWidgetClientsRoute
   '/console/login': typeof ConsoleLoginRoute
+  '/embed/crossover': typeof EmbedCrossoverRoute
   '/admin/': typeof AdminIndexRoute
   '/material/$id': typeof AppMaterialIdRoute
   '/org/team': typeof AppOrgTeamRoute
   '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
+  '/api/public/widget/catalog': typeof ApiPublicWidgetCatalogRoute
+  '/api/public/widget/config': typeof ApiPublicWidgetConfigRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -266,6 +301,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pi': typeof PiRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/widget.js': typeof WidgetDotjsRoute
   '/compare': typeof AppCompareRoute
   '/compliance': typeof AppComplianceRoute
   '/crossover': typeof AppCrossoverRoute
@@ -286,11 +322,15 @@ export interface FileRoutesByTo {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/widget-clients': typeof AdminWidgetClientsRoute
   '/console/login': typeof ConsoleLoginRoute
+  '/embed/crossover': typeof EmbedCrossoverRoute
   '/admin': typeof AdminIndexRoute
   '/material/$id': typeof AppMaterialIdRoute
   '/org/team': typeof AppOrgTeamRoute
   '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
+  '/api/public/widget/catalog': typeof ApiPublicWidgetCatalogRoute
+  '/api/public/widget/config': typeof ApiPublicWidgetConfigRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -304,6 +344,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pi': typeof PiRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/widget.js': typeof WidgetDotjsRoute
   '/_app/compare': typeof AppCompareRoute
   '/_app/compliance': typeof AppComplianceRoute
   '/_app/crossover': typeof AppCrossoverRoute
@@ -324,11 +365,15 @@ export interface FileRoutesById {
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/tds-upload': typeof AdminTdsUploadRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/widget-clients': typeof AdminWidgetClientsRoute
   '/console/login': typeof ConsoleLoginRoute
+  '/embed/crossover': typeof EmbedCrossoverRoute
   '/admin/': typeof AdminIndexRoute
   '/_app/material/$id': typeof AppMaterialIdRoute
   '/_app/org/team': typeof AppOrgTeamRoute
   '/api/public/tds-worker-tick': typeof ApiPublicTdsWorkerTickRoute
+  '/api/public/widget/catalog': typeof ApiPublicWidgetCatalogRoute
+  '/api/public/widget/config': typeof ApiPublicWidgetConfigRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -342,6 +387,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pi'
     | '/reset-password'
+    | '/widget.js'
     | '/compare'
     | '/compliance'
     | '/crossover'
@@ -362,11 +408,15 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/tds-upload'
     | '/admin/users'
+    | '/admin/widget-clients'
     | '/console/login'
+    | '/embed/crossover'
     | '/admin/'
     | '/material/$id'
     | '/org/team'
     | '/api/public/tds-worker-tick'
+    | '/api/public/widget/catalog'
+    | '/api/public/widget/config'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -378,6 +428,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pi'
     | '/reset-password'
+    | '/widget.js'
     | '/compare'
     | '/compliance'
     | '/crossover'
@@ -398,11 +449,15 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/tds-upload'
     | '/admin/users'
+    | '/admin/widget-clients'
     | '/console/login'
+    | '/embed/crossover'
     | '/admin'
     | '/material/$id'
     | '/org/team'
     | '/api/public/tds-worker-tick'
+    | '/api/public/widget/catalog'
+    | '/api/public/widget/config'
   id:
     | '__root__'
     | '/'
@@ -415,6 +470,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pi'
     | '/reset-password'
+    | '/widget.js'
     | '/_app/compare'
     | '/_app/compliance'
     | '/_app/crossover'
@@ -435,11 +491,15 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/tds-upload'
     | '/admin/users'
+    | '/admin/widget-clients'
     | '/console/login'
+    | '/embed/crossover'
     | '/admin/'
     | '/_app/material/$id'
     | '/_app/org/team'
     | '/api/public/tds-worker-tick'
+    | '/api/public/widget/catalog'
+    | '/api/public/widget/config'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -453,6 +513,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PiRoute: typeof PiRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  WidgetDotjsRoute: typeof WidgetDotjsRoute
   AdminAiUsageRoute: typeof AdminAiUsageRoute
   AdminCrmRoute: typeof AdminCrmRoute
   AdminFeatureFlagsRoute: typeof AdminFeatureFlagsRoute
@@ -461,12 +522,23 @@ export interface RootRouteChildren {
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminTdsUploadRoute: typeof AdminTdsUploadRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWidgetClientsRoute: typeof AdminWidgetClientsRoute
+  EmbedCrossoverRoute: typeof EmbedCrossoverRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicTdsWorkerTickRoute: typeof ApiPublicTdsWorkerTickRoute
+  ApiPublicWidgetCatalogRoute: typeof ApiPublicWidgetCatalogRoute
+  ApiPublicWidgetConfigRoute: typeof ApiPublicWidgetConfigRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/widget.js': {
+      id: '/widget.js'
+      path: '/widget.js'
+      fullPath: '/widget.js'
+      preLoaderRoute: typeof WidgetDotjsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -544,12 +616,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/embed/crossover': {
+      id: '/embed/crossover'
+      path: '/embed/crossover'
+      fullPath: '/embed/crossover'
+      preLoaderRoute: typeof EmbedCrossoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/console/login': {
       id: '/console/login'
       path: '/login'
       fullPath: '/console/login'
       preLoaderRoute: typeof ConsoleLoginRouteImport
       parentRoute: typeof ConsoleRoute
+    }
+    '/admin/widget-clients': {
+      id: '/admin/widget-clients'
+      path: '/admin/widget-clients'
+      fullPath: '/admin/widget-clients'
+      preLoaderRoute: typeof AdminWidgetClientsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
       id: '/admin/users'
@@ -712,6 +798,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaterialIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/widget/config': {
+      id: '/api/public/widget/config'
+      path: '/api/public/widget/config'
+      fullPath: '/api/public/widget/config'
+      preLoaderRoute: typeof ApiPublicWidgetConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/widget/catalog': {
+      id: '/api/public/widget/catalog'
+      path: '/api/public/widget/catalog'
+      fullPath: '/api/public/widget/catalog'
+      preLoaderRoute: typeof ApiPublicWidgetCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -773,6 +873,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PiRoute: PiRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  WidgetDotjsRoute: WidgetDotjsRoute,
   AdminAiUsageRoute: AdminAiUsageRoute,
   AdminCrmRoute: AdminCrmRoute,
   AdminFeatureFlagsRoute: AdminFeatureFlagsRoute,
@@ -781,8 +882,12 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminTdsUploadRoute: AdminTdsUploadRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWidgetClientsRoute: AdminWidgetClientsRoute,
+  EmbedCrossoverRoute: EmbedCrossoverRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicTdsWorkerTickRoute: ApiPublicTdsWorkerTickRoute,
+  ApiPublicWidgetCatalogRoute: ApiPublicWidgetCatalogRoute,
+  ApiPublicWidgetConfigRoute: ApiPublicWidgetConfigRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

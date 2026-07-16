@@ -1350,6 +1350,92 @@ export type Database = {
         }
         Relationships: []
       }
+      widget_clients: {
+        Row: {
+          accent_color: string
+          active: boolean
+          api_key_hash: string
+          api_key_prefix: string
+          brand_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          last_used_at: string | null
+          logo_url: string | null
+          monthly_price_usd: number | null
+          name: string
+          notes: string | null
+          subscription_renews_at: string | null
+          subscription_started_at: string | null
+          subscription_status: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          active?: boolean
+          api_key_hash: string
+          api_key_prefix: string
+          brand_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_used_at?: string | null
+          logo_url?: string | null
+          monthly_price_usd?: number | null
+          name: string
+          notes?: string | null
+          subscription_renews_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          active?: boolean
+          api_key_hash?: string
+          api_key_prefix?: string
+          brand_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_used_at?: string | null
+          logo_url?: string | null
+          monthly_price_usd?: number | null
+          name?: string
+          notes?: string | null
+          subscription_renews_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      widget_usage_monthly: {
+        Row: {
+          client_id: string
+          month: string
+          request_count: number
+        }
+        Insert: {
+          client_id: string
+          month: string
+          request_count?: number
+        }
+        Update: {
+          client_id?: string
+          month?: string
+          request_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_usage_monthly_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "widget_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
