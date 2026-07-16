@@ -834,7 +834,7 @@ export function buildSafePatch(
 
     if (kind === "text") {
       if (isMissing(v)) continue;
-      if (!isExistingEmpty(existing)) continue;
+      if (!isExistingEmpty(existing, dbCol)) continue;
       patch[dbCol] = String(v);
       updated.push(dbCol);
       if (prov?.quote) {
@@ -848,7 +848,7 @@ export function buildSafePatch(
       }
     } else if (kind === "num") {
       if (typeof v !== "number" || !Number.isFinite(v)) continue;
-      if (existing !== null && existing !== undefined) continue;
+      if (!isExistingEmpty(existing, dbCol)) continue;
       // Provenance quote required for numeric values.
       if (!prov?.quote || !prov.quote.trim()) {
         console.warn(`[tdsExtract] dropping ${dbCol}=${v} — no provenance quote`);
@@ -898,6 +898,38 @@ export function buildSafePatch(
   if (mergedCustomers.length > existingCustomers.length) {
     patch.customers = mergedCustomers;
     updated.push("customers");
+  }
+
+  // Grouped standards / identifiers / test-results: only write when the
+  // target column is empty — never overwrite curated structured data.
+  const groupWrites: Array<[string, unknown]> = [
+    ["qualifications", row.qualifications],
+    ["test_methods", row.testMethods],
+    ["contextual_standards", row.contextualStandards],
+    ["product_identifiers", row.productIdentifiers],
+    ["test_results", row.testResults],
+  ];
+  for (const [col, val] of groupWrites) {
+    if (!Array.isArray(val) || val.length === 0) continue;
+    const existing = spec[col];
+    const existingArr = Array.isArray(existing) ? existing : null;
+    if (existingArr && existingArr.length > 0) continue; // curated / already present
+    patch[col] = val as never;
+    updated.push(col);
+  }
+
+  // Back-compat: if qualifications[] came through but qualifications_standards
+  // (legacy text) is empty, populate the joined string so old UI still renders.
+  if (
+    Array.isArray(row.qualifications) &&
+    row.qualifications.length > 0 &&
+    isExistingEmpty(spec.qualifications_standards)
+  ) {
+    const joined = dedupe(row.qualifications.map((q) => q.standard)).join(", ");
+    if (joined) {
+      patch.qualifications_standards = joined;
+      if (!updated.includes("qualifications_standards")) updated.push("qualifications_standards");
+    }
   }
 
   return { patch, updated, provenanceRows };
