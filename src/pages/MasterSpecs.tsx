@@ -406,6 +406,13 @@ function SpecDrawer({
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowReview(true)}
+              className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-[var(--accent-blue)]/40 bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/20"
+              title="Open side-by-side PDF review & manual edit"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Review & Edit
+            </button>
+            <button
               onClick={() => setShowAudit(true)}
               className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-border bg-secondary/40 text-foreground hover:bg-secondary"
               title="View data lineage and scrape attempts"
@@ -418,6 +425,7 @@ function SpecDrawer({
           </div>
         </div>
         {showAudit && <DataAuditDrawer specId={spec.id} onClose={() => setShowAudit(false)} />}
+        {showReview && <SpecReviewWorkspace specId={spec.id} onClose={() => setShowReview(false)} />}
 
         <div className="p-5 space-y-5">
           {/* Inventory link */}
