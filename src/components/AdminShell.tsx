@@ -9,6 +9,7 @@ const TABS = [
   { path: "/admin/organizations", label: "Organizations" },
   { path: "/admin/crm", label: "CRM" },
   { path: "/admin/master-specs", label: "Master Specs" },
+  { path: "/admin/data-audit", label: "Data Audit" },
   { path: "/admin/tds-upload", label: "TDS Upload" },
   { path: "/admin/feature-flags", label: "Feature Flags" },
 ];
