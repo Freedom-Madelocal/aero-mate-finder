@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { X, ExternalLink, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { X, ExternalLink, AlertCircle, CheckCircle2, Clock, Pencil } from "lucide-react";
 import { getSpecAudit, type SpecAuditPayload } from "@/lib/specAudit.functions";
+import { listSpecManualEdits, type ManualEditRow } from "@/lib/specManualReview.functions";
 
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—";
@@ -86,6 +87,12 @@ export function DataAuditDrawer({ specId, onClose }: { specId: string; onClose: 
 
 function AuditBody({ data }: { data: SpecAuditPayload }) {
   const { spec, upload, scrapeLogs, analysisItems, provenance } = data;
+  const fetchEdits = useServerFn(listSpecManualEdits);
+  const editsQ = useQuery({
+    queryKey: ["spec-manual-edits", spec.id],
+    queryFn: () => fetchEdits({ data: { specId: spec.id } }) as Promise<ManualEditRow[]>,
+    staleTime: 15_000,
+  });
 
   return (
     <>
@@ -263,6 +270,38 @@ function AuditBody({ data }: { data: SpecAuditPayload }) {
                 )}
                 <p className="text-muted-foreground text-[10px]">
                   {p.model ?? "?"} · {p.promptVersion ?? "?"} · {fmtDate(p.extractedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {/* Manual edits */}
+      <Section title={`Manual Edits (${editsQ.data?.length ?? 0})`}>
+        {editsQ.isLoading ? (
+          <p className="text-xs text-muted-foreground">Loading manual edit log…</p>
+        ) : !editsQ.data || editsQ.data.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No manual edits recorded for this spec.</p>
+        ) : (
+          <ul className="space-y-2">
+            {editsQ.data.map((e) => (
+              <li key={e.id} className="rounded border border-border bg-secondary/20 p-2 text-xs space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Pencil className="w-3 h-3 text-[var(--accent-blue)]" />
+                    <span className="font-mono text-foreground">{e.field}</span>
+                  </div>
+                  <span className="text-muted-foreground">{fmtDate(e.created_at)}</span>
+                </div>
+                <p className="text-muted-foreground">
+                  <span className="line-through">{String(e.old_value ?? "—")}</span>
+                  {" → "}
+                  <span className="text-foreground">{String(e.new_value ?? "—")}</span>
+                </p>
+                <p className="text-muted-foreground text-[10px]">
+                  by {e.edited_by_email ?? e.edited_by ?? "unknown"}
+                  {e.note && <> · "{e.note}"</>}
                 </p>
               </li>
             ))}

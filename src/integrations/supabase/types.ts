@@ -538,6 +538,10 @@ export type Database = {
           qualifications_standards: string | null
           reinforcement: string | null
           resin_chemistry: string | null
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           shelf_life_months: number | null
           source_document: string | null
           storage_temp_max_c: number | null
@@ -605,6 +609,10 @@ export type Database = {
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           shelf_life_months?: number | null
           source_document?: string | null
           storage_temp_max_c?: number | null
@@ -672,6 +680,10 @@ export type Database = {
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           shelf_life_months?: number | null
           source_document?: string | null
           storage_temp_max_c?: number | null
@@ -1100,6 +1112,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "spec_corrections_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "master_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spec_manual_edits: {
+        Row: {
+          created_at: string
+          edited_by: string | null
+          edited_by_email: string | null
+          field: string
+          id: string
+          new_value: Json | null
+          note: string | null
+          old_value: Json | null
+          spec_id: string
+        }
+        Insert: {
+          created_at?: string
+          edited_by?: string | null
+          edited_by_email?: string | null
+          field: string
+          id?: string
+          new_value?: Json | null
+          note?: string | null
+          old_value?: Json | null
+          spec_id: string
+        }
+        Update: {
+          created_at?: string
+          edited_by?: string | null
+          edited_by_email?: string | null
+          field?: string
+          id?: string
+          new_value?: Json | null
+          note?: string | null
+          old_value?: Json | null
+          spec_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spec_manual_edits_spec_id_fkey"
             columns: ["spec_id"]
             isOneToOne: false
             referencedRelation: "master_specs"
