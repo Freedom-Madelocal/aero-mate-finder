@@ -378,6 +378,7 @@ function SpecDrawer({
   spec, inv, onClose,
 }: { spec: MasterSpec; inv: ReturnType<typeof getInventoryMatch>; onClose: () => void }) {
   const [showAudit, setShowAudit] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const fmt = (n: number | null, suffix = "") => fmtNonZero(n, suffix);
   const flags = [
     ["OOA / VBO", spec.ooaVboCapable], ["Toughened", spec.toughened],
