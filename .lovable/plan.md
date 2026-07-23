@@ -1,85 +1,78 @@
-# TDS Extraction Accuracy + Preflight — Phased Plan
+# Master Specs Data Audit & Manual Review
 
-## Phase 2A — Schema, provenance, and admin-guarded correction (this turn)
+Admin-console-only tooling to (1) see TDS coverage at a glance, (2) verify detail-screen data against the attached PDF, (3) track which materials a human data worker has checked, and (4) let admins hand-edit fields with the PDF open beside them — with a full "who edited what, when" audit trail.
 
-Additive migration only. No changes to existing extraction behaviour yet, so
-the running queue is never broken by a half-shipped prompt/schema pair.
+## What we're building
 
-1. **Migration `20260716_tds_accuracy_foundation`**
-   - Add to `master_specs`: `application_process text`, `shelf_life_months numeric`,
-     `storage_temp_min_c numeric`, `storage_temp_max_c numeric`,
-     `active_ingredient_or_resin text`.
-     (`product_form` already exists.)
-   - Rename read model for the classified standards. Keep the legacy
-     `qualifications_standards text` column intact (backward compat) and add:
-     - `qualifications jsonb` — product-conformance standards only, each
-       `{ standard, revision?, class?, type?, evidence_quote?, page? }`.
-     - `test_methods jsonb` — `{ method, evidence_quote?, page? }[]`.
-     - `contextual_standards jsonb` — `{ standard, role, evidence_quote?, page? }[]`
-       (e.g. tested-substrate coating).
-     - `product_identifiers jsonb` — `{ kind, value, applicability?, evidence_quote?, page? }[]`
-       (NSN, CAGE, part numbers).
-     - `test_results jsonb` — structured multi-dim tables preserved with
-       `{ name, conditions, rows: {label, value, units}[], evidence_quote?, page? }[]`.
-   - New `tds_extraction_runs` (log of every extraction attempt with route,
-     model, pages, input bytes, latency, cache status, cost estimate,
-     cancellation flag).
-   - New `spec_corrections` (audit trail; row_id, expected_document_hash,
-     before jsonb, after jsonb, actor, evidence text, created_at).
+### 1. TDS coverage & review dashboard (new page: `/admin/data-audit`)
 
-2. **Zod schema + types** — extend `TdsExtractionSchema` in
-   `src/lib/tdsExtract.server.ts` with the new grouped shapes. Do not remove
-   `qualifications_standards` from the merge yet; write both (structured +
-   legacy comma-joined string) so existing UI keeps rendering.
+A single admin page with three counters and a filterable table of every master spec:
 
-3. **Merge/canonical write** — never overwrite curated values; treat
-   legacy `0` as missing only for temperature/time fields where zero is a
-   sentinel (`cure_temperature_c`, `out_life_days`, `freezer_life_months`,
-   `shelf_life_months`, `storage_temp_*`). Preserve zero for `tml_pct`,
-   `cvcm_pct`, mechanical properties.
+- **With TDS PDF** / **Without TDS PDF** / **Total**
+- **Reviewed** / **Needs review** / **Flagged**
+- Filters: has PDF, review status, reviewer, last-edited-by, vendor
+- Row actions: **Open review** (opens the split-screen editor below), **Mark checked**, **Flag**
 
-4. **3M Adhesion Promoter 86A correction** — new
-   `src/lib/spec3MAdhesionPromoter86A.functions.ts` with
-   `previewCorrection86A()` and `applyCorrection86A()`, super-admin only,
-   requiring immutable row id and expected TDS document hash. Writes to
-   `spec_corrections` and updates the row with the exact evidenced values
-   from the request. Refuses mismatched id/hash.
+### 2. Review status on every material
 
-5. **Tests**
-   - Standards classification (ASTM D1000 → test method; MIL-PRF-85285 Type IV
-     → contextual; MIL-PRF-XYZ "conforms to" → qualification).
-   - Null preservation (legacy `0` on cure/out/freezer maps to `null`,
-     `tml_pct=0` stays `0`).
-   - Unit normalization (60–80 °F → 16–27 °C with source preserved).
-   - Curated-value conflict (curated row not overwritten by extraction).
-   - 3M correction guard (wrong hash → refuse; correct hash → audited write;
-     10-minute drying step not written to `cure_time`).
+New per-spec fields:
+- `review_status`: `unreviewed` | `in_review` | `checked` | `flagged` (default `unreviewed`)
+- `reviewed_by`, `reviewed_at`, `review_notes`
 
-## Phase 2B — Preflight + fast text-layer route (next turn)
+Shown as a colored pill in the Master Specs list and in the new dashboard. Only admins see it. `/engineer` is untouched.
 
-- Extract PDF metadata (signature, size, page count, encryption, text-layer
-  coverage) once via `pdfjs-dist` server helper; cancellation-aware.
-- New route selector: text-layer PDFs → compact page-labelled text into a
-  fast structured chat model (default: `google/gemini-3.1-flash-lite`);
-  scanned / low-text / table-heavy pages → keep vision on
-  `google/gemini-2.5-pro`.
-- Chunking + deterministic merge with page/quote provenance; no silent
-  truncation.
-- Stage-specific timeouts (fetch 15 s, parse 20 s, model call 60 s); on
-  timeout, retry with reduced chunk size, not the identical full-PDF POST.
-- Record every attempt in `tds_extraction_runs`.
+### 3. Split-screen manual editor (admin-only, on Master Specs detail)
 
-## Phase 2C — UI (after 2B is proven)
+New **"Review & Edit"** button in the Master Specs `SpecDrawer` (super-admin only, next to the existing Data Audit button). Opens a full-screen two-pane workspace:
 
-- Master Specs detail: render qualifications / test methods / contextual
-  standards / identifiers / test-results tables from the new jsonb columns,
-  with provenance popovers. Edit forms accept the new nullable canonical
-  fields. No changes to Engineer / customer surfaces.
+- **Left pane:** the TDS PDF (reuses existing `TdsPdfViewer`). If no PDF is attached, shows an upload slot.
+- **Right pane:** every editable field from the detail panel as inline inputs — identity, storage, cure/temp, qualifications, test results, etc. Each field shows the current value, its provenance badge (AI/manual/seed), and a small "override" input.
+- Footer: **Save changes**, **Mark as checked**, **Flag with note**, **Cancel**.
+- Not surfaced anywhere in `/engineer`.
 
----
+### 4. Full edit audit trail
 
-## Confirm before I execute Phase 2A
+Every manual edit writes one row per changed field to a new `spec_manual_edits` table: spec id, field, old value, new value, editor user id, timestamp, optional note. In the Data Audit Drawer (already exists) we add a new **"Manual edits"** section listing the trail so admins can see who last touched each field and what they changed. The existing AI provenance section stays as-is; manual edits are additive and always win over AI on the "last writer" display.
 
-- Ship Phase 2A now as described (additive migration + schema/merge/tests +
-  3M correction) and defer preflight/route selection and UI to 2B/2C?
-- Or restructure the ordering?
+### 5. Data-vs-PDF match indicator (lightweight)
+
+For each field with AI provenance we already store `source_page` and `source_quote`. In the split editor, next to each field, we show a small "verify" chip: click it to jump the PDF pane to `source_page` and highlight the quote. The reviewer then either accepts the value (leave as-is), edits it, or flags it. No new AI work — we're just wiring existing provenance to the PDF viewer.
+
+## Access control
+
+Everything above is gated to `super_admin` (same gate as the existing admin console). Regular authed users and `/engineer` see nothing new. Server functions re-check the role; RLS on the new tables restricts writes to super-admins and reads to the owning admin scope.
+
+## Out of scope for this plan
+
+- Assigning materials to specific data workers / queues (can add later once the flag/checked flow is in use)
+- Bulk CSV import of manual corrections
+- Re-running AI extraction from the editor (already exists as a separate control)
+
+## Technical details
+
+**Migration (additive):**
+- `master_specs`: add `review_status` (enum), `reviewed_by uuid`, `reviewed_at timestamptz`, `review_notes text`.
+- New `spec_manual_edits` table: `id`, `spec_id`, `field`, `old_value jsonb`, `new_value jsonb`, `edited_by`, `edited_at`, `note`. GRANTs for `authenticated` + `service_role`; RLS: SELECT/INSERT only when `has_role(auth.uid(),'super_admin')`.
+- Trigger on `master_specs` UPDATE by an admin path: not automatic — writes go through a server fn (`updateSpecFields`) that logs each changed field into `spec_manual_edits` in one transaction, so we capture intent and note.
+
+**Server functions (`src/lib/specManualReview.functions.ts`, new):**
+- `listSpecsForReview({ filters, page })` — powers the dashboard; returns coverage counters + paginated rows.
+- `updateSpecFields({ specId, changes: Record<field, newValue>, note? })` — super-admin only; diffs against current row, writes patch + audit rows atomically.
+- `setReviewStatus({ specId, status, note? })` — logs status change into audit trail too.
+- `listManualEdits({ specId })` — feeds the Data Audit Drawer's new section.
+
+**UI:**
+- New route `src/routes/admin.data-audit.tsx` + page `src/pages/admin/DataAudit.tsx` (counters, filters, table).
+- New component `src/components/SpecReviewWorkspace.tsx` (split-screen PDF + editable form), opened from the existing Master Specs `SpecDrawer`.
+- Extend `DataAuditDrawer.tsx` with a "Manual edits" section.
+- Sidebar link under Admin → "Data Audit".
+
+**Types:** regenerate Supabase types after the migration runs; update `MasterSpec` in `src/data/masterSpecs.ts` with the four new fields.
+
+## Rollout order
+
+1. Migration (schema + RLS + GRANTs).
+2. Server functions + types.
+3. Admin dashboard page.
+4. Split-screen editor + audit-drawer "Manual edits" section.
+5. Wire "verify" chip to jump PDF viewer to `source_page`.
