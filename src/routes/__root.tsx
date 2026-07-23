@@ -145,7 +145,7 @@ function RootComponent() {
             <UiThemeProvider>
               <CompareProvider>
                 <TooltipProvider delayDuration={200}>
-                  <Toaster position="top-right" />
+                  <Toaster position="bottom-right" closeButton />
                   <Outlet />
                   <TdsPdfViewer />
                 </TooltipProvider>
