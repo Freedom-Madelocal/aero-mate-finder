@@ -350,14 +350,17 @@ export const listSpecManualEdits = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
-    return (rows ?? []) as Array<{
-      id: string;
-      field: string;
-      old_value: unknown;
-      new_value: unknown;
-      edited_by: string | null;
-      edited_by_email: string | null;
-      note: string | null;
-      created_at: string;
-    }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (rows ?? []) as any[];
   });
+
+export type ManualEditRow = {
+  id: string;
+  field: string;
+  old_value: string | number | boolean | null;
+  new_value: string | number | boolean | null;
+  edited_by: string | null;
+  edited_by_email: string | null;
+  note: string | null;
+  created_at: string;
+};
