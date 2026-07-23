@@ -87,6 +87,12 @@ export function DataAuditDrawer({ specId, onClose }: { specId: string; onClose: 
 
 function AuditBody({ data }: { data: SpecAuditPayload }) {
   const { spec, upload, scrapeLogs, analysisItems, provenance } = data;
+  const fetchEdits = useServerFn(listSpecManualEdits);
+  const editsQ = useQuery({
+    queryKey: ["spec-manual-edits", spec.id],
+    queryFn: () => fetchEdits({ data: { specId: spec.id } }) as Promise<ManualEditRow[]>,
+    staleTime: 15_000,
+  });
 
   return (
     <>
