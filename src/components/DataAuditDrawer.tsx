@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { X, ExternalLink, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { X, ExternalLink, AlertCircle, CheckCircle2, Clock, Pencil } from "lucide-react";
 import { getSpecAudit, type SpecAuditPayload } from "@/lib/specAudit.functions";
+import { listSpecManualEdits, type ManualEditRow } from "@/lib/specManualReview.functions";
 
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—";
