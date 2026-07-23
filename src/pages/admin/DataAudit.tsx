@@ -24,12 +24,12 @@ export default function DataAudit() {
   const [openSpec, setOpenSpec] = useState<string | null>(null);
 
   // Vendor list from local store (mirrors master specs data)
-  const specs = useMasterSpecStore((s) => s.specs);
+  const store = useMasterSpecStore();
   const vendors = useMemo(() => {
     const set = new Set<string>();
-    for (const s of specs) if (s.vendor) set.add(s.vendor);
+    for (const s of store.specs) if (s.vendor) set.add(s.vendor);
     return ["All", ...Array.from(set).sort()];
-  }, [specs]);
+  }, [store.specs]);
 
   const summaryQ = useQuery({
     queryKey: ["review-summary"],
