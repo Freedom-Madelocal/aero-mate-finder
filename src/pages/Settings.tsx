@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import LandingEditor from "@/components/LandingEditor";
 import LeadMagnetEditor from "@/components/LeadMagnetEditor";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,12 +9,20 @@ import { toast } from "sonner";
 /*
  * Design: Material Intelligence — Dark Industrial Minimalism
  * Settings page: System configuration for the Traceum platform.
- * Covers storage thresholds, notification rules, user management, and facility config.
+ * Super-admin only.
  */
 
 export default function Settings() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, loading } = useAuth();
+  const navigate = useNavigate();
   const [active, setActive] = useState<string>("Storage Thresholds");
+
+  useEffect(() => {
+    if (!loading && !isSuperAdmin) navigate({ to: "/engineer", replace: true });
+  }, [loading, isSuperAdmin, navigate]);
+
+  if (loading || !isSuperAdmin) return <div className="min-h-[50vh]" />;
+
 
   const navItems: Array<{ icon: typeof Thermometer; label: string; enabled: boolean }> = [
     { icon: Thermometer, label: "Storage Thresholds", enabled: true },
