@@ -509,6 +509,17 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["applications", "applications", "text"],
   ["qualificationsStandards", "qualifications_standards", "text"],
   ["minimumOrderQuantity", "minimum_order_quantity", "text"],
+  ["densityGcm3", "density_g_cm3", "num"],
+  ["tensileModulusGpa", "tensile_modulus_gpa", "num"],
+  ["compressiveStrengthMpa", "compressive_strength_mpa", "num"],
+  ["mixRatioByWeight", "mix_ratio_by_weight", "text"],
+  ["mixRatioByVolume", "mix_ratio_by_volume", "text"],
+  ["mixedViscosityCp", "mixed_viscosity_cp", "num"],
+  ["arealWeightGsm", "areal_weight_gsm", "num"],
+  ["resinContentPct", "resin_content_pct", "num"],
+  ["volatileContentPct", "volatile_content_pct", "num"],
+  ["gelTimeMinutes", "gel_time_minutes", "num"],
+  ["potLifeHours", "pot_life_hours", "num"],
 ];
 
 /**
@@ -548,6 +559,15 @@ const RANGES: Record<string, [number, number]> = {
   t_peel_n_per_25mm: [0, 1000],
   flatwise_tension_mpa: [0, 100],
   climbing_drum_peel_in_lb_per_in: [0, 200],
+  density_g_cm3: [0.1, 10.0],
+  tensile_modulus_gpa: [0, 500],
+  compressive_strength_mpa: [0, 2000],
+  mixed_viscosity_cp: [0, 10_000_000],
+  areal_weight_gsm: [10, 2000],
+  resin_content_pct: [0, 100],
+  volatile_content_pct: [0, 20],
+  gel_time_minutes: [0, 1440],
+  pot_life_hours: [0, 720],
 };
 
 // Canonical display unit per numeric field (used for provenance row).
@@ -568,6 +588,15 @@ const UNIT_FOR: Record<string, string> = {
   t_peel_n_per_25mm: "N/25mm",
   flatwise_tension_mpa: "MPa",
   climbing_drum_peel_in_lb_per_in: "in-lb/in",
+  density_g_cm3: "g/cm³",
+  tensile_modulus_gpa: "GPa",
+  compressive_strength_mpa: "MPa",
+  mixed_viscosity_cp: "cP",
+  areal_weight_gsm: "gsm",
+  resin_content_pct: "%",
+  volatile_content_pct: "%",
+  gel_time_minutes: "min",
+  pot_life_hours: "hrs",
 };
 
 function isMissing(v: unknown): boolean {
