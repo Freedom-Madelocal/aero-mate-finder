@@ -106,7 +106,8 @@ export function joinPagesForPrompt(
 const FAST_SYSTEM = `You extract aerospace material specs for ONE named product from its TDS PDF, which has been converted to plain text with "--- Page N ---" markers.
 
 Emit the emit_spec tool call, obeying its schema exactly. Rules:
-- Units: temperatures in °C (convert °F→°C), lap shear in MPa, T-peel in N/25mm, TML/CVCM as percent (0.8 not 0.008), out-life in days, freezer life and shelf life in months.
+- Units (STRICT — the schema stores these units): temperatures in °C (convert °F→°C: C = (F - 32) * 5/9); pressures and mechanical strengths in MPa (ksi → MPa: ×6.895; psi → MPa: ÷145.038); modulus in GPa (Msi → GPa: ×6.895); density in g/cm³ (specific gravity is numerically equivalent); areal weight in g/m² (oz/yd² → gsm: ×33.906); viscosity in cP (1 mPa·s = 1 cP); lap shear in MPa; T-peel in N/25mm; climbing drum peel in in-lb/in; out-life in days; freezer life and shelf life in months; gel time in minutes; pot life in hours; TML/CVCM as percent (0.8 not 0.008).
+- NEVER return a numeric value when the unit on the PDF is unclear — return null.
 - Never return 0 as "unknown" — return null.
 - Application dry/flash time is NOT cure_time; put it in application_process.
 - Shelf life, freezer life, and out life are distinct — never conflate.
@@ -158,6 +159,17 @@ const FAST_TOOL = {
         applications: { type: "string" },
         qualificationsStandards: { type: "string" },
         minimumOrderQuantity: { type: "string" },
+        densityGcm3: { type: ["number", "null"], description: "Density or specific gravity. MUST convert to g/cm³. Specific gravity is numerically equivalent to g/cm³." },
+        tensileModulusGpa: { type: ["number", "null"], description: "Tensile modulus. MUST convert to GPa. Convert Msi to GPa: 1 Msi = 6.895 GPa." },
+        compressiveStrengthMpa: { type: ["number", "null"], description: "Compressive strength. MUST convert to MPa. Convert ksi to MPa: 1 ksi = 6.895 MPa." },
+        mixRatioByWeight: { type: "string", description: "Mix ratio by weight as a string ratio (e.g. '100:25'). For two-part adhesives and pastes." },
+        mixRatioByVolume: { type: "string", description: "Mix ratio by volume as a string ratio (e.g. '2:1'). For two-part adhesives and pastes." },
+        mixedViscosityCp: { type: ["number", "null"], description: "Mixed viscosity at room temperature. MUST convert to Centipoise (cP). 1 mPa·s = 1 cP." },
+        arealWeightGsm: { type: ["number", "null"], description: "Fabric or prepreg nominal areal weight. MUST convert to g/m² (gsm). Convert oz/yd² to gsm: multiply by 33.906." },
+        resinContentPct: { type: ["number", "null"], description: "Resin content by weight as a percentage (e.g. 35 for 35%)." },
+        volatileContentPct: { type: ["number", "null"], description: "Volatile content as a percentage." },
+        gelTimeMinutes: { type: ["number", "null"], description: "Gel time. MUST convert to minutes." },
+        potLifeHours: { type: ["number", "null"], description: "Pot life or working life. MUST convert to hours." },
         profiles: { type: "array", items: { type: "string" } },
         keySpecs: { type: "array", items: { type: "string" } },
         customers: { type: "array", items: { type: "string" } },
