@@ -240,7 +240,8 @@ const FAST_TOOL = {
                   type: "object",
                   properties: {
                     label: { type: "string" },
-                    value: { type: ["string", "number", "null"] },
+                    // Gemini rejects 3-way type unions in tool schemas.
+                    value: { type: ["string", "null"] },
                     units: { type: ["string", "null"] },
                   },
                   required: ["label"],
