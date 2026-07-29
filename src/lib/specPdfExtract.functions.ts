@@ -45,6 +45,17 @@ const ExtractedSpecSchema = z
     crossoverVendor: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
     minimumOrderQuantity: z.string().nullable().optional(),
+    densityGcm3: z.number().nullable().optional(),
+    tensileModulusGpa: z.number().nullable().optional(),
+    compressiveStrengthMpa: z.number().nullable().optional(),
+    mixRatioByWeight: z.string().nullable().optional(),
+    mixRatioByVolume: z.string().nullable().optional(),
+    mixedViscosityCp: z.number().nullable().optional(),
+    arealWeightGsm: z.number().nullable().optional(),
+    resinContentPct: z.number().nullable().optional(),
+    volatileContentPct: z.number().nullable().optional(),
+    gelTimeMinutes: z.number().nullable().optional(),
+    potLifeHours: z.number().nullable().optional(),
     profiles: z.array(z.string()).optional(),
     keySpecs: z.array(z.string()).optional(),
     customers: z.array(z.string()).optional(),
@@ -86,6 +97,17 @@ export interface ExtractedSpec {
   crossoverVendor: string | null;
   notes: string | null;
   minimumOrderQuantity: string | null;
+  densityGcm3: number | null;
+  tensileModulusGpa: number | null;
+  compressiveStrengthMpa: number | null;
+  mixRatioByWeight: string | null;
+  mixRatioByVolume: string | null;
+  mixedViscosityCp: number | null;
+  arealWeightGsm: number | null;
+  resinContentPct: number | null;
+  volatileContentPct: number | null;
+  gelTimeMinutes: number | null;
+  potLifeHours: number | null;
   profiles: string[];
   keySpecs: string[];
   customers: string[];
@@ -135,6 +157,17 @@ function normalize(r: z.infer<typeof ExtractedSpecSchema>): ExtractedSpec {
     crossoverVendor: txt(r.crossoverVendor),
     notes: txt(r.notes),
     minimumOrderQuantity: txt(r.minimumOrderQuantity),
+    densityGcm3: numOrNull(r.densityGcm3),
+    tensileModulusGpa: numOrNull(r.tensileModulusGpa),
+    compressiveStrengthMpa: numOrNull(r.compressiveStrengthMpa),
+    mixRatioByWeight: txt(r.mixRatioByWeight),
+    mixRatioByVolume: txt(r.mixRatioByVolume),
+    mixedViscosityCp: numOrNull(r.mixedViscosityCp),
+    arealWeightGsm: numOrNull(r.arealWeightGsm),
+    resinContentPct: numOrNull(r.resinContentPct),
+    volatileContentPct: numOrNull(r.volatileContentPct),
+    gelTimeMinutes: numOrNull(r.gelTimeMinutes),
+    potLifeHours: numOrNull(r.potLifeHours),
     profiles: Array.isArray(r.profiles) ? r.profiles.filter((p): p is string => typeof p === "string" && p.trim().length > 0) : [],
     keySpecs: Array.isArray(r.keySpecs) ? r.keySpecs.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
     customers: Array.isArray(r.customers) ? r.customers.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
