@@ -11,7 +11,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const BUCKET = "tds-pdfs";
 export const MODEL = "google/gemini-2.5-pro"; // vision fallback / default cache key
-export const PROMPT_VERSION = "v2";
+export const PROMPT_VERSION = "v3";
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB
 
 /**
