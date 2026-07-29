@@ -195,14 +195,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </Link>
                   );
                 })}
-                <Link
-                  to="/settings"
-                  onClick={() => setMobileOpen(false)}
-                  preload="render"
-                  className="block px-4 py-2 text-sm text-muted-foreground"
-                >
-                  Settings
-                </Link>
+                {isSuperAdmin && (
+                  <Link
+                    to="/settings"
+                    onClick={() => setMobileOpen(false)}
+                    preload="render"
+                    className="block px-4 py-2 text-sm text-muted-foreground"
+                  >
+                    Settings
+                  </Link>
+                )}
                 {isSuperAdmin && (
                   <Link
                     to="/admin"
@@ -249,11 +251,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
-                  <Cog className="w-3.5 h-3.5" /> Settings
-                </Link>
-              </DropdownMenuItem>
+              {isSuperAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Cog className="w-3.5 h-3.5" /> Settings
+                  </Link>
+                </DropdownMenuItem>
+              )}
               {isSuperAdmin && (
                 <>
                   <DropdownMenuSeparator />
