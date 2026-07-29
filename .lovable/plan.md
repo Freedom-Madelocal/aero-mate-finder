@@ -1,78 +1,37 @@
-# Master Specs Data Audit & Manual Review
+## Goal
 
-Admin-console-only tooling to (1) see TDS coverage at a glance, (2) verify detail-screen data against the attached PDF, (3) track which materials a human data worker has checked, and (4) let admins hand-edit fields with the PDF open beside them — with a full "who edited what, when" audit trail.
+Capture 11 additional material properties (density, modulus, mix ratios, viscosity, areal weight, resin/volatile content, gel time, pot life) end-to-end, so extracted TDS data lands in `master_specs` with provenance.
 
-## What we're building
+## Step 1 — Database migration
 
-### 1. TDS coverage & review dashboard (new page: `/admin/data-audit`)
+Additive migration on `public.master_specs` adding all 11 nullable columns exactly as specified (`density_g_cm3`, `tensile_modulus_gpa`, `compressive_strength_mpa`, `mix_ratio_by_weight`, `mix_ratio_by_volume`, `mixed_viscosity_cp`, `areal_weight_gsm`, `resin_content_pct`, `volatile_content_pct`, `gel_time_minutes`, `pot_life_hours`). Existing grants/RLS on the table already cover new columns. After approval the generated types file regenerates so the new columns are typed.
 
-A single admin page with three counters and a filterable table of every master spec:
+## Step 2 — `src/lib/tdsExtract.server.ts`
 
-- **With TDS PDF** / **Without TDS PDF** / **Total**
-- **Reviewed** / **Needs review** / **Flagged**
-- Filters: has PDF, review status, reviewer, last-edited-by, vendor
-- Row actions: **Open review** (opens the split-screen editor below), **Mark checked**, **Flag**
+- Add the 11 fields to `RowSchema` (line ~211).
+- Add matching properties with unit-conversion descriptions to the `TOOL` JSON schema (line ~260).
+- Replace the `Units (STRICT …)` block in the `SYSTEM` prompt (line ~411) with the expanded unit rules plus the "Complex tables and category-specific data" guidance.
+- Extend `FIELD_MAP` (line ~443) with the 11 AI-key → column → kind tuples, `RANGES` (line ~501) with the plausibility bounds, and `UNIT_FOR` (line ~521) with display units.
 
-### 2. Review status on every material
+Because `buildSafePatch` iterates `FIELD_MAP`, the new columns are written automatically — never overwriting existing non-empty values, dropped when out of range or missing a provenance quote, and recorded in `tds_field_provenance`.
 
-New per-spec fields:
-- `review_status`: `unreviewed` | `in_review` | `checked` | `flagged` (default `unreviewed`)
-- `reviewed_by`, `reviewed_at`, `review_notes`
+## Step 3 — `src/lib/tdsFastRoute.server.ts`
 
-Shown as a colored pill in the Master Specs list and in the new dashboard. Only admins see it. `/engineer` is untouched.
+Mirror the same three additions in the fast text-layer route: new Zod fields, new `FAST_TOOL` properties, and the same unit rules in `FAST_SYSTEM`, so both routes emit identical shapes.
 
-### 3. Split-screen manual editor (admin-only, on Master Specs detail)
+## Step 4 — `src/lib/specPdfExtract.functions.ts` (bulk upload)
 
-New **"Review & Edit"** button in the Master Specs `SpecDrawer` (super-admin only, next to the existing Data Audit button). Opens a full-screen two-pane workspace:
+- Add the 11 fields to `ExtractedSpecSchema` and to the `ExtractedSpec` interface.
+- Add the 11 properties to that file's `TOOL` definition.
+- Insert the unit-conversion block into `SYSTEM_PROMPT`.
+- Extend `normalize()` using existing `numOrNull` (numeric fields) and `txt` (the two mix-ratio strings).
 
-- **Left pane:** the TDS PDF (reuses existing `TdsPdfViewer`). If no PDF is attached, shows an upload slot.
-- **Right pane:** every editable field from the detail panel as inline inputs — identity, storage, cure/temp, qualifications, test results, etc. Each field shows the current value, its provenance badge (AI/manual/seed), and a small "override" input.
-- Footer: **Save changes**, **Mark as checked**, **Flag with note**, **Cancel**.
-- Not surfaced anywhere in `/engineer`.
+## Verification
 
-### 4. Full edit audit trail
+- Run the vitest suite (currently green) plus a `tsgo` typecheck to confirm no missing properties across schemas, `FIELD_MAP`, and generated Supabase types.
+- Confirm `buildSafePatch` now returns the new columns in its patch by extending the existing unit tests with a case covering a new field (e.g. `densityGcm3` with provenance, and an out-of-range rejection).
 
-Every manual edit writes one row per changed field to a new `spec_manual_edits` table: spec id, field, old value, new value, editor user id, timestamp, optional note. In the Data Audit Drawer (already exists) we add a new **"Manual edits"** section listing the trail so admins can see who last touched each field and what they changed. The existing AI provenance section stays as-is; manual edits are additive and always win over AI on the "last writer" display.
+## Notes
 
-### 5. Data-vs-PDF match indicator (lightweight)
-
-For each field with AI provenance we already store `source_page` and `source_quote`. In the split editor, next to each field, we show a small "verify" chip: click it to jump the PDF pane to `source_page` and highlight the quote. The reviewer then either accepts the value (leave as-is), edits it, or flags it. No new AI work — we're just wiring existing provenance to the PDF viewer.
-
-## Access control
-
-Everything above is gated to `super_admin` (same gate as the existing admin console). Regular authed users and `/engineer` see nothing new. Server functions re-check the role; RLS on the new tables restricts writes to super-admins and reads to the owning admin scope.
-
-## Out of scope for this plan
-
-- Assigning materials to specific data workers / queues (can add later once the flag/checked flow is in use)
-- Bulk CSV import of manual corrections
-- Re-running AI extraction from the editor (already exists as a separate control)
-
-## Technical details
-
-**Migration (additive):**
-- `master_specs`: add `review_status` (enum), `reviewed_by uuid`, `reviewed_at timestamptz`, `review_notes text`.
-- New `spec_manual_edits` table: `id`, `spec_id`, `field`, `old_value jsonb`, `new_value jsonb`, `edited_by`, `edited_at`, `note`. GRANTs for `authenticated` + `service_role`; RLS: SELECT/INSERT only when `has_role(auth.uid(),'super_admin')`.
-- Trigger on `master_specs` UPDATE by an admin path: not automatic — writes go through a server fn (`updateSpecFields`) that logs each changed field into `spec_manual_edits` in one transaction, so we capture intent and note.
-
-**Server functions (`src/lib/specManualReview.functions.ts`, new):**
-- `listSpecsForReview({ filters, page })` — powers the dashboard; returns coverage counters + paginated rows.
-- `updateSpecFields({ specId, changes: Record<field, newValue>, note? })` — super-admin only; diffs against current row, writes patch + audit rows atomically.
-- `setReviewStatus({ specId, status, note? })` — logs status change into audit trail too.
-- `listManualEdits({ specId })` — feeds the Data Audit Drawer's new section.
-
-**UI:**
-- New route `src/routes/admin.data-audit.tsx` + page `src/pages/admin/DataAudit.tsx` (counters, filters, table).
-- New component `src/components/SpecReviewWorkspace.tsx` (split-screen PDF + editable form), opened from the existing Master Specs `SpecDrawer`.
-- Extend `DataAuditDrawer.tsx` with a "Manual edits" section.
-- Sidebar link under Admin → "Data Audit".
-
-**Types:** regenerate Supabase types after the migration runs; update `MasterSpec` in `src/data/masterSpecs.ts` with the four new fields.
-
-## Rollout order
-
-1. Migration (schema + RLS + GRANTs).
-2. Server functions + types.
-3. Admin dashboard page.
-4. Split-screen editor + audit-drawer "Manual edits" section.
-5. Wire "verify" chip to jump PDF viewer to `source_page`.
+- Migration is additive only; no existing data touched, missing values stay `null`.
+- Step 2 must land after the migration is approved so the regenerated Supabase types include the columns.
