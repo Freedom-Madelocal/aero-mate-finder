@@ -397,7 +397,10 @@ const TOOL = {
                   type: "object",
                   properties: {
                     label: { type: "string" },
-                    value: { type: ["string", "number", "null"] },
+                    // Gemini's tool-schema validator rejects 3-way type unions
+                    // (it drops the property, then errors on required[]). Keep
+                    // this a string|null; numbers are emitted as text.
+                    value: { type: ["string", "null"] },
                     units: { type: ["string", "null"] },
                   },
                   required: ["label"],
