@@ -499,7 +499,9 @@ export type Database = {
           active_ingredient_or_resin: string | null
           application_process: string | null
           applications: string | null
+          areal_weight_gsm: number | null
           climbing_drum_peel_in_lb_per_in: number | null
+          compressive_strength_mpa: number | null
           contextual_standards: Json | null
           created_at: string
           crossover_product: string | null
@@ -508,12 +510,14 @@ export type Database = {
           cure_time: string | null
           customers: string[]
           cvcm_pct: number | null
+          density_g_cm3: number | null
           dry_tg_onset_c: number | null
           engineer_default_name: string | null
           flame_retardant: boolean
           flatwise_tension_mpa: number | null
           freezer_life_months: number | null
           frequent_reorder: boolean
+          gel_time_minutes: number | null
           high_temperature: boolean
           id: string
           impact_resistant: boolean
@@ -524,10 +528,14 @@ export type Database = {
           material_number: number | null
           max_service_temperature_c: number | null
           minimum_order_quantity: string | null
+          mix_ratio_by_volume: string | null
+          mix_ratio_by_weight: string | null
+          mixed_viscosity_cp: number | null
           notes: string | null
           ooa_vbo_capable: boolean
           out_life_days: number | null
           peak_tg_c: number | null
+          pot_life_hours: number | null
           process_method: string | null
           product_family: string | null
           product_form: string | null
@@ -538,6 +546,7 @@ export type Database = {
           qualifications_standards: string | null
           reinforcement: string | null
           resin_chemistry: string | null
+          resin_content_pct: number | null
           review_notes: string | null
           review_status: string
           reviewed_at: string | null
@@ -557,6 +566,7 @@ export type Database = {
           tds_source_title: string | null
           tds_url: string | null
           tensile_lap_shear_mpa: number | null
+          tensile_modulus_gpa: number | null
           test_methods: Json | null
           test_results: Json | null
           tml_pct: number | null
@@ -564,13 +574,16 @@ export type Database = {
           updated_at: string
           uploaded_from: string | null
           vendor: string
+          volatile_content_pct: number | null
           wet_tg_c: number | null
         }
         Insert: {
           active_ingredient_or_resin?: string | null
           application_process?: string | null
           applications?: string | null
+          areal_weight_gsm?: number | null
           climbing_drum_peel_in_lb_per_in?: number | null
+          compressive_strength_mpa?: number | null
           contextual_standards?: Json | null
           created_at?: string
           crossover_product?: string | null
@@ -579,12 +592,14 @@ export type Database = {
           cure_time?: string | null
           customers?: string[]
           cvcm_pct?: number | null
+          density_g_cm3?: number | null
           dry_tg_onset_c?: number | null
           engineer_default_name?: string | null
           flame_retardant?: boolean
           flatwise_tension_mpa?: number | null
           freezer_life_months?: number | null
           frequent_reorder?: boolean
+          gel_time_minutes?: number | null
           high_temperature?: boolean
           id?: string
           impact_resistant?: boolean
@@ -595,10 +610,14 @@ export type Database = {
           material_number?: number | null
           max_service_temperature_c?: number | null
           minimum_order_quantity?: string | null
+          mix_ratio_by_volume?: string | null
+          mix_ratio_by_weight?: string | null
+          mixed_viscosity_cp?: number | null
           notes?: string | null
           ooa_vbo_capable?: boolean
           out_life_days?: number | null
           peak_tg_c?: number | null
+          pot_life_hours?: number | null
           process_method?: string | null
           product_family?: string | null
           product_form?: string | null
@@ -609,6 +628,7 @@ export type Database = {
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
+          resin_content_pct?: number | null
           review_notes?: string | null
           review_status?: string
           reviewed_at?: string | null
@@ -628,6 +648,7 @@ export type Database = {
           tds_source_title?: string | null
           tds_url?: string | null
           tensile_lap_shear_mpa?: number | null
+          tensile_modulus_gpa?: number | null
           test_methods?: Json | null
           test_results?: Json | null
           tml_pct?: number | null
@@ -635,13 +656,16 @@ export type Database = {
           updated_at?: string
           uploaded_from?: string | null
           vendor: string
+          volatile_content_pct?: number | null
           wet_tg_c?: number | null
         }
         Update: {
           active_ingredient_or_resin?: string | null
           application_process?: string | null
           applications?: string | null
+          areal_weight_gsm?: number | null
           climbing_drum_peel_in_lb_per_in?: number | null
+          compressive_strength_mpa?: number | null
           contextual_standards?: Json | null
           created_at?: string
           crossover_product?: string | null
@@ -650,12 +674,14 @@ export type Database = {
           cure_time?: string | null
           customers?: string[]
           cvcm_pct?: number | null
+          density_g_cm3?: number | null
           dry_tg_onset_c?: number | null
           engineer_default_name?: string | null
           flame_retardant?: boolean
           flatwise_tension_mpa?: number | null
           freezer_life_months?: number | null
           frequent_reorder?: boolean
+          gel_time_minutes?: number | null
           high_temperature?: boolean
           id?: string
           impact_resistant?: boolean
@@ -666,10 +692,14 @@ export type Database = {
           material_number?: number | null
           max_service_temperature_c?: number | null
           minimum_order_quantity?: string | null
+          mix_ratio_by_volume?: string | null
+          mix_ratio_by_weight?: string | null
+          mixed_viscosity_cp?: number | null
           notes?: string | null
           ooa_vbo_capable?: boolean
           out_life_days?: number | null
           peak_tg_c?: number | null
+          pot_life_hours?: number | null
           process_method?: string | null
           product_family?: string | null
           product_form?: string | null
@@ -680,6 +710,7 @@ export type Database = {
           qualifications_standards?: string | null
           reinforcement?: string | null
           resin_chemistry?: string | null
+          resin_content_pct?: number | null
           review_notes?: string | null
           review_status?: string
           reviewed_at?: string | null
@@ -699,6 +730,7 @@ export type Database = {
           tds_source_title?: string | null
           tds_url?: string | null
           tensile_lap_shear_mpa?: number | null
+          tensile_modulus_gpa?: number | null
           test_methods?: Json | null
           test_results?: Json | null
           tml_pct?: number | null
@@ -706,6 +738,7 @@ export type Database = {
           updated_at?: string
           uploaded_from?: string | null
           vendor?: string
+          volatile_content_pct?: number | null
           wet_tg_c?: number | null
         }
         Relationships: []

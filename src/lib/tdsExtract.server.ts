@@ -252,6 +252,17 @@ export const RowSchema = z.object({
   contextualStandards: z.array(ContextualStandardItemSchema).optional(),
   productIdentifiers: z.array(ProductIdentifierItemSchema).optional(),
   testResults: z.array(TestResultTableSchema).optional(),
+  densityGcm3: z.number().nullable().optional(),
+  tensileModulusGpa: z.number().nullable().optional(),
+  compressiveStrengthMpa: z.number().nullable().optional(),
+  mixRatioByWeight: z.string().nullable().optional(),
+  mixRatioByVolume: z.string().nullable().optional(),
+  mixedViscosityCp: z.number().nullable().optional(),
+  arealWeightGsm: z.number().nullable().optional(),
+  resinContentPct: z.number().nullable().optional(),
+  volatileContentPct: z.number().nullable().optional(),
+  gelTimeMinutes: z.number().nullable().optional(),
+  potLifeHours: z.number().nullable().optional(),
   provenance: z.array(ProvenanceItem).optional(),
 });
 
@@ -300,6 +311,17 @@ const TOOL = {
         applications: { type: "string" },
         qualificationsStandards: { type: "string", description: "Legacy comma-joined list of qualifications (for back-compat). Prefer populating the structured 'qualifications' array." },
         minimumOrderQuantity: { type: "string" },
+        densityGcm3: { type: ["number", "null"], description: "Density or specific gravity. MUST convert to g/cm³. Specific gravity is numerically equivalent to g/cm³." },
+        tensileModulusGpa: { type: ["number", "null"], description: "Tensile modulus. MUST convert to GPa. Convert Msi to GPa: 1 Msi = 6.895 GPa." },
+        compressiveStrengthMpa: { type: ["number", "null"], description: "Compressive strength. MUST convert to MPa. Convert ksi to MPa: 1 ksi = 6.895 MPa." },
+        mixRatioByWeight: { type: "string", description: "Mix ratio by weight as a string ratio (e.g. '100:25'). For two-part adhesives and pastes." },
+        mixRatioByVolume: { type: "string", description: "Mix ratio by volume as a string ratio (e.g. '2:1'). For two-part adhesives and pastes." },
+        mixedViscosityCp: { type: ["number", "null"], description: "Mixed viscosity at room temperature. MUST convert to Centipoise (cP). 1 mPa·s = 1 cP." },
+        arealWeightGsm: { type: ["number", "null"], description: "Fabric or prepreg nominal areal weight. MUST convert to g/m² (gsm). Convert oz/yd² to gsm: multiply by 33.906." },
+        resinContentPct: { type: ["number", "null"], description: "Resin content by weight as a percentage (e.g. 35 for 35%)." },
+        volatileContentPct: { type: ["number", "null"], description: "Volatile content as a percentage." },
+        gelTimeMinutes: { type: ["number", "null"], description: "Gel time. MUST convert to minutes." },
+        potLifeHours: { type: ["number", "null"], description: "Pot life or working life. MUST convert to hours." },
         profiles: { type: "array", items: { type: "string" } },
         keySpecs: { type: "array", items: { type: "string" } },
         customers: { type: "array", items: { type: "string" } },
@@ -412,10 +434,21 @@ const SYSTEM = `You extract the aerospace material specs for ONE named product f
 
 Units (STRICT — the schema stores these units):
 - All temperatures in Celsius (°C). If the PDF gives °F, convert: C = (F - 32) * 5/9.
-- Pressures: MPa. Lap shear stress: MPa. T-peel: N per 25mm. Climbing drum peel: in-lb/in.
-- Out-life in days. Freezer life in months. TML/CVCM as percent (e.g. 0.8 not 0.008).
+- Pressures and mechanical strengths: MPa. Convert ksi → MPa: multiply by 6.895. Convert psi → MPa: divide by 145.038.
+- Modulus values: GPa. Convert Msi → GPa: multiply by 6.895.
+- Density: g/cm³. Specific gravity is numerically equivalent to g/cm³.
+- Areal weight: g/m² (gsm). Convert oz/yd² → gsm: multiply by 33.906.
+- Viscosity: cP (Centipoise). 1 mPa·s = 1 cP.
+- Lap shear stress: MPa. T-peel: N per 25mm. Climbing drum peel: in-lb/in.
+- Out-life in days. Freezer life in months. Shelf life in months.
+- Gel time in minutes. Pot life in hours.
+- TML/CVCM as percent (e.g. 0.8 not 0.008).
 - NEVER return a numeric value when the unit on the PDF is unclear — return null.
 - NEVER return 0 as a placeholder for "unknown". Use null.
+
+Complex tables and category-specific data:
+- If a property has multiple values across conditions (temperatures, substrates, cure schedules), emit the FULL table under testResults[] rather than picking one number for the scalar field. Only emit the scalar field when the PDF gives a single unambiguous value or a clearly labelled "typical" value.
+- For category-specific data that has no scalar field in the schema (e.g. peel strength at multiple angles, compression strength at multiple temperatures), you MUST capture it as a table in testResults[] rather than omitting it.
 
 Rules:
 - Extract data ONLY for the specified vendor + product. Ignore other products the PDF may list.
@@ -476,6 +509,17 @@ const FIELD_MAP: Array<[keyof ExtractedRow, string, "text" | "num" | "bool"]> = 
   ["applications", "applications", "text"],
   ["qualificationsStandards", "qualifications_standards", "text"],
   ["minimumOrderQuantity", "minimum_order_quantity", "text"],
+  ["densityGcm3", "density_g_cm3", "num"],
+  ["tensileModulusGpa", "tensile_modulus_gpa", "num"],
+  ["compressiveStrengthMpa", "compressive_strength_mpa", "num"],
+  ["mixRatioByWeight", "mix_ratio_by_weight", "text"],
+  ["mixRatioByVolume", "mix_ratio_by_volume", "text"],
+  ["mixedViscosityCp", "mixed_viscosity_cp", "num"],
+  ["arealWeightGsm", "areal_weight_gsm", "num"],
+  ["resinContentPct", "resin_content_pct", "num"],
+  ["volatileContentPct", "volatile_content_pct", "num"],
+  ["gelTimeMinutes", "gel_time_minutes", "num"],
+  ["potLifeHours", "pot_life_hours", "num"],
 ];
 
 /**
@@ -515,6 +559,15 @@ const RANGES: Record<string, [number, number]> = {
   t_peel_n_per_25mm: [0, 1000],
   flatwise_tension_mpa: [0, 100],
   climbing_drum_peel_in_lb_per_in: [0, 200],
+  density_g_cm3: [0.1, 10.0],
+  tensile_modulus_gpa: [0, 500],
+  compressive_strength_mpa: [0, 2000],
+  mixed_viscosity_cp: [0, 10_000_000],
+  areal_weight_gsm: [10, 2000],
+  resin_content_pct: [0, 100],
+  volatile_content_pct: [0, 20],
+  gel_time_minutes: [0, 1440],
+  pot_life_hours: [0, 720],
 };
 
 // Canonical display unit per numeric field (used for provenance row).
@@ -535,6 +588,15 @@ const UNIT_FOR: Record<string, string> = {
   t_peel_n_per_25mm: "N/25mm",
   flatwise_tension_mpa: "MPa",
   climbing_drum_peel_in_lb_per_in: "in-lb/in",
+  density_g_cm3: "g/cm³",
+  tensile_modulus_gpa: "GPa",
+  compressive_strength_mpa: "MPa",
+  mixed_viscosity_cp: "cP",
+  areal_weight_gsm: "gsm",
+  resin_content_pct: "%",
+  volatile_content_pct: "%",
+  gel_time_minutes: "min",
+  pot_life_hours: "hrs",
 };
 
 function isMissing(v: unknown): boolean {

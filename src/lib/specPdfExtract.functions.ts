@@ -45,6 +45,17 @@ const ExtractedSpecSchema = z
     crossoverVendor: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
     minimumOrderQuantity: z.string().nullable().optional(),
+    densityGcm3: z.number().nullable().optional(),
+    tensileModulusGpa: z.number().nullable().optional(),
+    compressiveStrengthMpa: z.number().nullable().optional(),
+    mixRatioByWeight: z.string().nullable().optional(),
+    mixRatioByVolume: z.string().nullable().optional(),
+    mixedViscosityCp: z.number().nullable().optional(),
+    arealWeightGsm: z.number().nullable().optional(),
+    resinContentPct: z.number().nullable().optional(),
+    volatileContentPct: z.number().nullable().optional(),
+    gelTimeMinutes: z.number().nullable().optional(),
+    potLifeHours: z.number().nullable().optional(),
     profiles: z.array(z.string()).optional(),
     keySpecs: z.array(z.string()).optional(),
     customers: z.array(z.string()).optional(),
@@ -86,6 +97,17 @@ export interface ExtractedSpec {
   crossoverVendor: string | null;
   notes: string | null;
   minimumOrderQuantity: string | null;
+  densityGcm3: number | null;
+  tensileModulusGpa: number | null;
+  compressiveStrengthMpa: number | null;
+  mixRatioByWeight: string | null;
+  mixRatioByVolume: string | null;
+  mixedViscosityCp: number | null;
+  arealWeightGsm: number | null;
+  resinContentPct: number | null;
+  volatileContentPct: number | null;
+  gelTimeMinutes: number | null;
+  potLifeHours: number | null;
   profiles: string[];
   keySpecs: string[];
   customers: string[];
@@ -135,6 +157,17 @@ function normalize(r: z.infer<typeof ExtractedSpecSchema>): ExtractedSpec {
     crossoverVendor: txt(r.crossoverVendor),
     notes: txt(r.notes),
     minimumOrderQuantity: txt(r.minimumOrderQuantity),
+    densityGcm3: numOrNull(r.densityGcm3),
+    tensileModulusGpa: numOrNull(r.tensileModulusGpa),
+    compressiveStrengthMpa: numOrNull(r.compressiveStrengthMpa),
+    mixRatioByWeight: txt(r.mixRatioByWeight),
+    mixRatioByVolume: txt(r.mixRatioByVolume),
+    mixedViscosityCp: numOrNull(r.mixedViscosityCp),
+    arealWeightGsm: numOrNull(r.arealWeightGsm),
+    resinContentPct: numOrNull(r.resinContentPct),
+    volatileContentPct: numOrNull(r.volatileContentPct),
+    gelTimeMinutes: numOrNull(r.gelTimeMinutes),
+    potLifeHours: numOrNull(r.potLifeHours),
     profiles: Array.isArray(r.profiles) ? r.profiles.filter((p): p is string => typeof p === "string" && p.trim().length > 0) : [],
     keySpecs: Array.isArray(r.keySpecs) ? r.keySpecs.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
     customers: Array.isArray(r.customers) ? r.customers.filter((p): p is string => typeof p === "string" && p.trim().length > 0).map((p) => p.trim()) : [],
@@ -156,7 +189,19 @@ Rules:
 - For TEXT fields, if the value is missing/unknown, return the literal string "none given" (do NOT guess).
 - For NUMERIC fields, if missing/unknown, return null.
 - For BOOLEAN flags, return false when unknown.
-- Map units: convert °F to °C, psi to MPa, etc., when source is in non-metric.
+- Units (STRICT — the schema stores these units):
+  - All temperatures in Celsius (°C). If the PDF gives °F, convert: C = (F - 32) * 5/9.
+  - Pressures and mechanical strengths: MPa. Convert ksi → MPa: multiply by 6.895. Convert psi → MPa: divide by 145.038.
+  - Modulus values: GPa. Convert Msi → GPa: multiply by 6.895.
+  - Density: g/cm³. Specific gravity is numerically equivalent to g/cm³.
+  - Areal weight: g/m² (gsm). Convert oz/yd² → gsm: multiply by 33.906.
+  - Viscosity: cP (Centipoise). 1 mPa·s = 1 cP.
+  - Lap shear stress: MPa. T-peel: N per 25mm. Climbing drum peel: in-lb/in.
+  - Out-life in days. Freezer life in months. Shelf life in months.
+  - Gel time in minutes. Pot life in hours.
+  - TML/CVCM as percent (e.g. 0.8 not 0.008).
+  - NEVER return a numeric value when the unit on the PDF is unclear — return null.
+  - NEVER return 0 as a placeholder for "unknown". Use null.
 - Be exhaustive — do not skip products. Do not invent products.`;
 
 const TOOL = {
@@ -207,6 +252,17 @@ const TOOL = {
               crossoverVendor: { type: "string" },
               notes: { type: "string" },
               minimumOrderQuantity: { type: "string" },
+              densityGcm3: { type: ["number", "null"], description: "Density or specific gravity. MUST convert to g/cm³. Specific gravity is numerically equivalent to g/cm³." },
+              tensileModulusGpa: { type: ["number", "null"], description: "Tensile modulus. MUST convert to GPa. Convert Msi to GPa: 1 Msi = 6.895 GPa." },
+              compressiveStrengthMpa: { type: ["number", "null"], description: "Compressive strength. MUST convert to MPa. Convert ksi to MPa: 1 ksi = 6.895 MPa." },
+              mixRatioByWeight: { type: "string", description: "Mix ratio by weight as a string ratio (e.g. '100:25'). For two-part adhesives and pastes." },
+              mixRatioByVolume: { type: "string", description: "Mix ratio by volume as a string ratio (e.g. '2:1'). For two-part adhesives and pastes." },
+              mixedViscosityCp: { type: ["number", "null"], description: "Mixed viscosity at room temperature. MUST convert to Centipoise (cP). 1 mPa·s = 1 cP." },
+              arealWeightGsm: { type: ["number", "null"], description: "Fabric or prepreg nominal areal weight. MUST convert to g/m² (gsm). Convert oz/yd² to gsm: multiply by 33.906." },
+              resinContentPct: { type: ["number", "null"], description: "Resin content by weight as a percentage (e.g. 35 for 35%)." },
+              volatileContentPct: { type: ["number", "null"], description: "Volatile content as a percentage." },
+              gelTimeMinutes: { type: ["number", "null"], description: "Gel time. MUST convert to minutes." },
+              potLifeHours: { type: ["number", "null"], description: "Pot life or working life. MUST convert to hours." },
               profiles: { type: "array", items: { type: "string" } },
               keySpecs: { type: "array", items: { type: "string" }, description: "Universal/OEM spec numbers (BMS5-101, MIL-PRF-83282, AMS3819, etc.). Verbatim." },
               customers: { type: "array", items: { type: "string" }, description: "Customer/OEM/end-user names this product is qualified for or listed under (Boeing, Airbus, Bell, Lockheed, Northrop, Sikorsky, NASA, etc.)." },

@@ -191,6 +191,40 @@ describe("buildSafePatch", () => {
     expect(patch.cure_temperature_c).toBeUndefined();
   });
 
+  it("writes the new scalar fields when in range and cited", () => {
+    const row: ExtractedRow = {
+      densityGcm3: 1.24,
+      arealWeightGsm: 196,
+      mixRatioByWeight: "100:25",
+      provenance: [
+        { field: "densityGcm3", page: 2, quote: "Density 1.24 g/cm³", confidence: "high" },
+        { field: "arealWeightGsm", page: 2, quote: "Areal weight 196 gsm", confidence: "high" },
+      ],
+    };
+    const { patch, updated } = buildSafePatch(row, {
+      density_g_cm3: null,
+      areal_weight_gsm: null,
+      mix_ratio_by_weight: null,
+    });
+    expect(patch.density_g_cm3).toBe(1.24);
+    expect(patch.areal_weight_gsm).toBe(196);
+    expect(patch.mix_ratio_by_weight).toBe("100:25");
+    expect(updated).toEqual(
+      expect.arrayContaining(["density_g_cm3", "areal_weight_gsm", "mix_ratio_by_weight"]),
+    );
+  });
+
+  it("drops new scalar fields outside their plausibility range", () => {
+    const row: ExtractedRow = {
+      densityGcm3: 42,
+      provenance: [
+        { field: "densityGcm3", page: 1, quote: "density 42", confidence: "high" },
+      ],
+    };
+    const { patch } = buildSafePatch(row, { density_g_cm3: null });
+    expect(patch.density_g_cm3).toBeUndefined();
+  });
+
   it("merges profiles and customers without duplicates", () => {
     const row: ExtractedRow = {
       profiles: ["OoA", "Autoclave"],
